@@ -33,13 +33,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Clone repositories
-        shell: bash
-        run: |
-          git clone https://github.com/org-metaeffekt/metaeffekt-core.git -b ${{ inputs.ae-core-version }}
-          git clone https://github.com/org-metaeffekt/metaeffekt-artifact-analysis.git -b ${{ inputs.ae-artifact-analysis-version }}
-          git clone https://github.com/org-metaeffekt/metaeffekt-kontinuum.git -b ${{ inputs.ae-kontinuum-version }}
-
       - name: Setup Java and Maven
         uses: actions/setup-java@v4
         with:
@@ -49,6 +42,9 @@ jobs:
 
       - name: Checkout metaeffekt-workbench
         run: |
+          git clone https://github.com/org-metaeffekt/metaeffekt-kontinuum.git ${{ github.workspace }}/metaeffekt-kontinuum
+          cd ${{ github.workspace }}/metaeffekt-kontinuum
+          git checkout ${{ inputs.ae-kontinuum-version }}
           git clone https://github.com/org-metaeffekt/metaeffekt-workbench.git ${{ github.workspace }}/metaeffekt-workbench
           cd ${{ github.workspace }}/metaeffekt-workbench
           git checkout ${{ inputs.ae-workbench-version }}
