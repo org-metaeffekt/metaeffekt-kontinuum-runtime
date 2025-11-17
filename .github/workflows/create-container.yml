@@ -1,4 +1,4 @@
-name: Create Release
+name: Create Container
 
 on:
   workflow_dispatch:
@@ -12,11 +12,11 @@ on:
         required: true
         type: string
       ae-kontinuum-version:
-        description: 'Release version. Must be valid semantic versioning.'
+        description: 'Metaeffekt Kontinuum version to use for this release.'
         required: true
         type: string
       ae-workbench-version:
-        description: 'Metaeffekt Workbench version tag or branch to utilize for testing.'
+        description: 'Metaeffekt Workbench version tag or branch to utilize for testing with kontinuum.'
         default: main
         required: false
         type: string
@@ -27,26 +27,11 @@ env:
 jobs:
   release:
     runs-on: ubuntu-latest
-
-    services:
-      docker:
-        image: docker:26-dind
-        options: --privileged
-        ports:
-          - 2375:2375
-        env:
-          DOCKER_TLS_CERTDIR: ""
+    timeout-minutes: 60
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Docker for GitHub Actions
-        run: |
-          sudo apt-get update -q
-          sudo apt-get install -y containerd docker.io
-          echo "DOCKER_HOST=tcp://localhost:2375" >> "$GITHUB_ENV"
-          docker info
 
       - name: Clone repositories
         shell: bash
@@ -55,13 +40,12 @@ jobs:
           git clone https://github.com/org-metaeffekt/metaeffekt-artifact-analysis.git -b ${{ inputs.ae-artifact-analysis-version }}
           git clone https://github.com/org-metaeffekt/metaeffekt-kontinuum.git -b ${{ inputs.ae-kontinuum-version }}
 
-      - name: Install Maven
-        run: |
-          MVN_VER=3.9.11
-          wget -q https://downloads.apache.org/maven/maven-3/${MVN_VER}/binaries/apache-maven-${MVN_VER}-bin.tar.gz
-          sudo tar -xzf apache-maven-${MVN_VER}-bin.tar.gz -C /opt/
-          sudo mv /opt/apache-maven-${MVN_VER} /opt/maven
-          echo "/opt/maven/bin" >> "$GITHUB_PATH"
+      - name: Setup Java and Maven
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+          cache: 'maven'
 
       - name: Checkout metaeffekt-workbench
         run: |
@@ -89,8 +73,6 @@ jobs:
           echo "AE_CORE_VERSION=${{ inputs.ae-core-version }}" >> ${{ github.workspace }}/external.rc
           echo "AE_ARTIFACT_ANALYSIS_VERSION=${{ inputs.ae-artifact-analysis-version }}" >> ${{ github.workspace }}/external.rc
 
-          cat ${{ github.workspace }}/external.rc
-
       - name: Enable debug logging on runner console
         shell: bash
         run: |
@@ -99,7 +81,7 @@ jobs:
       - name: Restore vulnerability mirror and maven index cache
         uses: actions/cache/restore@v4
         with:
-          key: simple-key
+          key: key-${{ inputs.ae-core-version }}-${{ inputs.ae-artifact-analysis-version }}
           path: |
             .mirror
             .maven-index
@@ -117,7 +99,7 @@ jobs:
         uses: actions/cache/save@v4
         if: ${{ always() }}
         with:
-          key: simple-key
+          key: key-${{ inputs.ae-core-version }}-${{ inputs.ae-artifact-analysis-version }}
           path: |
             .mirror
             .maven-index
@@ -141,8 +123,8 @@ jobs:
         run: |
           mkdir -p local-maven-repo/com/metaeffekt
           mkdir -p local-maven-repo/org/metaeffekt
-          cp /home/runner/.m2/repository/com/metaeffekt local-maven-repo/com/metaeffekt
-          cp /home/runner/.m2/repository/org/metaeffekt local-maven-repo/org/metaeffekt
+          cp -r /home/runner/.m2/repository/com/metaeffekt/. local-maven-repo/com/metaeffekt
+          cp -r /home/runner/.m2/repository/org/metaeffekt/. local-maven-repo/org/metaeffekt
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -163,14 +145,14 @@ jobs:
           images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: ${{ github.workspace }}
           push: false
           file: ${{ github.workspace }}/container/Dockerfile
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          outputs: type=docker,dest=/tmp/image.tar   # <-- save local tarball
+          outputs: type=docker,dest=/tmp/image.tar
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
