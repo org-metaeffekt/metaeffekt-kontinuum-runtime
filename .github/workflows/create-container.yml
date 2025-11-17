@@ -70,7 +70,7 @@ jobs:
         run: |
           touch ${{ github.workspace }}/external.rc
           echo "EXTERNAL_WORKBENCH_DIR=${{ github.workspace }}/metaeffekt-workbench" >> ${{ github.workspace }}/external.rc
-          echo "EXTERNAL_VULNERABILITY_MIRROR_DIR=${{ github.workspace }}/.mirror" >> ${{ github.workspace }}/external.rc
+          echo "EXTERNAL_VULNERABILITY_MIRROR_DIR=${{ github.workspace }}/metaeffekt-kontinuum/.mirror" >> ${{ github.workspace }}/external.rc
           echo "EXTERNAL_VULNERABILITY_MIRROR_URL=https://metaeffekt.com/mirror/ae-vulnerability-mirror/ae-mirror-index_gen4-external.tar.gz" >> ${{ github.workspace }}/external.rc
           echo "EXTERNAL_VULNERABILITY_MIRROR_NAME=ae-mirror-index_gen4-external.tar.gz" >> ${{ github.workspace }}/external.rc
           echo "NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> ${{ github.workspace }}/external.rc
@@ -80,15 +80,15 @@ jobs:
       - name: Enable debug logging on runner console
         shell: bash
         run: |
-          sed -i 's/local log_to_console="\$3"/local log_to_console="true"/' ./tests/scripts/processors/log.sh
+          sed -i 's/local log_to_console="\$3"/local log_to_console="true"/' metaeffekt-kontinuum/tests/scripts/processors/log.sh
 
       - name: Restore vulnerability mirror and maven index cache
         uses: actions/cache/restore@v4
         with:
           key: key-${{ inputs.ae-core-version }}-${{ inputs.ae-artifact-analysis-version }}
           path: |
-            .mirror
-            .maven-index
+            metaeffekt-kontinuum/.mirror
+            metaeffekt-kontinuum/.maven-index
 
       - name: Run test pipelines
         shell: bash
@@ -96,8 +96,8 @@ jobs:
           AE_CORE_VERSION: ${{ inputs.ae-core-version }}
           AE_ARTIFACT_ANALYSIS_VERSION: ${{ inputs.ae-artifact-analysis-version }}
         run: |
-          ./tests/scripts/pipelines/run_workspace-001.sh
-          ./tests/scripts/pipelines/run_workspace-002.sh
+          metaeffekt-kontinuum/tests/scripts/pipelines/run_workspace-001.sh
+          metaeffekt-kontinuum/tests/scripts/pipelines/run_workspace-002.sh
 
       - name: Save vulnerability mirror and maven index cache
         uses: actions/cache/save@v4
@@ -105,14 +105,14 @@ jobs:
         with:
           key: key-${{ inputs.ae-core-version }}-${{ inputs.ae-artifact-analysis-version }}
           path: |
-            .mirror
-            .maven-index
+            metaeffekt-kontinuum/.mirror
+            metaeffekt-kontinuum/.maven-index
 
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: logs
-          path: .logs
+          path: metaeffekt-kontinuum/.logs
 
       - name: Run core and artifact-analysis
         shell: bash
