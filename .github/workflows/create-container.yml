@@ -26,7 +26,7 @@ env:
   IMAGE_NAME: metaeffekt-kontinuum-runtime
 
 jobs:
-  release:
+  create-container:
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -68,14 +68,14 @@ jobs:
 
       - name: Create external.rc file
         run: |
-          touch ${{ github.workspace }}/external.rc
-          echo "EXTERNAL_WORKBENCH_DIR=${{ github.workspace }}/metaeffekt-workbench" >> ${{ github.workspace }}/external.rc
-          echo "EXTERNAL_VULNERABILITY_MIRROR_DIR=${{ github.workspace }}/metaeffekt-kontinuum/.mirror" >> ${{ github.workspace }}/external.rc
-          echo "EXTERNAL_VULNERABILITY_MIRROR_URL=https://metaeffekt.com/mirror/ae-vulnerability-mirror/ae-mirror-index_gen4-external.tar.gz" >> ${{ github.workspace }}/external.rc
-          echo "EXTERNAL_VULNERABILITY_MIRROR_NAME=ae-mirror-index_gen4-external.tar.gz" >> ${{ github.workspace }}/external.rc
-          echo "NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> ${{ github.workspace }}/external.rc
-          echo "AE_CORE_VERSION=${{ inputs.ae-core-version }}" >> ${{ github.workspace }}/external.rc
-          echo "AE_ARTIFACT_ANALYSIS_VERSION=${{ inputs.ae-artifact-analysis-version }}" >> ${{ github.workspace }}/external.rc
+          touch ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "EXTERNAL_WORKBENCH_DIR=${{ github.workspace }}/metaeffekt-workbench" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "EXTERNAL_VULNERABILITY_MIRROR_DIR=${{ github.workspace }}/metaeffekt-kontinuum/.mirror" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "EXTERNAL_VULNERABILITY_MIRROR_URL=https://metaeffekt.com/mirror/ae-vulnerability-mirror/ae-mirror-index_gen4-external.tar.gz" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "EXTERNAL_VULNERABILITY_MIRROR_NAME=ae-mirror-index_gen4-external.tar.gz" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "AE_CORE_VERSION=${{ inputs.ae-core-version }}" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "AE_ARTIFACT_ANALYSIS_VERSION=${{ inputs.ae-artifact-analysis-version }}" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
 
       - name: Enable debug logging on runner console
         shell: bash
