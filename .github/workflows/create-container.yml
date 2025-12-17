@@ -4,22 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       ae-core-version:
-        description: 'Metaeffekt Core version to use for this release.'
+        description: 'Valid metaeffekt-core version tag.'
         required: true
         type: string
       ae-artifact-analysis-version:
-        description: 'Metaeffekt Artifact Analysis version to use for this release.'
+        description: 'Valid metaeffekt-artifact-analysis version tag.'
         required: true
         type: string
       ae-kontinuum-version:
-        description: 'Metaeffekt Kontinuum version to use for this release.'
+        description: 'Valid metaeffekt-kontinuum version tag.'
         default: main
         required: true
-        type: string
-      ae-workbench-version:
-        description: 'Metaeffekt Workbench version tag or branch to utilize for testing with kontinuum.'
-        default: main
-        required: false
         type: string
 
 env:
@@ -34,12 +29,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: '17'
-
       - name: Install Maven
         run: |
           MVN_VER=3.9.11
@@ -48,87 +37,46 @@ jobs:
           sudo mv /opt/apache-maven-${MVN_VER} /opt/maven
           echo "/opt/maven/bin" >> "$GITHUB_PATH"
 
-      - name: Checkout metaeffekt-workbench
+      - name: Checkout required repositories
         run: |
           git clone https://github.com/org-metaeffekt/metaeffekt-kontinuum.git ${{ github.workspace }}/metaeffekt-kontinuum
           cd ${{ github.workspace }}/metaeffekt-kontinuum
           git checkout ${{ inputs.ae-kontinuum-version }}
-          git clone https://github.com/org-metaeffekt/metaeffekt-workbench.git ${{ github.workspace }}/metaeffekt-workbench
-          cd ${{ github.workspace }}/metaeffekt-workbench
-          git checkout ${{ inputs.ae-workbench-version }}
+          git clone https://github.com/org-metaeffekt/metaeffekt-core.git ${{ github.workspace }}/metaeffekt-core
+          cd ${{ github.workspace }}/metaeffekt-core
+          git checkout ${{ inputs.ae-core-version }}
+          git clone https://github.com/org-metaeffekt/metaeffekt-artifact-analysis.git ${{ github.workspace }}/metaeffekt-artifact-analysis
+          cd ${{ github.workspace }}/metaeffekt-artifact-analysis
+          git checkout ${{ inputs.ae-artifact-analysis-version }}
 
-      - name: Change metaeffekt-workbench versioning
-        run: |
-          cd ${{ github.workspace }}/metaeffekt-workbench
-          sed -i 's|<ae.core.version>HEAD-SNAPSHOT</ae.core.version>|<ae.core.version>${{ inputs.ae-core-version }}</ae.core.version>|' templates/report-template/pom.xml
-          sed -i 's|<ae.artifact.analysis.version>HEAD-SNAPSHOT</ae.artifact.analysis.version>|<ae.artifact.analysis.version>${{ inputs.ae-artifact-analysis-version }}</ae.artifact.analysis.version>|' templates/report-template/pom.xml
-          
-          sed -i 's|<ae.core.version>HEAD-SNAPSHOT</ae.core.version>|<ae.core.version>${{ inputs.ae-core-version }}</ae.core.version>|' processors/workbench-parent.xml
-          sed -i 's|<ae.artifact.analysis.version>HEAD-SNAPSHOT</ae.artifact.analysis.version>|<ae.artifact.analysis.version>${{ inputs.ae-artifact-analysis-version }}</ae.artifact.analysis.version>|' processors/workbench-parent.xml
-
-      - name: Create external.rc file
-        run: |
-          touch ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
-          echo "EXTERNAL_WORKBENCH_DIR=${{ github.workspace }}/metaeffekt-workbench" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
-          echo "EXTERNAL_VULNERABILITY_MIRROR_DIR=${{ github.workspace }}/metaeffekt-kontinuum/.mirror" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
-          echo "EXTERNAL_VULNERABILITY_MIRROR_URL=https://metaeffekt.com/mirror/ae-vulnerability-mirror/ae-mirror-index_gen4-external.tar.gz" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
-          echo "EXTERNAL_VULNERABILITY_MIRROR_NAME=ae-mirror-index_gen4-external.tar.gz" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
-          echo "NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
-          echo "AE_CORE_VERSION=${{ inputs.ae-core-version }}" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
-          echo "AE_ARTIFACT_ANALYSIS_VERSION=${{ inputs.ae-artifact-analysis-version }}" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
-
-      - name: Enable debug logging on runner console
-        shell: bash
-        run: |
-          sed -i 's/local log_to_console="\$3"/local log_to_console="true"/' metaeffekt-kontinuum/tests/scripts/processors/log.sh
-
-      - name: Restore vulnerability mirror and maven index cache
-        uses: actions/cache/restore@v4
-        with:
-          key: key-${{ inputs.ae-core-version }}-${{ inputs.ae-artifact-analysis-version }}
-          path: |
-            metaeffekt-kontinuum/.mirror
-            metaeffekt-kontinuum/.maven-index
-
-      - name: Run test pipelines
-        shell: bash
-        env:
-          AE_CORE_VERSION: ${{ inputs.ae-core-version }}
-          AE_ARTIFACT_ANALYSIS_VERSION: ${{ inputs.ae-artifact-analysis-version }}
-        run: |
-          metaeffekt-kontinuum/tests/scripts/pipelines/run_workspace-001.sh
-          metaeffekt-kontinuum/tests/scripts/pipelines/run_workspace-002.sh
-
-      - name: Save vulnerability mirror and maven index cache
-        uses: actions/cache/save@v4
-        if: ${{ always() }}
-        with:
-          key: key-${{ inputs.ae-core-version }}-${{ inputs.ae-artifact-analysis-version }}
-          path: |
-            metaeffekt-kontinuum/.mirror
-            metaeffekt-kontinuum/.maven-index
-
-      - uses: actions/upload-artifact@v4
-        if: ${{ always() }}
-        with:
-          name: logs
-          path: metaeffekt-kontinuum/.logs
-
-      - name: Run core and artifact-analysis
+      - name: Build core
         shell: bash
         run: |
           cd metaeffekt-core
           mvn clean install -DskipTests
-          cd ../metaeffekt-artifact-analysis
+
+      - name: Build artifact-analysis
+        shell: bash
+        run: |
+          cd metaeffekt-artifact-analysis
           mvn clean install -DskipTests
 
-      - name: Copy maven artifacts for container
+      - name: Build kontinuum
+        shell: bash
+        run: |
+          ./metaeffekt-kontinuum/tests/scripts/pipelines/001_remote.sh
+
+      - name: Prepare selective maven dependencies
         shell: bash
         run: |
           mkdir -p local-maven-repo/com/metaeffekt
           mkdir -p local-maven-repo/org/metaeffekt
+          mkdir -p local-maven-repo/org/jetbrains/kotlin 
+          mkdir -p local-maven-repo/org/apache/jena
           cp -r /home/runner/.m2/repository/com/metaeffekt/. local-maven-repo/com/metaeffekt
           cp -r /home/runner/.m2/repository/org/metaeffekt/. local-maven-repo/org/metaeffekt
+          cp -r /home/runner/.m2/repository/org/jetbrains/kotlin/. local-maven-repo/org/jetbrains/kotlin
+          cp -r /home/runner/.m2/repository/org/apache/jena/. local-maven-repo/org/apache/jena
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -142,7 +90,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Docker meta
+      - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
