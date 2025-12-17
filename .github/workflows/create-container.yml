@@ -16,9 +16,16 @@ on:
         default: main
         required: true
         type: string
+      ae-workbench-version:
+        description: 'Valid metaeffekt-workbench version tag.'
+        default: main
+        required: true
+        type: string
 
 env:
   IMAGE_NAME: metaeffekt-kontinuum-runtime
+  MIRROR_URL: "https://metaeffekt.com/mirror/ae-vulnerability-mirror/ae-mirror-index_gen5-external.tar.gz"
+  MIRROR_NAME: "ae-mirror-index_gen5-external.tar.gz"
 
 jobs:
   create-container:
@@ -62,6 +69,13 @@ jobs:
           ref: ${{ inputs.ae-kontinuum-version }}
           path: 'metaeffekt-kontinuum'
 
+      - name: Checkout workbench
+        uses: actions/checkout@v6
+        with:
+          repository: 'org-metaeffekt/metaeffekt-workbench'
+          ref: ${{ inputs.ae-workbench-version }}
+          path: 'metaeffekt-workbench'
+
       - name: Build core
         shell: bash
         run: |
@@ -73,6 +87,17 @@ jobs:
         run: |
           cd metaeffekt-artifact-analysis
           mvn clean install -DskipTests
+
+      - name: Create external.rc file
+        run: |
+          touch ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "EXTERNAL_WORKBENCH_DIR=${{ github.workspace }}/metaeffekt-workbench" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "EXTERNAL_VULNERABILITY_MIRROR_DIR=${{ github.workspace }}/metaeffekt-kontinuum/.mirror" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "EXTERNAL_VULNERABILITY_MIRROR_URL=${{ env.MIRROR_URL }}" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "EXTERNAL_VULNERABILITY_MIRROR_NAME=${{ env.MIRROR_NAME }}" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "NVD_API_KEY=${{ secrets.NVD_API_KEY }}" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "AE_CORE_VERSION=${{ inputs.ae-core-version }}" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
+          echo "AE_ARTIFACT_ANALYSIS_VERSION=${{ inputs.ae-artifact-analysis-version }}" >> ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
 
       - name: Build kontinuum
         shell: bash
