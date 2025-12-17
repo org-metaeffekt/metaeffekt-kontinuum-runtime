@@ -9,6 +9,5 @@ COPY metaeffekt-kontinuum /usr/src/metaeffekt-kontinuum
 COPY local-maven-repo/org/metaeffekt /root/.m2/repository/org/metaeffekt
 COPY local-maven-repo/com/metaeffekt /root/.m2/repository/com/metaeffekt
 COPY local-maven-repo/org/jetbrains/kotlin /root/.m2/repository/org/jetbrains/kotlin
-COPY local-maven-repo/org/apache/jena /root/.m2/repository/org/apache/jena
 
 WORKDIR /usr/src/metaeffekt-kontinuum
