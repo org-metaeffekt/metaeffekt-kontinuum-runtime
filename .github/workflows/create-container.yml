@@ -38,7 +38,7 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: zulu
-          java-version: '17'
+          java-version: '8'
 
       - name: Checkout core
         uses: actions/checkout@v6
