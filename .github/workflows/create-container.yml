@@ -29,13 +29,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Maven
-        run: |
-          MVN_VER=3.9.11
-          wget -q https://downloads.apache.org/maven/maven-3/${MVN_VER}/binaries/apache-maven-${MVN_VER}-bin.tar.gz
-          sudo tar -xzf apache-maven-${MVN_VER}-bin.tar.gz -C /opt/
-          sudo mv /opt/apache-maven-${MVN_VER} /opt/maven
-          echo "/opt/maven/bin" >> "$GITHUB_PATH"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+          cache: 'maven'
 
       - name: Checkout required repositories
         run: |
