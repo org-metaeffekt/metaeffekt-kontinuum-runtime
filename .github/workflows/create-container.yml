@@ -59,7 +59,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: 'org-metaeffekt/metaeffekt-kontinuum'
-          ref: ${{ inputs.ae-artifact-analysis-version }}
+          ref: ${{ inputs.ae-kontinuum-version }}
           path: 'metaeffekt-kontinuum'
 
       - name: Build core
