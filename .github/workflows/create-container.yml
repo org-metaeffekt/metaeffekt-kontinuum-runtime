@@ -27,24 +27,40 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Configure git
+        shell: bash
+        run: |
+          git config --local user.email "github-actions[bot]@metaeffekt.com"
+          git config --local user.name "github-actions[bot]"
 
       - uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: '17'
 
-      - name: Checkout required repositories
-        run: |
-          git clone https://github.com/org-metaeffekt/metaeffekt-kontinuum.git ${{ github.workspace }}/metaeffekt-kontinuum
-          cd ${{ github.workspace }}/metaeffekt-kontinuum
-          git checkout ${{ inputs.ae-kontinuum-version }}
-          git clone https://github.com/org-metaeffekt/metaeffekt-core.git ${{ github.workspace }}/metaeffekt-core
-          cd ${{ github.workspace }}/metaeffekt-core
-          git checkout ${{ inputs.ae-core-version }}
-          git clone https://github.com/org-metaeffekt/metaeffekt-artifact-analysis.git ${{ github.workspace }}/metaeffekt-artifact-analysis
-          cd ${{ github.workspace }}/metaeffekt-artifact-analysis
-          git checkout ${{ inputs.ae-artifact-analysis-version }}
+      - name: Checkout core
+        uses: actions/checkout@v6
+        with:
+          repository: 'org-metaeffekt/metaeffekt-core'
+          ref: ${{ inputs.ae-core-version }}
+          path: 'metaeffekt-core'
+
+      - name: Checkout artifact-analysis
+        uses: actions/checkout@v6
+        with:
+          repository: 'org-metaeffekt/metaeffekt-artifact-analysis'
+          token: ${{ secrets.ARTIFACT_ANALYSIS_ACCESS_TOKEN }}
+          ref: ${{ inputs.ae-artifact-analysis-version }}
+          path: 'metaeffekt-artifact-analysis'
+
+      - name: Checkout kontinuum
+        uses: actions/checkout@v6
+        with:
+          repository: 'org-metaeffekt/metaeffekt-kontinuum'
+          ref: ${{ inputs.ae-artifact-analysis-version }}
+          path: 'metaeffekt-kontinuum'
 
       - name: Build core
         shell: bash
@@ -78,7 +94,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: metaeffekt
+          username: 'metaeffekt'
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up QEMU (multi-platform optional)
@@ -91,7 +107,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}
+          images: 'metaeffekt/${{ env.IMAGE_NAME }}'
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -108,6 +124,3 @@ jobs:
         with:
           name: my-image
           path: /tmp/image.tar
-
-
-          
