@@ -13,3 +13,16 @@ corresponding [Dockerfile](container/Dockerfile). A breakdown of the container c
 - **Metaeffekt maven artifacts required by metaeffekt-kontinuum**
   - /root/.m2/repository/com/metaeffekt
   - /root/.m2/repository/org/metaeffekt
+
+## Publishing
+
+Copy all required directories from your local maven repository into metaeffekt-kontinuum-runtime/local-maven-repo/. The
+list of the required subdirectories can be found in the [Dockerfile](container/Dockerfile). Clone the desired release of the
+[metaeffekt-kontinuum](https://github.com/org-metaeffekt/metaeffekt-kontinuum) into metaeffekt-kontinuum-runtime/metaeffekt-kontinuum.
+
+   ```bash
+    cd [...]/metaeffekt-kontinuuum-runtime
+    docker build -f container/Dockerfile .
+    docker tag IMAGE_ID metaeffekt/metaeffekt-kontinuuum-runtime:VERSION
+    docker push metaeffekt/metaeffekt-kontinuum-runtime:VERSION
+   ```
