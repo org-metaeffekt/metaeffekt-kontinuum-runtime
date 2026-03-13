@@ -21,12 +21,16 @@ list of the required subdirectories can be found in the [Dockerfile](container/D
 [metaeffekt-kontinuum](https://github.com/org-metaeffekt/metaeffekt-kontinuum) into metaeffekt-kontinuum-runtime/metaeffekt-kontinuum.
 
    ```bash
-    cd [...]/metaeffekt-kontinuuum-runtime
-    docker buildx create --use --name multiarch-builder
-    docker buildx build \
-      --platform linux/amd64,linux/arm64 \
-      -f container/Dockerfile \
-      --tag metaeffekt/metaeffekt-kontinuuum-runtime:VERSION \
-      --push \
-      .
+      cd [...]/metaeffekt-kontinuum-runtime
+      
+      docker login -u <username> --password-stdin <<< "<access-token>"
+      
+      docker buildx create --use --name multiarch-builder
+      
+      docker buildx build \
+        --platform linux/amd64,linux/arm64 \
+        -f container/Dockerfile \
+        --tag metaeffekt/metaeffekt-kontinuum-runtime:VERSION \
+        --push \
+        .
    ```
