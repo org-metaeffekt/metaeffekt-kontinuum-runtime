@@ -45,6 +45,8 @@ Options:
     -a, --artifact-version  Version of metaeffekt-artifact-analysis to use (default: $DEFAULT_AE_ARTIFACT_ANALYSIS_VERSION)
     -k, --kontinuum-version Version of metaeffekt-kontinuum to use (default: $DEFAULT_AE_KONTINUUM_VERSION)
     -d, --docker-tag        Docker image tag (default: $DEFAULT_CONTAINER_VERSION)
+    -u, --docker-user       Docker Hub username
+    -t, --docker-token      Docker Hub access token
     -y, --yes               Skip confirmation prompts
 
 Environment variables:
@@ -52,12 +54,15 @@ Environment variables:
     AE_ARTIFACT_ANALYSIS_VERSION Version of metaeffekt-artifact-analysis
     AE_KONTINUUM_VERSION    Version of metaeffekt-kontinuum
     CONTAINER_VERSION       Docker image tag
+    DOCKER_USERNAME         Docker Hub username
+    DOCKER_ACCESS_TOKEN     Docker Hub access token
 
 Examples:
     $0                          # Interactive mode
     $0 --core-version v1.0.0    # Use specific core version
     $0 -c v1.0.0 -k v2.0.0      # Use specific versions
     AE_CORE_VERSION=v1.0.0 $0   # Use environment variables
+    $0 -u myuser -t mytoken -y  # Push to Docker Hub non-interactively
 EOF
 }
 
@@ -145,6 +150,7 @@ copy_artifacts() {
         
         if [[ -d "$src_dir" ]]; then
             print_info "Copying $dir"
+            mkdir -p "$(dirname "$dest_dir")"
             cp -r "$src_dir" "$(dirname "$dest_dir")/"
         else
             print_warn "Source directory not found: $src_dir"
@@ -183,9 +189,30 @@ setup_kontinuum() {
     done
 }
 
-# Function to build Docker image
+# Function to login to Docker Hub
+docker_login() {
+    local username="$1"
+    local token="$2"
+    
+    if [[ -z "$username" || -z "$token" ]]; then
+        print_error "Docker Hub username and access token are required to push"
+        print_error "Use -u/--docker-user and -t/--docker-token, or set DOCKER_USERNAME and DOCKER_ACCESS_TOKEN"
+        return 1
+    fi
+    
+    print_info "Logging in to Docker Hub as $username"
+    echo "$token" | docker login -u "$username" --password-stdin || {
+        print_error "Docker login failed"
+        return 1
+    }
+}
+
+# Function to build and push Docker image
 build_docker() {
     local docker_tag="$1"
+    local push="$2"
+    local docker_user="$3"
+    local docker_token="$4"
     
     print_info "Building Docker image with tag: $docker_tag"
     
@@ -198,17 +225,32 @@ build_docker() {
         docker buildx use multiarch-builder
     fi
     
-    # Build the image
-    docker buildx build \
-        --platform linux/amd64,linux/arm64 \
-        -f "$SELF_DIR/container/Dockerfile" \
-        --tag "metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag" \
-        "$SELF_DIR" || {
-        print_error "Docker build failed"
-        return 1
-    }
-    
-    print_info "Docker image built successfully: metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag"
+    if [[ "$push" == true ]]; then
+        docker_login "$docker_user" "$docker_token" || return 1
+        
+        docker buildx build \
+            --platform linux/amd64,linux/arm64 \
+            --push \
+            -f "$SELF_DIR/container/Dockerfile" \
+            --tag "metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag" \
+            "$SELF_DIR" || {
+            print_error "Docker build and push failed"
+            return 1
+        }
+        
+        print_info "Docker image pushed successfully: metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag"
+    else
+        docker buildx build \
+            --load \
+            -f "$SELF_DIR/container/Dockerfile" \
+            --tag "metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag" \
+            "$SELF_DIR" || {
+            print_error "Docker build failed"
+            return 1
+        }
+        
+        print_info "Docker image built successfully: metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag"
+    fi
 }
 
 # Function to cleanup temporary files
@@ -244,6 +286,8 @@ main() {
     local artifact_version=""
     local kontinuum_version=""
     local docker_tag=""
+    local docker_user=""
+    local docker_token=""
     
     while [[ $# -gt 0 ]]; do
         case $1 in
@@ -271,6 +315,14 @@ main() {
                 interactive=false
                 shift 2
                 ;;
+            -u|--docker-user)
+                docker_user="$2"
+                shift 2
+                ;;
+            -t|--docker-token)
+                docker_token="$2"
+                shift 2
+                ;;
             -y|--yes)
                 interactive=false
                 shift
@@ -288,6 +340,13 @@ main() {
     artifact_version="${artifact_version:-${AE_ARTIFACT_ANALYSIS_VERSION:-$DEFAULT_AE_ARTIFACT_ANALYSIS_VERSION}}"
     kontinuum_version="${kontinuum_version:-${AE_KONTINUUM_VERSION:-$DEFAULT_AE_KONTINUUM_VERSION}}"
     docker_tag="${docker_tag:-${CONTAINER_VERSION:-$DEFAULT_CONTAINER_VERSION}}"
+    docker_user="${docker_user:-${DOCKER_USERNAME:-}}"
+    docker_token="${docker_token:-${DOCKER_ACCESS_TOKEN:-}}"
+    
+    local push=false
+    if [[ -n "$docker_user" && -n "$docker_token" ]]; then
+        push=true
+    fi
     
     # Interactive prompts
     if [[ "$interactive" == true ]]; then
@@ -304,6 +363,12 @@ main() {
     echo "  metaeffekt-artifact-analysis version: $artifact_version"
     echo "  metaeffekt-kontinuum version: $kontinuum_version"
     echo "  Docker tag: $docker_tag"
+    if [[ "$push" == true ]]; then
+        echo "  Docker Hub user: $docker_user"
+        echo "  Push to registry: yes"
+    else
+        echo "  Push to registry: no (local build only)"
+    fi
     
     # Confirm if not auto-skipped
     if [[ "$interactive" == true ]]; then
@@ -321,7 +386,7 @@ main() {
     
     # Build metaeffekt-core
     local core_dir="$TMP_DIR/metaeffekt-core"
-    if ! clone_repo "https://github.com/org-metaeffekt/metaeffekt-core.git" "$core_dir" "$core_version"; then
+    if ! clone_repo "git@github.com:org-metaeffekt/metaeffekt-core.git" "$core_dir" "$core_version"; then
         print_error "Failed to clone metaeffekt-core"
         exit 1
     fi
@@ -333,7 +398,7 @@ main() {
     
     # Build metaeffekt-artifact-analysis
     local artifact_dir="$TMP_DIR/metaeffekt-artifact-analysis"
-    if ! clone_repo "https://github.com/org-metaeffekt/metaeffekt-artifact-analysis.git" "$artifact_dir" "$artifact_version"; then
+    if ! clone_repo "git@github.com:org-metaeffekt/metaeffekt-artifact-analysis.git" "$artifact_dir" "$artifact_version"; then
         print_error "Failed to clone metaeffekt-artifact-analysis"
         exit 1
     fi
@@ -348,13 +413,13 @@ main() {
     
     # Setup metaeffekt-kontinuum
     local kontinuum_dir="$SELF_DIR/metaeffekt-kontinuum"
-    if ! setup_kontinuum "https://github.com/org-metaeffekt/metaeffekt-kontinuum.git" "$kontinuum_dir" "$kontinuum_version"; then
+    if ! setup_kontinuum "git@github.com:org-metaeffekt/metaeffekt-kontinuum.git" "$kontinuum_dir" "$kontinuum_version"; then
         print_error "Failed to setup metaeffekt-kontinuum"
         exit 1
     fi
     
     # Build Docker image
-    if ! build_docker "$docker_tag"; then
+    if ! build_docker "$docker_tag" "$push" "$docker_user" "$docker_token"; then
         print_error "Failed to build Docker image"
         exit 1
     fi
