@@ -1,7 +1,7 @@
 FROM maven:3.9.11-amazoncorretto-17-debian
 
 RUN apt-get update && \
-    apt-get install -y fontconfig libfreetype6 && \
+    apt-get install -y fontconfig libfreetype6 rsync && \
     rm -rf /var/lib/apt/lists/*
 
 COPY metaeffekt-kontinuum /usr/src/metaeffekt-kontinuum

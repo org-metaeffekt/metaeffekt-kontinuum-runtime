@@ -410,7 +410,51 @@ main() {
     
     # Copy artifacts to local Maven repo
     copy_artifacts "$TEMP_MAVEN_REPO" "$LOCAL_MAVEN_REPO"
-    
+
+    # Audit large files in tmp/local-maven-repo (exclude directories already in Dockerfile)
+    local LARGE_FILES_REPORT="$SELF_DIR/large-files-report.txt"
+    print_info "Scanning for files larger than 2.4MB in $TEMP_MAVEN_REPO"
+
+    # Directories the Dockerfile COPYs into the container — these are expected and excluded
+    local -a DOCKERFILE_DIRS=(
+        "org/metaeffekt"
+        "com/metaeffekt"
+        "org/jetbrains/kotlin"
+    )
+
+    # Build an exclusion pattern for find: match any path containing one of the Dockerfile dirs
+    local find_exclude_args=()
+    for d in "${DOCKERFILE_DIRS[@]}"; do
+        find_exclude_args+=( -path "*/$d/*" -prune -o )
+    done
+
+    find "$TEMP_MAVEN_REPO" "${find_exclude_args[@]}" -type f -size +2400k -print \
+        | sed "s|^$TEMP_MAVEN_REPO/||" \
+        | sort > "$LARGE_FILES_REPORT"
+
+    local large_count
+    large_count=$(wc -l < "$LARGE_FILES_REPORT" | tr -d ' ')
+
+    if [[ "$large_count" -gt 0 ]]; then
+        print_warn "Found $large_count file(s) larger than 2.4MB NOT already covered by the Dockerfile."
+        print_warn "Review the list: $LARGE_FILES_REPORT"
+        echo ""
+        cat "$LARGE_FILES_REPORT"
+        echo ""
+
+        if [[ "$interactive" == true ]]; then
+            read -p "Continue with the build? [y/N] " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                print_info "Build cancelled by user after large file review"
+                exit 0
+            fi
+        fi
+    else
+        print_info "No files larger than 2.4MB found outside Dockerfile-included directories."
+        rm -f "$LARGE_FILES_REPORT"
+    fi
+
     # Setup metaeffekt-kontinuum
     local kontinuum_dir="$SELF_DIR/metaeffekt-kontinuum"
     if ! setup_kontinuum "git@github.com:org-metaeffekt/metaeffekt-kontinuum.git" "$kontinuum_dir" "$kontinuum_version"; then
