@@ -1,0 +1,12 @@
+com/github/eirslett/node/14.17.0/node-14.17.0-darwin-x64.tar.gz
+com/github/eirslett/npm/6.14.13/npm-6.14.13.tar.gz
+com/google/protobuf/protoc/3.25.5/protoc-3.25.5-osx-x86_64.exe
+io/grpc/protoc-gen-grpc-java/1.69.0/protoc-gen-grpc-java-1.69.0-osx-x86_64.exe
+net/bytebuddy/byte-buddy/1.14.17/byte-buddy-1.14.17.jar
+net/bytebuddy/byte-buddy/1.14.18/byte-buddy-1.14.18.jar
+org/assertj/assertj-core/3.15.0/assertj-core-3.15.0.jar
+org/graalvm/js/js/22.0.0.2/js-22.0.0.2.jar
+org/graalvm/regex/regex/22.0.0.2/regex-22.0.0.2.jar
+org/graalvm/truffle/truffle-api/22.0.0.2/truffle-api-22.0.0.2.jar
+org/jetbrains/kotlinx/kotlinx-coroutines-debug/1.8.0/kotlinx-coroutines-debug-1.8.0.jar
+xalan/xalan/2.7.2/xalan-2.7.2.jar

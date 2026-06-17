@@ -135,19 +135,74 @@ build_maven() {
 }
 
 # Function to copy artifacts to local Maven repo
+# Reads COPY sources from the Dockerfile so it stays in sync automatically.
 copy_artifacts() {
     local src_repo="$1"
     local dest_repo="$2"
-    
+    local prompt_user="${3:-true}"
+    local dockerfile="$SELF_DIR/container/Dockerfile"
+    local copy_dirs=()
+    local line=""
+    local remainder=""
+    local source_path=""
+    local dir=""
+    local existing=""
+    local already_listed=false
+
     print_info "Copying Maven artifacts to local repository"
-    
+
     ensure_dir "$dest_repo"
-    
-    # Copy required directories
-    for dir in "com/metaeffekt" "org/metaeffekt" "org/jetbrains/kotlin"; do
+
+    # Extract COPY source paths that reference local-maven-repo
+    while IFS= read -r line; do
+        [[ "$line" =~ ^[[:space:]]*COPY[[:space:]]+ ]] || continue
+
+        remainder="${line#COPY }"
+        while [[ "$remainder" == --* ]]; do
+            remainder="${remainder#* }"
+        done
+
+        source_path="${remainder%% *}"
+
+        [[ "$source_path" == local-maven-repo/* ]] || continue
+
+        dir="${source_path#local-maven-repo/}"
+        already_listed=false
+        for existing in "${copy_dirs[@]}"; do
+            if [[ "$existing" == "$dir" ]]; then
+                already_listed=true
+                break
+            fi
+        done
+
+        if [[ "$already_listed" == false ]]; then
+            copy_dirs+=("$dir")
+        fi
+    done < "$dockerfile"
+
+    if [[ ${#copy_dirs[@]} -eq 0 ]]; then
+        print_error "No local-maven-repo COPY sources found in Dockerfile: $dockerfile"
+        return 1
+    fi
+
+    print_info "Directories referenced by Dockerfile COPY commands:"
+    for dir in "${copy_dirs[@]}"; do
+        echo "  - $dir"
+    done
+
+    if [[ "$prompt_user" == true ]]; then
+        read -p "Continue and copy these artifacts? [y/N] " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            print_info "Artifact copy cancelled by user"
+            return 1
+        fi
+    fi
+
+    for dir in "${copy_dirs[@]}"; do
         local src_dir="$src_repo/$dir"
         local dest_dir="$dest_repo/$dir"
-        
+
         if [[ -d "$src_dir" ]]; then
             print_info "Copying $dir"
             mkdir -p "$(dirname "$dest_dir")"
@@ -409,8 +464,11 @@ main() {
     fi
     
     # Copy artifacts to local Maven repo
-    copy_artifacts "$TEMP_MAVEN_REPO" "$LOCAL_MAVEN_REPO"
-    
+    if ! copy_artifacts "$TEMP_MAVEN_REPO" "$LOCAL_MAVEN_REPO" "$interactive"; then
+        print_error "Failed to copy artifacts"
+        exit 1
+    fi
+
     # Setup metaeffekt-kontinuum
     local kontinuum_dir="$SELF_DIR/metaeffekt-kontinuum"
     if ! setup_kontinuum "git@github.com:org-metaeffekt/metaeffekt-kontinuum.git" "$kontinuum_dir" "$kontinuum_version"; then
