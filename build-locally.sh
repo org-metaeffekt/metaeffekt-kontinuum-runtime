@@ -154,7 +154,7 @@ copy_artifacts() {
     ensure_dir "$dest_repo"
 
     # Extract COPY source paths that reference local-maven-repo
-    while IFS= read -r line; do
+    while IFS= read -r line || [[ -n "$line" ]]; do
         [[ "$line" =~ ^[[:space:]]*COPY[[:space:]]+ ]] || continue
 
         remainder="${line#COPY }"
