@@ -1,0 +1,69 @@
+# This example shows multiple assets and how they are utilized to define what outputs to produce.
+# The compiler reads this file and generates a GitLab CI child pipeline (or local execution plan).
+projectProperties:
+  project:
+    name: "example-project"
+    version: "1.0.0"
+    tenant: "metaeffekt"
+  assets:
+    - id: "asset1"
+      name: "first-asset"
+      version: "1.0.0"
+      assessmentId: "asset1"
+      reference: "inventories/reference-inventory.xlsx"
+      context: "local"
+      urlResolver:
+        url: "https://example-project/first-asset-1.0.0.zip"
+    - id: "asset2"
+      name: "second-asset"
+      version: "2.0.0"
+      assessmentId: "asset2"
+      reference: "inventories/reference-inventory.xlsx"
+      context: "local"
+      urlResolver:
+        url: "https://example-project/second-asset-2.0.0.zip"
+
+# Reports define which document types are produced and which assets they consume.
+# Supported types: VR, VSR, CR, SDA, LD, ILD, CA
+# The compiler derives per-asset processing requirements from these types.
+reports:
+  - assetId: "asset1"
+    types:
+      - "VR"
+    organization: "metaeffekt"
+    classificationRating: "DEFAULT"
+    controlRating: "DEFAULT"
+    watermark: "Sample"
+  - assetId: "asset2"
+    types:
+      - "CR"
+    organization: "metaeffekt"
+    classificationRating: "DEFAULT"
+    controlRating: "DEFAULT"
+    watermark: "Sample"
+
+# Dashboards define which assets should have vulnerability dashboards generated.
+dashboards:
+  - assetId: "asset1"
+  - assetId: "asset2"
+
+# Additional pipeline configuration
+options:
+  global:
+    documentLanguage: "en"
+    enableSpdxBom: false
+    enableCycloneDxBom: false
+    enableResolve: false
+  enrichment:
+    securityPolicyFile: "policies/security-policy.json"
+    securityPolicyActiveIds: ["base_configuration"]
+    activateMsrc: true
+    activateNvd: true
+    activateCertFr: true
+    activateCertEu: true
+    activateCertSei: true
+    activateOsv: true
+    activateKev: true
+    activateEpss: true
+    activateEol: true
+    activateCsaf: true

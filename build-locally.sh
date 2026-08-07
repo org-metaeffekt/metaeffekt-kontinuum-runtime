@@ -17,6 +17,7 @@ NC='\033[0m' # No Color
 DEFAULT_AE_CORE_VERSION="main"
 DEFAULT_AE_ARTIFACT_ANALYSIS_VERSION="main"
 DEFAULT_AE_KONTINUUM_VERSION="main"
+DEFAULT_AE_PORTFOLIO_MANAGER_VERSION="main"
 DEFAULT_CONTAINER_VERSION="latest"
 
 # Function to print colored output
@@ -44,6 +45,7 @@ Options:
     -c, --core-version      Version of metaeffekt-core to use (default: $DEFAULT_AE_CORE_VERSION)
     -a, --artifact-version  Version of metaeffekt-artifact-analysis to use (default: $DEFAULT_AE_ARTIFACT_ANALYSIS_VERSION)
     -k, --kontinuum-version Version of metaeffekt-kontinuum to use (default: $DEFAULT_AE_KONTINUUM_VERSION)
+    -p, --portfolio-version Version of metaeffekt-portfolio-manager to use (default: $DEFAULT_AE_PORTFOLIO_MANAGER_VERSION)
     -d, --docker-tag        Docker image tag (default: $DEFAULT_CONTAINER_VERSION)
     -u, --docker-user       Docker Hub username
     -t, --docker-token      Docker Hub access token
@@ -53,6 +55,7 @@ Environment variables:
     AE_CORE_VERSION         Version of metaeffekt-core
     AE_ARTIFACT_ANALYSIS_VERSION Version of metaeffekt-artifact-analysis
     AE_KONTINUUM_VERSION    Version of metaeffekt-kontinuum
+    AE_PORTFOLIO_MANAGER_VERSION Version of metaeffekt-portfolio-manager
     CONTAINER_VERSION       Docker image tag
     DOCKER_USERNAME         Docker Hub username
     DOCKER_ACCESS_TOKEN     Docker Hub access token
@@ -340,6 +343,7 @@ main() {
     local core_version=""
     local artifact_version=""
     local kontinuum_version=""
+    local portfolio_version=""
     local docker_tag=""
     local docker_user=""
     local docker_token=""
@@ -362,6 +366,11 @@ main() {
                 ;;
             -k|--kontinuum-version)
                 kontinuum_version="$2"
+                interactive=false
+                shift 2
+                ;;
+            -p|--portfolio-version)
+                portfolio_version="$2"
                 interactive=false
                 shift 2
                 ;;
@@ -394,6 +403,7 @@ main() {
     core_version="${core_version:-${AE_CORE_VERSION:-$DEFAULT_AE_CORE_VERSION}}"
     artifact_version="${artifact_version:-${AE_ARTIFACT_ANALYSIS_VERSION:-$DEFAULT_AE_ARTIFACT_ANALYSIS_VERSION}}"
     kontinuum_version="${kontinuum_version:-${AE_KONTINUUM_VERSION:-$DEFAULT_AE_KONTINUUM_VERSION}}"
+    portfolio_version="${portfolio_version:-${AE_PORTFOLIO_MANAGER_VERSION:-$DEFAULT_AE_PORTFOLIO_MANAGER_VERSION}}"
     docker_tag="${docker_tag:-${CONTAINER_VERSION:-$DEFAULT_CONTAINER_VERSION}}"
     docker_user="${docker_user:-${DOCKER_USERNAME:-}}"
     docker_token="${docker_token:-${DOCKER_ACCESS_TOKEN:-}}"
@@ -409,6 +419,7 @@ main() {
         core_version=$(prompt_version "Enter metaeffekt-core version" "$core_version")
         artifact_version=$(prompt_version "Enter metaeffekt-artifact-analysis version" "$artifact_version")
         kontinuum_version=$(prompt_version "Enter metaeffekt-kontinuum version" "$kontinuum_version")
+        portfolio_version=$(prompt_version "Enter metaeffekt-portfolio-manager version" "$portfolio_version")
         docker_tag=$(prompt_version "Enter Docker image tag" "$docker_tag")
     fi
     
@@ -417,6 +428,7 @@ main() {
     echo "  metaeffekt-core version: $core_version"
     echo "  metaeffekt-artifact-analysis version: $artifact_version"
     echo "  metaeffekt-kontinuum version: $kontinuum_version"
+    echo "  metaeffekt-portfolio-manager version: $portfolio_version"
     echo "  Docker tag: $docker_tag"
     if [[ "$push" == true ]]; then
         echo "  Docker Hub user: $docker_user"
@@ -463,6 +475,18 @@ main() {
         exit 1
     fi
     
+    # Build metaeffekt-portfolio-manager
+    local portfolio_dir="$TMP_DIR/metaeffekt-portfolio-manager"
+    if ! clone_repo "http://ae-server:7990/scm/ae/metaeffekt-portfolio-manager.git" "$portfolio_dir" "$portfolio_version"; then
+        print_error "Failed to clone metaeffekt-portfolio-manager"
+        exit 1
+    fi
+
+    if ! build_maven "$portfolio_dir" "$TEMP_MAVEN_REPO"; then
+        print_error "Failed to build metaeffekt-portfolio-manager"
+        exit 1
+    fi
+
     # Copy artifacts to local Maven repo
     if ! copy_artifacts "$TEMP_MAVEN_REPO" "$LOCAL_MAVEN_REPO" "$interactive"; then
         print_error "Failed to copy artifacts"

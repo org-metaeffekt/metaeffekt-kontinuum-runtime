@@ -1,3 +1,7 @@
 .idea
 local-maven-repo
 metaeffekt-kontinuum
+**/target/
+**/*.iml
+
+**/.project.properties
