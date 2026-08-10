@@ -88,6 +88,11 @@ jobs:
           cd metaeffekt-artifact-analysis
           mvn clean install -DskipTests
 
+      - name: Build kontinuum-runtime
+        shell: bash
+        run: |
+          mvn clean install -DskipTests
+
       - name: Create external.rc file
         run: |
           touch ${{ github.workspace }}/metaeffekt-kontinuum/external.rc
@@ -107,13 +112,13 @@ jobs:
       - name: Prepare selective maven dependencies
         shell: bash
         run: |
-          mkdir -p local-maven-repo/com/metaeffekt
-          mkdir -p local-maven-repo/org/metaeffekt
-          mkdir -p local-maven-repo/org/jetbrains/kotlin 
-          mkdir -p local-maven-repo/org/apache/jena
-          cp -r /home/runner/.m2/repository/com/metaeffekt/. local-maven-repo/com/metaeffekt
-          cp -r /home/runner/.m2/repository/org/metaeffekt/. local-maven-repo/org/metaeffekt
-          cp -r /home/runner/.m2/repository/org/jetbrains/kotlin/. local-maven-repo/org/jetbrains/kotlin
+          mkdir -p container/local-maven-repo/com/metaeffekt
+          mkdir -p container/local-maven-repo/org/metaeffekt
+          mkdir -p container/local-maven-repo/org/jetbrains/kotlin 
+          mkdir -p container/local-maven-repo/org/apache/jena
+          cp -r /home/runner/.m2/repository/com/metaeffekt/. container/local-maven-repo/com/metaeffekt
+          cp -r /home/runner/.m2/repository/org/metaeffekt/. container/local-maven-repo/org/metaeffekt
+          cp -r /home/runner/.m2/repository/org/jetbrains/kotlin/. container/local-maven-repo/org/jetbrains/kotlin
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -136,7 +141,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: ${{ github.workspace }}
+          context: ${{ github.workspace }}/container
           push: false
           file: ${{ github.workspace }}/container/Dockerfile
           tags: ${{ steps.meta.outputs.tags }}

@@ -7,11 +7,11 @@
     <parent>
         <groupId>org.metaeffekt.kontinuum.runtime</groupId>
         <artifactId>ae-kontinuum-runtime</artifactId>
-        <version>KONTINUUM-RUNTIME-SNAPSHOT</version>
+        <version>HEAD-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>ae-kontinuum-runtime-generator-codegen</artifactId>
+    <artifactId>ae-kontinuum-runtime-processor-sync</artifactId>
 
     <dependencies>
         <dependency>

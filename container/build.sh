@@ -3,6 +3,7 @@
 set -eo pipefail
 
 readonly SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+readonly ROOT_DIR="$(cd "$SELF_DIR/.." && pwd)"
 readonly TMP_DIR="$SELF_DIR/tmp"
 readonly LOCAL_MAVEN_REPO="$SELF_DIR/local-maven-repo"
 readonly TEMP_MAVEN_REPO="$TMP_DIR/local-maven-repo"
@@ -143,7 +144,7 @@ copy_artifacts() {
     local src_repo="$1"
     local dest_repo="$2"
     local prompt_user="${3:-true}"
-    local dockerfile="$SELF_DIR/container/Dockerfile"
+    local dockerfile="$SELF_DIR/Dockerfile"
     local copy_dirs=()
     local line=""
     local remainder=""
@@ -289,7 +290,7 @@ build_docker() {
         docker buildx build \
             --platform linux/amd64,linux/arm64 \
             --push \
-            -f "$SELF_DIR/container/Dockerfile" \
+            -f "$SELF_DIR/Dockerfile" \
             --tag "metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag" \
             "$SELF_DIR" || {
             print_error "Docker build and push failed"
@@ -300,7 +301,7 @@ build_docker() {
     else
         docker buildx build \
             --load \
-            -f "$SELF_DIR/container/Dockerfile" \
+            -f "$SELF_DIR/Dockerfile" \
             --tag "metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag" \
             "$SELF_DIR" || {
             print_error "Docker build failed"
@@ -322,7 +323,7 @@ cleanup() {
 
     if [[ -d "$SELF_DIR/metaeffekt-kontinuum" ]]; then
         rm -rf "$SELF_DIR/metaeffekt-kontinuum"
-        print_info "Removed kontinuum directory: $TMP_DIR"
+        print_info "Removed kontinuum directory: $SELF_DIR/metaeffekt-kontinuum"
     fi
 }
 
@@ -450,7 +451,14 @@ main() {
     # Ensure required directories exist
     ensure_dir "$TMP_DIR"
     ensure_dir "$LOCAL_MAVEN_REPO"
-    
+
+    # Build ae-kontinuum-runtime Java modules first
+    print_info "Building metaeffekt-kontinuum-runtime Maven modules"
+    (cd "$ROOT_DIR" && mvn clean install -DskipTests -Dmaven.repo.local="$TEMP_MAVEN_REPO") || {
+        print_error "Failed to build metaeffekt-kontinuum-runtime Maven modules"
+        exit 1
+    }
+
     # Build metaeffekt-core
     local core_dir="$TMP_DIR/metaeffekt-core"
     if ! clone_repo "git@github.com:org-metaeffekt/metaeffekt-core.git" "$core_dir" "$core_version"; then

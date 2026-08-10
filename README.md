@@ -1,22 +1,53 @@
 # metaeffekt-kontinuum-runtime
-Defines a docker container for use with metaeffekt-kontinuum.
 
-## Container Information
+`metaeffekt-kontinuum-runtime` houses both the dynamic CI/CD pipeline generator tooling and the runtime container environment used by `metaeffekt-kontinuum`.
 
-The configuration of the container built via the github workflow in this repository is described in the
-corresponding [Dockerfile](container/Dockerfile). A breakdown of the container contents is as follows:
+---
 
-- **Base image:** 
-  - maven:3.9.9-amazoncorretto-8-debian-bookworm
-- **Instance of the metaeffekt-kontinuuum repository:**
-  - /usr/src/metaeffekt-kontinuum (set as working directory)
-- **Metaeffekt maven artifacts required by metaeffekt-kontinuum**
-  - /root/.m2/repository/com/metaeffekt
-  - /root/.m2/repository/org/metaeffekt
+## 1. Dynamic Pipeline Generator (Maven Modules)
 
-## Building / Publishing
+The repository contains Maven modules responsible for generating CI/CD pipelines dynamically from project configurations:
 
-A new version of the metaeffekt-kontinuum-runtime container can be buit via the included [build-locally.sh](build-locally.sh)
-script. The script will prompt for all required parameters and build a multi-architecture image locally.
-After the script has successfully run, simply push the created image with the correct tag to the remote
-repository on docker hub. Note: This requires the correct credentials.
+- **`generator-codegen`**: Code generation utilities for generating model classes and parameter keys from specifications (e.g. `processors.yaml`).
+- **`generator`**: Core engine for parsing configurations and generating CI/CD pipelines.
+- **`execution`**: `kontinuum-maven-plugin` providing Maven goal integration for executing pipeline generation.
+- **`container`**: Packaging module for building the runtime Docker container image.
+
+### Building the Java Tooling
+
+To compile, test, and install the Java modules into your local Maven repository:
+
+```bash
+mvn clean install
+```
+
+---
+
+## 2. Kontinuum Runtime Container
+
+The configuration of the container built via the GitHub workflow in this repository is described in [container/Dockerfile](container/Dockerfile).
+
+### Container Contents
+
+- **Base Image:** `maven:3.9.11-amazoncorretto-17-debian`
+- **Working Directory:** `/usr/src/metaeffekt-kontinuum`
+- **Cached Maven Artifacts:**
+  - `/root/.m2/repository/com/metaeffekt`
+  - `/root/.m2/repository/org/metaeffekt` (including `org.metaeffekt.kontinuum.runtime` artifacts)
+  - Pre-cached third-party dependencies required for offline pipeline execution.
+
+### Building the Container
+
+You can build the container using Maven or directly via the container build script. Both methods ensure that the Java generator modules are built first.
+
+#### Option A: Building via Maven Profile
+```bash
+mvn clean install -Pbuild-container
+```
+
+#### Option B: Building via Shell Script
+```bash
+./container/build.sh
+```
+
+Run `./container/build.sh --help` to view interactive and non-interactive build flags (e.g. core versions, image tags, Docker Hub credentials).

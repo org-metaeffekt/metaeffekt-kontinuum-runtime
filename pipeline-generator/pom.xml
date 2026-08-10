@@ -6,11 +6,11 @@
     <parent>
         <groupId>org.metaeffekt.kontinuum.runtime</groupId>
         <artifactId>ae-kontinuum-runtime</artifactId>
-        <version>KONTINUUM-RUNTIME-SNAPSHOT</version>
+        <version>HEAD-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>ae-kontinuum-runtime-generator</artifactId>
+    <artifactId>ae-kontinuum-runtime-pipeline-generator</artifactId>
 
     <dependencies>
         <dependency>
@@ -21,33 +21,23 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.42</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
-            <version>2.21.2</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>2.0.16</version>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.5.16</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.17.0</version>
         </dependency>
         <dependency>
             <groupId>org.metaeffekt.kontinuum.runtime</groupId>
-            <artifactId>ae-kontinuum-runtime-generator-codegen</artifactId>
-            <version>KONTINUUM-RUNTIME-SNAPSHOT</version>
+            <artifactId>ae-kontinuum-runtime-processor-sync</artifactId>
+            <version>HEAD-SNAPSHOT</version>
         </dependency>
     </dependencies>
 
@@ -97,19 +87,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <annotationProcessorPaths>
-                        <path>
-                            <groupId>org.projectlombok</groupId>
-                            <artifactId>lombok</artifactId>
-                            <version>1.18.42</version>
-                        </path>
-                    </annotationProcessorPaths>
-                </configuration>
             </plugin>
         </plugins>
     </build>
