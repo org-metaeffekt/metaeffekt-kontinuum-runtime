@@ -3,91 +3,69 @@
 set -eo pipefail
 
 readonly SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-readonly ROOT_DIR="$(cd "$SELF_DIR/.." && pwd)"
-readonly TMP_DIR="$SELF_DIR/tmp"
+readonly TARGET_DIR="$SELF_DIR/target"
+readonly TEMP_MAVEN_REPO="$TARGET_DIR/.m2/repository"
 readonly LOCAL_MAVEN_REPO="$SELF_DIR/local-maven-repo"
-readonly TEMP_MAVEN_REPO="$TMP_DIR/local-maven-repo"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# Default version values (can be overridden by environment variables)
-DEFAULT_AE_CORE_VERSION="main"
-DEFAULT_AE_ARTIFACT_ANALYSIS_VERSION="main"
-DEFAULT_AE_KONTINUUM_VERSION="main"
-DEFAULT_AE_PORTFOLIO_MANAGER_VERSION="main"
-DEFAULT_CONTAINER_VERSION="latest"
-
-# Function to print colored output
-print_info() {
-    echo -e "${GREEN}[INFO]${NC} $1"
+# Helper function to strip surrounding quotes if present
+strip_quotes() {
+    local val="$1"
+    val="${val#\"}"
+    val="${val%\"}"
+    val="${val#\'}"
+    val="${val%\'}"
+    echo "$val"
 }
 
-print_warn() {
-    echo -e "${YELLOW}[WARN]${NC} $1"
-}
+readonly AE_CORE_VERSION="$(strip_quotes "$1")"
+readonly AE_ARTIFACT_ANALYSIS_VERSION="$(strip_quotes "$2")"
+readonly AE_PORTFOLIO_MANAGER_VERSION="$(strip_quotes "$3")"
+readonly DOCKER_TAG="$(strip_quotes "$4")"
+readonly DOCKER_USERNAME="$(strip_quotes "$5")"
+readonly DOCKER_ACCESS_TOKEN="$(strip_quotes "$6")"
+readonly DOCKER_REGISTRY="$(strip_quotes "$7")"
+readonly AE_KONTINUUM_VERSION="$(strip_quotes "${AE_KONTINUUM_VERSION:-HEAD-SNAPSHOT}")"
 
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
+# Function to check all required input argument variables
+check_args() {
+    local missing=0
 
-# Function to display help/usage
-show_help() {
-    cat << EOF
-Usage: $0 [OPTIONS]
+    if [[ -z "$AE_CORE_VERSION" ]]; then
+        echo "Error: AE_CORE_VERSION (argument 1) is missing or empty." >&2
+        missing=1
+    fi
+    if [[ -z "$AE_ARTIFACT_ANALYSIS_VERSION" ]]; then
+        echo "Error: AE_ARTIFACT_ANALYSIS_VERSION (argument 2) is missing or empty." >&2
+        missing=1
+    fi
+    if [[ -z "$AE_PORTFOLIO_MANAGER_VERSION" ]]; then
+        echo "Error: AE_PORTFOLIO_MANAGER_VERSION (argument 3) is missing or empty." >&2
+        missing=1
+    fi
+    if [[ -z "$DOCKER_TAG" ]]; then
+        echo "Error: DOCKER_TAG (argument 4) is missing or empty." >&2
+        missing=1
+    fi
+    if [[ -z "$DOCKER_USERNAME" ]]; then
+        echo "Error: DOCKER_USERNAME (argument 5) is missing or empty." >&2
+        missing=1
+    fi
+    if [[ -z "$DOCKER_ACCESS_TOKEN" ]]; then
+        echo "Error: DOCKER_ACCESS_TOKEN (argument 6) is missing or empty." >&2
+        missing=1
+    fi
+    if [[ -z "$DOCKER_REGISTRY" ]]; then
+        echo "Error: DOCKER_REGISTRY (argument 7) is missing or empty." >&2
+        missing=1
+    fi
 
-Build the metaeffekt-kontinuum-runtime container locally.
-
-Options:
-    -h, --help              Show this help message
-    -c, --core-version      Version of metaeffekt-core to use (default: $DEFAULT_AE_CORE_VERSION)
-    -a, --artifact-version  Version of metaeffekt-artifact-analysis to use (default: $DEFAULT_AE_ARTIFACT_ANALYSIS_VERSION)
-    -k, --kontinuum-version Version of metaeffekt-kontinuum to use (default: $DEFAULT_AE_KONTINUUM_VERSION)
-    -p, --portfolio-version Version of metaeffekt-portfolio-manager to use (default: $DEFAULT_AE_PORTFOLIO_MANAGER_VERSION)
-    -d, --docker-tag        Docker image tag (default: $DEFAULT_CONTAINER_VERSION)
-    -u, --docker-user       Docker Hub username
-    -t, --docker-token      Docker Hub access token
-    -y, --yes               Skip confirmation prompts
-
-Environment variables:
-    AE_CORE_VERSION         Version of metaeffekt-core
-    AE_ARTIFACT_ANALYSIS_VERSION Version of metaeffekt-artifact-analysis
-    AE_KONTINUUM_VERSION    Version of metaeffekt-kontinuum
-    AE_PORTFOLIO_MANAGER_VERSION Version of metaeffekt-portfolio-manager
-    CONTAINER_VERSION       Docker image tag
-    DOCKER_USERNAME         Docker Hub username
-    DOCKER_ACCESS_TOKEN     Docker Hub access token
-
-Examples:
-    $0                          # Interactive mode
-    $0 --core-version v1.0.0    # Use specific core version
-    $0 -c v1.0.0 -k v2.0.0      # Use specific versions
-    AE_CORE_VERSION=v1.0.0 $0   # Use environment variables
-    $0 -u myuser -t mytoken -y  # Push to Docker Hub non-interactively
-EOF
-}
-
-# Function to prompt for version with default
-prompt_version() {
-    local prompt="$1"
-    local default="$2"
-    local value=""
-    
-    read -p "$prompt [default: $default]: " value
-    echo "${value:-$default}"
-}
-
-# Function to ensure directory exists
-ensure_dir() {
-    local dir="$1"
-    if [[ ! -d "$dir" ]]; then
-        print_info "Creating directory: $dir"
-        mkdir -p "$dir"
+    if [[ $missing -ne 0 ]]; then
+        echo "" >&2
+        echo "Usage: $0 <AE_CORE_VERSION> <AE_ARTIFACT_ANALYSIS_VERSION> <AE_PORTFOLIO_MANAGER_VERSION> <DOCKER_TAG> <DOCKER_USERNAME> <DOCKER_ACCESS_TOKEN> <DOCKER_REGISTRY>" >&2
+        exit 1
     fi
 }
+
 
 # Function to check if git repository exists
 check_git_repo() {
@@ -104,419 +82,156 @@ clone_repo() {
     local url="$1"
     local dest="$2"
     local branch="$3"
-    
-    print_info "Cloning $url to $dest (branch: $branch)"
-    
+
+    echo "Cloning $url to $dest (branch: $branch)"
+
     if ! check_git_repo "$url"; then
-        print_error "Git repository not found or inaccessible: $url"
+        echo "Git repository not found or inaccessible: $url"
         return 1
     fi
-    
-    git clone --depth 1 --branch "$branch" "$url" "$dest" || {
-        print_error "Failed to clone repository: $url"
-        return 1
-    }
+
+    # If set to HEAD-SNAPSHOT always use main or master
+    if [[ "$branch" == "HEAD-SNAPSHOT" ]]; then
+          git clone --depth 1 "$url" "$dest" || {
+              echo "Failed to clone repository: $url"
+              return 1
+          }
+    else
+          git clone --depth 1 --branch "$branch" "$url" "$dest" || {
+              echo "Failed to clone repository: $url"
+              return 1
+          }
+    fi
 }
 
 # Function to build Maven project
 build_maven() {
     local project_dir="$1"
-    local repo_dir="$2"
-    
-    print_info "Building Maven project in $project_dir"
-    
+
+    echo "Building Maven project in $project_dir"
+
     cd "$project_dir" || {
-        print_error "Failed to change to directory: $project_dir"
+        echo "Failed to change to directory: $project_dir"
         return 1
     }
-    
-    mvn clean install -DskipTests -Dmaven.repo.local="$repo_dir" || {
-        print_error "Maven build failed in $project_dir"
+
+    mvn install -DskipTests -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
+        echo "Maven build failed in $project_dir"
         return 1
     }
-    
+
     cd "$SELF_DIR" || return 1
 }
 
-# Function to copy artifacts to local Maven repo
-# Reads COPY sources from the Dockerfile so it stays in sync automatically.
-copy_artifacts() {
-    local src_repo="$1"
-    local dest_repo="$2"
-    local prompt_user="${3:-true}"
-    local dockerfile="$SELF_DIR/Dockerfile"
-    local copy_dirs=()
-    local line=""
-    local remainder=""
-    local source_path=""
-    local dir=""
-    local existing=""
-    local already_listed=false
-
-    print_info "Copying Maven artifacts to local repository"
-
-    ensure_dir "$dest_repo"
-
-    # Extract COPY source paths that reference local-maven-repo
-    while IFS= read -r line || [[ -n "$line" ]]; do
-        [[ "$line" =~ ^[[:space:]]*COPY[[:space:]]+ ]] || continue
-
-        remainder="${line#COPY }"
-        while [[ "$remainder" == --* ]]; do
-            remainder="${remainder#* }"
-        done
-
-        source_path="${remainder%% *}"
-
-        [[ "$source_path" == local-maven-repo/* ]] || continue
-
-        dir="${source_path#local-maven-repo/}"
-        already_listed=false
-        for existing in "${copy_dirs[@]}"; do
-            if [[ "$existing" == "$dir" ]]; then
-                already_listed=true
-                break
-            fi
-        done
-
-        if [[ "$already_listed" == false ]]; then
-            copy_dirs+=("$dir")
-        fi
-    done < "$dockerfile"
-
-    if [[ ${#copy_dirs[@]} -eq 0 ]]; then
-        print_error "No local-maven-repo COPY sources found in Dockerfile: $dockerfile"
-        return 1
-    fi
-
-    print_info "Directories referenced by Dockerfile COPY commands:"
-    for dir in "${copy_dirs[@]}"; do
-        echo "  - $dir"
-    done
-
-    if [[ "$prompt_user" == true ]]; then
-        read -p "Continue and copy these artifacts? [y/N] " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            print_info "Artifact copy cancelled by user"
-            return 1
-        fi
-    fi
-
-    for dir in "${copy_dirs[@]}"; do
-        local src_dir="$src_repo/$dir"
-        local dest_dir="$dest_repo/$dir"
-
-        if [[ -d "$src_dir" ]]; then
-            print_info "Copying $dir"
-            mkdir -p "$(dirname "$dest_dir")"
-            cp -r "$src_dir" "$(dirname "$dest_dir")/"
-        else
-            print_warn "Source directory not found: $src_dir"
-        fi
-    done
-}
-
-# Function to setup kontinuum directory
-setup_kontinuum() {
-    local repo_url="$1"
-    local dest_dir="$2"
-    local branch="$3"
-    
-    print_info "Setting up metaeffekt-kontinuum"
-    
-    # Clone the repository
-    clone_repo "$repo_url" "$dest_dir" "$branch" || return 1
-    
-    # Remove unnecessary directories and files
-    print_info "Cleaning up repository"
-    
-    local items_to_remove=(
-        ".git"
-        ".github"
-        ".jenkins"
-        "docs"
-        "tests"
-        ".gitignore"
-    )
-    
-    for item in "${items_to_remove[@]}"; do
-        local path="$dest_dir/$item"
-        if [[ -e "$path" ]]; then
-            rm -rf "$path"
-        fi
-    done
-}
-
-# Function to login to Docker Hub
-docker_login() {
-    local username="$1"
-    local token="$2"
-    
-    if [[ -z "$username" || -z "$token" ]]; then
-        print_error "Docker Hub username and access token are required to push"
-        print_error "Use -u/--docker-user and -t/--docker-token, or set DOCKER_USERNAME and DOCKER_ACCESS_TOKEN"
-        return 1
-    fi
-    
-    print_info "Logging in to Docker Hub as $username"
-    echo "$token" | docker login -u "$username" --password-stdin || {
-        print_error "Docker login failed"
-        return 1
-    }
-}
-
-# Function to build and push Docker image
 build_docker() {
-    local docker_tag="$1"
-    local push="$2"
-    local docker_user="$3"
-    local docker_token="$4"
-    
-    print_info "Building Docker image with tag: $docker_tag"
-    
-    # Create multi-arch builder if it doesn't exist
-    if ! docker buildx inspect multiarch-builder &>/dev/null; then
-        print_info "Creating multi-arch builder"
-        docker buildx create --use --name multiarch-builder
-    else
-        print_info "Using existing multi-arch builder"
-        docker buildx use multiarch-builder
+    echo "Building Docker image with tag: $DOCKER_TAG"
+
+    # Create BuildKit config file for insecure/HTTP registry support
+    cat << EOF > "$SELF_DIR/buildkitd.toml"
+[registry."$DOCKER_REGISTRY"]
+  http = true
+  insecure = true
+EOF
+
+    # Re-create builder node if config changed or builder missing
+    if docker buildx inspect multiarch-builder &>/dev/null; then
+        echo "Updating multi-arch builder with insecure HTTP registry configuration"
+        docker buildx rm multiarch-builder &>/dev/null || true
     fi
-    
-    if [[ "$push" == true ]]; then
-        docker_login "$docker_user" "$docker_token" || return 1
-        
-        docker buildx build \
-            --platform linux/amd64,linux/arm64 \
-            --push \
-            -f "$SELF_DIR/Dockerfile" \
-            --tag "metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag" \
-            "$SELF_DIR" || {
-            print_error "Docker build and push failed"
+
+    echo "Creating multi-arch builder for registry $DOCKER_REGISTRY"
+    docker buildx create --use --name multiarch-builder --config "$SELF_DIR/buildkitd.toml"
+
+    if [[ -n "$DOCKER_USERNAME" && -n "$DOCKER_ACCESS_TOKEN" ]]; then
+        echo "Logging in to Docker Hub as $DOCKER_USERNAME"
+        echo "$DOCKER_ACCESS_TOKEN" | docker login -u "$DOCKER_USERNAME" --password-stdin || {
+            echo "Docker login failed"
             return 1
         }
-        
-        print_info "Docker image pushed successfully: metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag"
-    else
-        docker buildx build \
-            --load \
-            -f "$SELF_DIR/Dockerfile" \
-            --tag "metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag" \
-            "$SELF_DIR" || {
-            print_error "Docker build failed"
-            return 1
-        }
-        
-        print_info "Docker image built successfully: metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag"
-    fi
-}
-
-# Function to cleanup temporary files
-cleanup() {
-    print_info "Cleaning up temporary files"
-    
-    if [[ -d "$TMP_DIR" ]]; then
-        rm -rf "$TMP_DIR"
-        print_info "Removed temporary directory: $TMP_DIR"
     fi
 
-    if [[ -d "$SELF_DIR/metaeffekt-kontinuum" ]]; then
-        rm -rf "$SELF_DIR/metaeffekt-kontinuum"
-        print_info "Removed kontinuum directory: $SELF_DIR/metaeffekt-kontinuum"
-    fi
-}
-
-# Function to handle script exit
-cleanup_on_exit() {
-    local exit_code=$?
-    cleanup
-    exit $exit_code
-}
-
-# Main script execution
-main() {
-    # Set trap to cleanup on exit
-    trap cleanup_on_exit EXIT
-    
-    # Parse command line arguments
-    local interactive=true
-    local core_version=""
-    local artifact_version=""
-    local kontinuum_version=""
-    local portfolio_version=""
-    local docker_tag=""
-    local docker_user=""
-    local docker_token=""
-    
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            -h|--help)
-                show_help
-                exit 0
-                ;;
-            -c|--core-version)
-                core_version="$2"
-                interactive=false
-                shift 2
-                ;;
-            -a|--artifact-version)
-                artifact_version="$2"
-                interactive=false
-                shift 2
-                ;;
-            -k|--kontinuum-version)
-                kontinuum_version="$2"
-                interactive=false
-                shift 2
-                ;;
-            -p|--portfolio-version)
-                portfolio_version="$2"
-                interactive=false
-                shift 2
-                ;;
-            -d|--docker-tag)
-                docker_tag="$2"
-                interactive=false
-                shift 2
-                ;;
-            -u|--docker-user)
-                docker_user="$2"
-                shift 2
-                ;;
-            -t|--docker-token)
-                docker_token="$2"
-                shift 2
-                ;;
-            -y|--yes)
-                interactive=false
-                shift
-                ;;
-            *)
-                print_error "Unknown option: $1"
-                show_help
-                exit 1
-                ;;
-        esac
-    done
-    
-    # Set versions from environment variables or defaults
-    core_version="${core_version:-${AE_CORE_VERSION:-$DEFAULT_AE_CORE_VERSION}}"
-    artifact_version="${artifact_version:-${AE_ARTIFACT_ANALYSIS_VERSION:-$DEFAULT_AE_ARTIFACT_ANALYSIS_VERSION}}"
-    kontinuum_version="${kontinuum_version:-${AE_KONTINUUM_VERSION:-$DEFAULT_AE_KONTINUUM_VERSION}}"
-    portfolio_version="${portfolio_version:-${AE_PORTFOLIO_MANAGER_VERSION:-$DEFAULT_AE_PORTFOLIO_MANAGER_VERSION}}"
-    docker_tag="${docker_tag:-${CONTAINER_VERSION:-$DEFAULT_CONTAINER_VERSION}}"
-    docker_user="${docker_user:-${DOCKER_USERNAME:-}}"
-    docker_token="${docker_token:-${DOCKER_ACCESS_TOKEN:-}}"
-    
-    local push=false
-    if [[ -n "$docker_user" && -n "$docker_token" ]]; then
-        push=true
-    fi
-    
-    # Interactive prompts
-    if [[ "$interactive" == true ]]; then
-        print_info "Interactive mode - press Enter to accept defaults"
-        core_version=$(prompt_version "Enter metaeffekt-core version" "$core_version")
-        artifact_version=$(prompt_version "Enter metaeffekt-artifact-analysis version" "$artifact_version")
-        kontinuum_version=$(prompt_version "Enter metaeffekt-kontinuum version" "$kontinuum_version")
-        portfolio_version=$(prompt_version "Enter metaeffekt-portfolio-manager version" "$portfolio_version")
-        docker_tag=$(prompt_version "Enter Docker image tag" "$docker_tag")
-    fi
-    
-    # Display configuration
-    print_info "Configuration:"
-    echo "  metaeffekt-core version: $core_version"
-    echo "  metaeffekt-artifact-analysis version: $artifact_version"
-    echo "  metaeffekt-kontinuum version: $kontinuum_version"
-    echo "  metaeffekt-portfolio-manager version: $portfolio_version"
-    echo "  Docker tag: $docker_tag"
-    if [[ "$push" == true ]]; then
-        echo "  Docker Hub user: $docker_user"
-        echo "  Push to registry: yes"
-    else
-        echo "  Push to registry: no (local build only)"
-    fi
-    
-    # Confirm if not auto-skipped
-    if [[ "$interactive" == true ]]; then
-        read -p "Continue with these settings? [y/N] " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            print_info "Build cancelled by user"
-            exit 0
-        fi
-    fi
-    
-    # Ensure required directories exist
-    ensure_dir "$TMP_DIR"
-    ensure_dir "$LOCAL_MAVEN_REPO"
-
-    # Build ae-kontinuum-runtime Java modules first
-    print_info "Building metaeffekt-kontinuum-runtime Maven modules"
-    (cd "$ROOT_DIR" && mvn clean install -DskipTests -Dmaven.repo.local="$TEMP_MAVEN_REPO") || {
-        print_error "Failed to build metaeffekt-kontinuum-runtime Maven modules"
-        exit 1
+    docker buildx build \
+        --platform linux/amd64,linux/arm64 \
+        --push \
+        -f "$SELF_DIR/Dockerfile" \
+        --tag "$DOCKER_REGISTRY/metaeffekt/metaeffekt-kontinuum-runtime:$DOCKER_TAG" \
+        "$SELF_DIR" || {
+        echo "Docker build and push failed"
+        return 1
     }
 
-    # Build metaeffekt-core
-    local core_dir="$TMP_DIR/metaeffekt-core"
-    if ! clone_repo "git@github.com:org-metaeffekt/metaeffekt-core.git" "$core_dir" "$core_version"; then
-        print_error "Failed to clone metaeffekt-core"
-        exit 1
-    fi
-    
-    if ! build_maven "$core_dir" "$TEMP_MAVEN_REPO"; then
-        print_error "Failed to build metaeffekt-core"
-        exit 1
-    fi
-    
-    # Build metaeffekt-artifact-analysis
-    local artifact_dir="$TMP_DIR/metaeffekt-artifact-analysis"
-    if ! clone_repo "git@github.com:org-metaeffekt/metaeffekt-artifact-analysis.git" "$artifact_dir" "$artifact_version"; then
-        print_error "Failed to clone metaeffekt-artifact-analysis"
-        exit 1
-    fi
-    
-    if ! build_maven "$artifact_dir" "$TEMP_MAVEN_REPO"; then
-        print_error "Failed to build metaeffekt-artifact-analysis"
-        exit 1
-    fi
-    
-    # Build metaeffekt-portfolio-manager
-    local portfolio_dir="$TMP_DIR/metaeffekt-portfolio-manager"
-    if ! clone_repo "http://ae-server:7990/scm/ae/metaeffekt-portfolio-manager.git" "$portfolio_dir" "$portfolio_version"; then
-        print_error "Failed to clone metaeffekt-portfolio-manager"
-        exit 1
-    fi
-
-    if ! build_maven "$portfolio_dir" "$TEMP_MAVEN_REPO"; then
-        print_error "Failed to build metaeffekt-portfolio-manager"
-        exit 1
-    fi
-
-    # Copy artifacts to local Maven repo
-    if ! copy_artifacts "$TEMP_MAVEN_REPO" "$LOCAL_MAVEN_REPO" "$interactive"; then
-        print_error "Failed to copy artifacts"
-        exit 1
-    fi
-
-    # Setup metaeffekt-kontinuum
-    local kontinuum_dir="$SELF_DIR/metaeffekt-kontinuum"
-    if ! setup_kontinuum "git@github.com:org-metaeffekt/metaeffekt-kontinuum.git" "$kontinuum_dir" "$kontinuum_version"; then
-        print_error "Failed to setup metaeffekt-kontinuum"
-        exit 1
-    fi
-    
-    # Build Docker image
-    if ! build_docker "$docker_tag" "$push" "$docker_user" "$docker_token"; then
-        print_error "Failed to build Docker image"
-        exit 1
-    fi
-    
-    print_info "Build completed successfully!"
-    print_info "Docker image: metaeffekt/metaeffekt-kontinuum-runtime:$docker_tag"
+    echo "Docker image pushed successfully: $DOCKER_REGISTRY/metaeffekt/metaeffekt-kontinuum-runtime:$DOCKER_TAG"
 }
 
-# Run main function with all arguments
+build_core() {
+      local core_dir="$TARGET_DIR/metaeffekt-core"
+      if ! clone_repo "git@github.com:org-metaeffekt/metaeffekt-core.git" "$core_dir" "$AE_CORE_VERSION"; then
+          echo "Failed to clone metaeffekt-core"
+          exit 1
+      fi
+
+      if ! build_maven "$core_dir"; then
+          echo "Failed to build metaeffekt-core"
+          exit 1
+      fi
+}
+
+build_artifact_analysis() {
+      local artifact_dir="$TARGET_DIR/metaeffekt-artifact-analysis"
+      if ! clone_repo "git@github.com:org-metaeffekt/metaeffekt-artifact-analysis.git" "$artifact_dir" "$AE_ARTIFACT_ANALYSIS_VERSION"; then
+          echo "Failed to clone metaeffekt-artifact-analysis"
+          exit 1
+      fi
+
+      if ! build_maven "$artifact_dir"; then
+          echo "Failed to build metaeffekt-artifact-analysis"
+          exit 1
+      fi
+}
+
+build_portfolio_manager() {
+      local portfolio_dir="$TARGET_DIR/metaeffekt-portfolio-manager"
+      if ! clone_repo "http://ae-server:7990/scm/ae/metaeffekt-portfolio-manager.git" "$portfolio_dir" "$AE_PORTFOLIO_MANAGER_VERSION"; then
+          echo "Failed to clone metaeffekt-portfolio-manager"
+          exit 1
+      fi
+
+      if ! build_maven "$portfolio_dir"; then
+          echo "Failed to build metaeffekt-portfolio-manager"
+          exit 1
+      fi
+}
+
+build_kontinuum() {
+        local kontinuum_dir="$TARGET_DIR/metaeffekt-kontinuum"
+        if ! clone_repo "git@github.com:org-metaeffekt/metaeffekt-kontinuum.git" "$kontinuum_dir" "$AE_KONTINUUM_VERSION"; then
+            echo "Failed to clone metaeffekt-kontinuum"
+            exit 1
+        fi
+
+      local items_to_remove=(
+          ".git"
+          ".github"
+          ".jenkins"
+          "docs"
+          "tests"
+          ".gitignore"
+      )
+
+      for item in "${items_to_remove[@]}"; do
+          rm -rf "$kontinuum_dir/$item"
+      done
+}
+
+main() {
+  check_args
+
+  build_core
+  build_artifact_analysis
+  build_portfolio_manager
+  build_kontinuum
+
+  build_docker
+}
+
 main "$@"

@@ -72,13 +72,17 @@ public class LocalPipeline {
                 } else if (step.processor instanceof StandaloneProcessor standaloneProcessor) {
                     scriptDocument.append(standaloneProcessor.getScript()).append(System.lineSeparator());
                 }
-                scriptDocument.append(System.lineSeparator());
             }
         }
     }
 
     private String generateMavenScriptBlock(MavenProcessor processor) {
         StringBuilder script = new StringBuilder();
+
+        if (StringUtils.isNotBlank(processor.getPreScript())) {
+            script.append(processor.getPreScript()).append(System.lineSeparator());
+        }
+
         script.append("mvn -f ")
                 .append(localConfiguration.getKontinuumProcessorsDirNormalized())
                 .append(processor.getPomLocation()).append(" ")
@@ -96,6 +100,11 @@ public class LocalPipeline {
             }
             script.append(System.lineSeparator());
         }
+
+        if (StringUtils.isNotBlank(processor.getPostScript())) {
+            script.append(processor.getPostScript()).append(System.lineSeparator());
+        }
+
         return script.toString();
     }
 

@@ -6,6 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey;
 
 @Data
 public class ProcessorDefinitions {

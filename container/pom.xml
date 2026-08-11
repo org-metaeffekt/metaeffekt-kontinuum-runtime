@@ -24,7 +24,7 @@
 
     <profiles>
         <profile>
-            <id>build-x86-container</id>
+            <id>build-container</id>
             <build>
                 <plugins>
                     <plugin>
@@ -41,31 +41,16 @@
                                 <configuration>
                                     <executable>${project.basedir}/build.sh</executable>
                                     <workingDirectory>${project.basedir}</workingDirectory>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <id>build-arm64-container</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.6.3</version>
-                        <executions>
-                            <execution>
-                                <id>run-container-build-script</id>
-                                <phase>install</phase>
-                                <goals>
-                                    <goal>exec</goal>
-                                </goals>
-                                <configuration>
-                                    <executable>${project.basedir}/build.sh</executable>
-                                    <workingDirectory>${project.basedir}</workingDirectory>
+
+                                    <arguments>
+                                        <argument>${ae.core.version}</argument>
+                                        <argument>${ae.artifact.analysis.version}</argument>
+                                        <argument>${ae.portfolio.manager.version}</argument>
+                                        <argument>${docker.image.tag}</argument>
+                                        <argument>${docker.username}</argument>
+                                        <argument>${docker.access.token}</argument>
+                                        <argument>${docker.registry}</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>

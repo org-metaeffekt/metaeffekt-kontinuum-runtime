@@ -421,7 +421,7 @@ processors:
     description: |
       This process downloads the vulnerability mirror index from an archive URL.
     pomLocation: mirror/mirror_download-index.xml
-    goal: process-resources
+    goal: compile
     stage: PRE
     parameters:
       - key: param.mirror.archive.url
