@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
+import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.*;
 
 public class Pipeline {
 
@@ -30,20 +31,19 @@ public class Pipeline {
     private final Workspace workspace;
 
     private final EnvironmentConfiguration environmentConfiguration;
-    private final YamlProcessorCatalog yamlProcessorCatalog = new YamlProcessorCatalog();
+    private final ProcessorCatalog processorCatalog = new DefaultProcessorCatalog();
 
     public Pipeline(PipelineConfiguration pipelineConfiguration,
                     EnvironmentConfiguration environmentConfiguration) {
+
+        new PipelineConfigurationLoader().validatePipelineConfigFile(pipelineConfiguration);
+
         this.environmentConfiguration = environmentConfiguration;
         this.pipelineConfiguration = pipelineConfiguration;
         this.workspace = new Workspace(pipelineConfiguration, environmentConfiguration);
 
-        if (pipelineConfiguration.getOptions() == null) {
-            pipelineConfiguration.setOptions(new PipelineConfiguration.Options());
-        }
-
-        pipelineConfiguration.getProjectProperties().getAssets()
-                .forEach(a -> assetPlans.add(new AssetPlan(a, pipelineConfiguration, environmentConfiguration)));
+        pipelineConfiguration.getProjectProperties().getAllAssets()
+                .forEach(asset -> assetPlans.add(new AssetPlan(asset, pipelineConfiguration)));
     }
 
     public Map<Asset, List<Processor>> generatePipeline() {
@@ -78,14 +78,14 @@ public class Pipeline {
                 addDownloadAssetProcessor(assetPlan);
             } else if (assetPlan.getAsset().getMavenResolver() != null) {
                 addMavenDownloadProcessor(assetPlan);
+            } else if (assetPlan.getAsset().getContainerResolver() != null) {
+                addSaveContainerImageProcessor(assetPlan);
             }
         }
     }
 
     private void addExtractStageProcessors(AssetPlan assetPlan) {
-        if (assetPlan.isRequireContainerInspect()) {
-            addInspectImageProcessor(assetPlan);
-        }
+        return;
     }
 
     private void addPrepareStageProcessors(AssetPlan assetPlan) {
@@ -152,7 +152,7 @@ public class Pipeline {
 
 
     private void addDownloadIndexProcessor(AssetPlan assetPlan) {
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("download-index");
+        MavenProcessor processor = processorCatalog.getProcessorById(DOWNLOAD_INDEX);
         processor.setProcessorParameter(PARAM_MIRROR_ARCHIVE_URL, environmentConfiguration.VULNERABILITY_MIRROR_URL);
         processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR, environmentConfiguration.getMirrorDir());
 
@@ -161,7 +161,7 @@ public class Pipeline {
 
     private void addDownloadAssetProcessor(AssetPlan assetPlan) {
         Asset asset = assetPlan.getAsset();
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("download-asset");
+        MavenProcessor processor = processorCatalog.getProcessorById(DOWNLOAD_ASSET);
         processor.setProcessorParameter(PARAM_ASSET_URL, asset.getUrlResolver().getUrl());
         processor.setProcessorParameter(OUTPUT_ASSET_DIR, workspace.getStageDirForAsset(asset, Stage.FETCH).toString());
 
@@ -170,7 +170,7 @@ public class Pipeline {
 
     private void addMavenDownloadProcessor(AssetPlan assetPlan) {
         Asset asset = assetPlan.getAsset();
-        PipelineConfiguration.ProjectProperties.Asset.MavenResolver mavenResolver = asset.getMavenResolver();
+        Asset.MavenResolver mavenResolver = asset.getMavenResolver();
 
         String groupId = mavenResolver.getGroupId();
         String artifactId = mavenResolver.getArtifactId() != null ? mavenResolver.getArtifactId() : "";
@@ -179,22 +179,22 @@ public class Pipeline {
         String fetchedDir = workspace.getStageDirForAsset(asset, Stage.FETCH).toString();
 
         String scriptPath = environmentConfiguration.getKontinuumProcessorsDirNormalized()
-                + "scripts/download-maven-artifacts.sh";
-        String invocation = "bash \"" + scriptPath + "\" \"" + groupId + "\" \""
+                + "fetch/download-maven-artifacts.sh";
+        String script = "bash \"" + scriptPath + "\" \"" + groupId + "\" \""
                 + artifactId + "\" \"" + version + "\" \""
                 + fetchedDir + "\" \"" + repoUrl + "\"";
 
         ProcessorDefinitions.StandaloneProcessor standaloneProcessor =
                 new ProcessorDefinitions.StandaloneProcessor("download-maven-artifacts", "Download Maven Artifacts", Stage.FETCH.name());
-        standaloneProcessor.setScript(invocation);
+        standaloneProcessor.setScript(script);
         assetProcessorsMap.computeIfAbsent(assetPlan.getAsset(), k -> new ArrayList<>()).add(standaloneProcessor);
     }
 
-    private void addInspectImageProcessor(AssetPlan assetPlan) {
+    private void addSaveContainerImageProcessor(AssetPlan assetPlan) {
         Asset asset = assetPlan.getAsset();
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("save-inspect-image");
+        MavenProcessor processor = processorCatalog.getProcessorById(SAVE_INSPECT_IMAGE);
 
-        processor.setProcessorParameter(OUTPUT_DIR, workspace.getStageDirForAsset(asset, Stage.PREPARE).toString());
+        processor.setProcessorParameter(OUTPUT_DIR, workspace.getStageDirForAsset(asset, Stage.FETCH).toString());
         processor.setProcessorParameter(PARAM_IMAGE_ID,
                 asset.getContainerResolver().getImage());
         processor.setProcessorParameter(PARAM_IMAGE_VERSION,
@@ -205,7 +205,7 @@ public class Pipeline {
 
     private void addCopyInventoryProcessor(AssetPlan assetPlan) {
         Asset asset = assetPlan.getAsset();
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("copy-inventories");
+        MavenProcessor processor = processorCatalog.getProcessorById(COPY_INVENTORIES);
 
         File inputFile;
         try {
@@ -225,7 +225,7 @@ public class Pipeline {
 
     private void addScanDirectoryProcessor(AssetPlan assetPlan) {
         Asset asset = assetPlan.getAsset();
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("scan-directory");
+        MavenProcessor processor = processorCatalog.getProcessorById(SCAN_DIRECTORY);
 
         if (assetPlan.isRequireFetch()) {
             processor.setProcessorParameter(INPUT_EXTRACT_DIR,
@@ -248,7 +248,7 @@ public class Pipeline {
 
     private void addInventoryToCycloneDxProcessor(AssetPlan assetPlan, Stage stage) {
         Asset asset = assetPlan.getAsset();
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("inventory-to-cyclonedx");
+        MavenProcessor processor = processorCatalog.getProcessorById(INVENTORY_TO_CYCLONEDX);
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, workspace.getStageDirForAsset(asset, stage).appendAssetInventory());
         processor.setProcessorParameter(OUTPUT_BOM_FILE, workspace.getStageDirForAsset(asset, stage).appendCycloneDxFile("JSON"));
@@ -262,7 +262,7 @@ public class Pipeline {
 
     private void addInventoryToSpdxProcessor(AssetPlan assetPlan, Stage stage) {
         Asset asset = assetPlan.getAsset();
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("inventory-to-spdx");
+        MavenProcessor processor = processorCatalog.getProcessorById(INVENTORY_TO_SPDX);
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, workspace.getStageDirForAsset(asset, stage).appendAssetInventory());
         processor.setProcessorParameter(OUTPUT_BOM_FILE, workspace.getStageDirForAsset(asset, stage).appendSpdxFile("JSON"));
@@ -276,7 +276,7 @@ public class Pipeline {
 
     private void addPortfolioUploadProcessor(AssetPlan assetPlan) {
         Asset asset = assetPlan.getAsset();
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("portfolio-upload");
+        MavenProcessor processor = processorCatalog.getProcessorById(PORTFOLIO_UPLOAD);
 
         processor.setProcessorParameter(INPUT_FILE, workspace.getStageDirForAsset(asset, Stage.PREPARE).appendAssetInventory());
         processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_URL, environmentConfiguration.PORTFOLIO_MANAGER_URL);
@@ -301,38 +301,40 @@ public class Pipeline {
         }
 
         for (Dashboard dashboard : dashboards) {
-            if (!dashboard.getAssetId().equals(assetPlan.getAsset().getId())) {
-                continue;
+            for (String assetId : dashboard.getAssetIds()) {
+                if (!assetId.equals(assetPlan.getAsset().getId())) {
+                    continue;
+                }
+
+                EnrichmentOptions enrichmentOptions = pipelineConfiguration.getOptions().getEnrichment();
+                MavenProcessor processor = processorCatalog.getProcessorById(CREATE_DASHBOARD);
+                PipelineConfiguration.ProjectProperties.Project project = pipelineConfiguration
+                        .getProjectProperties()
+                        .getProject();
+
+                processor.setProcessorParameter(INPUT_INVENTORY_FILE,
+                        workspace.getStageDirForAsset(asset, Stage.ADVISE).appendAssetInventory());
+                processor.setProcessorParameter(OUTPUT_DASHBOARD_FILE,
+                        workspace.getStageDirForAsset(asset, Stage.REPORT).appendDashboardFile());
+                processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE,
+                        enrichmentOptions.getSecurityPolicyFile(environmentConfiguration.getWorkbenchDirNormalized()));
+                processor.setProcessorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS,
+                        enrichmentOptions.getSecurityPolicyActiveIds() != null
+                                ? String.join(",",
+                                pipelineConfiguration.getOptions()
+                                        .getEnrichment()
+                                        .getSecurityPolicyActiveIds()) : null);
+                processor.setProcessorParameter(PARAM_TENANT_ID,
+                        project.getTenant());
+                processor.setProcessorParameter(PARAM_ASSET_ID,
+                        assetPlan.getAsset().getAssessmentId());
+                processor.setProcessorParameter(PARAM_ASSESSMENT_CONTEXT,
+                        assetPlan.getAsset().getContext());
+                processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
+                        environmentConfiguration.getMirrorDatabaseDir());
+
+                assetProcessorsMap.computeIfAbsent(assetPlan.getAsset(), k -> new ArrayList<>()).add(processor);
             }
-
-            EnrichmentOptions enrichmentOptions = pipelineConfiguration.getOptions().getEnrichment();
-            MavenProcessor processor = yamlProcessorCatalog.getProcessorById("create-dashboard");
-            PipelineConfiguration.ProjectProperties.Project project = pipelineConfiguration
-                    .getProjectProperties()
-                    .getProject();
-
-            processor.setProcessorParameter(INPUT_INVENTORY_FILE,
-                    workspace.getStageDirForAsset(asset, Stage.ADVISE).appendAssetInventory());
-            processor.setProcessorParameter(OUTPUT_DASHBOARD_FILE,
-                    workspace.getStageDirForAsset(asset, Stage.REPORT).appendDashboardFile());
-            processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE,
-                    enrichmentOptions.getSecurityPolicyFile(environmentConfiguration.getWorkbenchDirNormalized()));
-            processor.setProcessorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS,
-                    enrichmentOptions.getSecurityPolicyActiveIds() != null
-                            ? String.join(",",
-                            pipelineConfiguration.getOptions()
-                                    .getEnrichment()
-                                    .getSecurityPolicyActiveIds()) : null);
-            processor.setProcessorParameter(PARAM_TENANT_ID,
-                    project.getTenant());
-            processor.setProcessorParameter(PARAM_ASSET_ID,
-                    assetPlan.getAsset().getAssessmentId());
-            processor.setProcessorParameter(PARAM_ASSESSMENT_CONTEXT,
-                    assetPlan.getAsset().getContext());
-            processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
-                    environmentConfiguration.getMirrorDatabaseDir());
-
-            assetProcessorsMap.computeIfAbsent(assetPlan.getAsset(), k -> new ArrayList<>()).add(processor);
         }
     }
 
@@ -344,92 +346,94 @@ public class Pipeline {
         }
 
         for (Report report : reports) {
-            if (!report.getAssetId().equals(assetPlan.getAsset().getId())) {
-                continue;
-            }
 
-            List<String> types = report.getTypes();
-            if (types == null || types.isEmpty()) {
-                continue;
-            }
-
-            for (String type : types) {
-                if (type == null) {
+            for (String assetId :  report.getAssetIds()) {
+                if (!assetId.equals(assetPlan.getAsset().getId())) {
                     continue;
                 }
 
-                MavenProcessor processor = yamlProcessorCatalog.getProcessorById("create-document");
-                ReportType reportType = ReportType.fromKey(type);
-                Asset asset = assetPlan.getAsset();
-
-                if (ReportType.requiresScan(reportType)) {
-                    processor.setProcessorParameter(INPUT_INVENTORY_DIR, workspace.getStageDirForAsset(asset, Stage.SCAN).toString());
-                } else if (ReportType.requiresVulnerabilityEnrichment(reportType)) {
-                    processor.setProcessorParameter(INPUT_INVENTORY_DIR, workspace.getStageDirForAsset(asset, Stage.ADVISE).toString());
-                } else if (assetPlan.isRequireResolve()){
-                    processor.setProcessorParameter(INPUT_INVENTORY_DIR, workspace.getStageDirForAsset(asset, Stage.RESOLVE).toString());
-                } else if (assetPlan.isRequireAggregation()){
-                    processor.setProcessorParameter(INPUT_INVENTORY_DIR, workspace.getStageDirForAsset(asset, Stage.AGGREGATE).toString());
-                } else {
-                    processor.setProcessorParameter(INPUT_INVENTORY_DIR, workspace.getStageDirForAsset(asset, Stage.PREPARE).toString());
+                List<String> types = report.getTypes();
+                if (types == null || types.isEmpty()) {
+                    continue;
                 }
 
-                if (ReportType.fromKey(type).equals(ReportType.CERT_REPORT)) {
-                    processor.setProcessorParameter(PARAM_OVERVIEW_ADVISORS, "[\"CERT_FR\"]");
-                } else {
-                    processor.setProcessorParameter(PARAM_OVERVIEW_ADVISORS,
-                            report.getOverviewAdvisors() == null || report.getOverviewAdvisors().isEmpty()
-                                    ? null
-                                    : String.join(", ", report.getOverviewAdvisors()));
+                for (String type : types) {
+                    if (type == null) {
+                        continue;
+                    }
+
+                    MavenProcessor processor = processorCatalog.getProcessorById(CREATE_DOCUMENT);
+                    ReportType reportType = ReportType.fromKey(type);
+                    Asset asset = assetPlan.getAsset();
+
+                    if (ReportType.requiresScan(reportType)) {
+                        processor.setProcessorParameter(INPUT_INVENTORY_DIR, workspace.getStageDirForAsset(asset, Stage.SCAN).toString());
+                    } else if (ReportType.requiresVulnerabilityEnrichment(reportType)) {
+                        processor.setProcessorParameter(INPUT_INVENTORY_DIR, workspace.getStageDirForAsset(asset, Stage.ADVISE).toString());
+                    } else if (assetPlan.isRequireResolve()){
+                        processor.setProcessorParameter(INPUT_INVENTORY_DIR, workspace.getStageDirForAsset(asset, Stage.RESOLVE).toString());
+                    } else if (assetPlan.isRequireAggregation()){
+                        processor.setProcessorParameter(INPUT_INVENTORY_DIR, workspace.getStageDirForAsset(asset, Stage.AGGREGATE).toString());
+                    } else {
+                        processor.setProcessorParameter(INPUT_INVENTORY_DIR, workspace.getStageDirForAsset(asset, Stage.PREPARE).toString());
+                    }
+
+                    if (ReportType.fromKey(type).equals(ReportType.CERT_REPORT)) {
+                        processor.setProcessorParameter(PARAM_OVERVIEW_ADVISORS, "[\"CERT_FR\"]");
+                    } else {
+                        processor.setProcessorParameter(PARAM_OVERVIEW_ADVISORS,
+                                report.getOverviewAdvisors() == null || report.getOverviewAdvisors().isEmpty()
+                                        ? null
+                                        : String.join(", ", report.getOverviewAdvisors()));
+                    }
+
+                    if (ReportType.requiresVulnerabilityEnrichment(reportType)) {
+                        processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE,
+                                pipelineConfiguration.getOptions().getEnrichment().getSecurityPolicyFile(environmentConfiguration.getWorkbenchDirNormalized()));
+                    }
+
+                    processor.setProcessorParameter(OUTPUT_DOCUMENT_FILE, workspace.getStageDirForAsset(asset, Stage.REPORT).appendReportFile(ReportType.fromKey(type)));
+
+                    processor.setProcessorParameter(PARAM_COMPUTED_INVENTORY_DIR,
+                            workspace.getStageDirForAsset(asset, Stage.REPORT).toString());
+                    processor.setProcessorParameter(PARAM_DOCUMENT_TYPE, type);
+                    processor.setProcessorParameter(PARAM_DOCUMENT_LANGUAGE, report.getLanguage());
+
+                    processor.setProcessorParameter(PARAM_ASSET_ID, assetPlan.getAsset().getId());
+                    processor.setProcessorParameter(PARAM_ASSET_NAME, assetPlan.getAsset().getName());
+                    processor.setProcessorParameter(PARAM_ASSET_VERSION, assetPlan.getAsset().getVersion());
+
+                    processor.setProcessorParameter(PARAM_PRODUCT_NAME,
+                            pipelineConfiguration.getProjectProperties().getProject().getName());
+                    processor.setProcessorParameter(PARAM_PRODUCT_VERSION,
+                            pipelineConfiguration.getProjectProperties().getProject().getVersion());
+                    processor.setProcessorParameter(PARAM_PRODUCT_WATERMARK, report.getWatermark());
+                    processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_ORGANIZATION, report.getOrganization());
+                    processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_CLASSIFICATION, report.getClassificationRating());
+                    processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_CONTROL, report.getControlRating());
+                    processor.setProcessorParameter(PARAM_ASSET_DESCRIPTOR_FILE, KontinuumUtils.normalizeDir(environmentConfiguration.getDescriptorsDirNormalized(), reportType.getAssetDescriptorFile()));
+                    processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR,
+                            assetPlan.getAsset().getReferenceDir(environmentConfiguration.getWorkbenchDirNormalized()));
+                    processor.setProcessorParameter(PARAM_REFERENCE_LICENSE_DIR, null);
+                    processor.setProcessorParameter(PARAM_REFERENCE_COMPONENT_DIR, null);
+                    processor.setProcessorParameter(ENV_KONTINUUM_DIR,
+                            environmentConfiguration.getKontinuumDirNormalized());
+                    processor.setProcessorParameter(ENV_KONTINUUM_PROCESSORS_DIR,
+                            environmentConfiguration.getKontinuumProcessorsDirNormalized());
+                    processor.setProcessorParameter(ENV_WORKBENCH_DIR,
+                            environmentConfiguration.getWorkbenchDirNormalized());
+                    processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
+                            environmentConfiguration.getMirrorDatabaseDir());
+
+                    assetProcessorsMap.computeIfAbsent(assetPlan.getAsset(), k -> new ArrayList<>()).add(processor);
                 }
-
-                if (ReportType.requiresVulnerabilityEnrichment(reportType)) {
-                    processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE,
-                            pipelineConfiguration.getOptions().getEnrichment().getSecurityPolicyFile(environmentConfiguration.getWorkbenchDirNormalized()));
-                }
-
-                processor.setProcessorParameter(OUTPUT_DOCUMENT_FILE, workspace.getStageDirForAsset(asset, Stage.REPORT).appendReportFile(ReportType.fromKey(type)));
-
-                processor.setProcessorParameter(PARAM_COMPUTED_INVENTORY_DIR,
-                        workspace.getStageDirForAsset(asset, Stage.REPORT).toString());
-                processor.setProcessorParameter(PARAM_DOCUMENT_TYPE, type);
-                processor.setProcessorParameter(PARAM_DOCUMENT_LANGUAGE,
-                        pipelineConfiguration.getOptions().getGlobal().getDocumentLanguage());
-
-                processor.setProcessorParameter(PARAM_ASSET_ID, assetPlan.getAsset().getId());
-                processor.setProcessorParameter(PARAM_ASSET_NAME, assetPlan.getAsset().getName());
-                processor.setProcessorParameter(PARAM_ASSET_VERSION, assetPlan.getAsset().getVersion());
-
-                processor.setProcessorParameter(PARAM_PRODUCT_NAME,
-                        pipelineConfiguration.getProjectProperties().getProject().getName());
-                processor.setProcessorParameter(PARAM_PRODUCT_VERSION,
-                        pipelineConfiguration.getProjectProperties().getProject().getVersion());
-                processor.setProcessorParameter(PARAM_PRODUCT_WATERMARK, report.getWatermark());
-                processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_ORGANIZATION, report.getOrganization());
-                processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_CLASSIFICATION, report.getClassificationRating());
-                processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_CONTROL, report.getControlRating());
-                processor.setProcessorParameter(PARAM_ASSET_DESCRIPTOR_FILE, KontinuumUtils.normalizeDir(environmentConfiguration.getDescriptorsDirNormalized(), reportType.getAssetDescriptorFile()));
-                processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR,
-                        assetPlan.getAsset().getReferenceDir(environmentConfiguration.getWorkbenchDirNormalized()));
-                processor.setProcessorParameter(PARAM_REFERENCE_LICENSE_DIR, null);
-                processor.setProcessorParameter(PARAM_REFERENCE_COMPONENT_DIR, null);
-                processor.setProcessorParameter(ENV_KONTINUUM_DIR,
-                        environmentConfiguration.getKontinuumDirNormalized());
-                processor.setProcessorParameter(ENV_KONTINUUM_PROCESSORS_DIR,
-                        environmentConfiguration.getKontinuumProcessorsDirNormalized());
-                processor.setProcessorParameter(ENV_WORKBENCH_DIR,
-                        environmentConfiguration.getWorkbenchDirNormalized());
-                processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
-                        environmentConfiguration.getMirrorDatabaseDir());
-
-                assetProcessorsMap.computeIfAbsent(assetPlan.getAsset(), k -> new ArrayList<>()).add(processor);
             }
         }
     }
 
     private void addPortfolioDownloadProcessor(AssetPlan assetPlan) {
         Asset asset = assetPlan.getAsset();
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("portfolio-download");
+        MavenProcessor processor = processorCatalog.getProcessorById(PORTFOLIO_DOWNLOAD);
 
         processor.setProcessorParameter(OUTPUT_INVENTORY_DIR, workspace.getStageDirForAsset(asset, Stage.AGGREGATE).toString());
         processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_URL, environmentConfiguration.PORTFOLIO_MANAGER_URL);
@@ -462,7 +466,7 @@ public class Pipeline {
 
 
     private void addEnrichInventoryWithReferenceProcessor(AssetPlan assetPlan, Stage stage, String inputInventory, String referenceInventoryDir) {
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("enrich-inventory-with-reference");
+        MavenProcessor processor = processorCatalog.getProcessorById(ENRICH_INVENTORY_WITH_REFERENCE);
         processor.setStage(stage.name());
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, inputInventory);
@@ -474,7 +478,7 @@ public class Pipeline {
 
     private void addResolveProcessor(AssetPlan assetPlan) {
         Asset asset = assetPlan.getAsset();
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("resolve-inventory");
+        MavenProcessor processor = processorCatalog.getProcessorById(RESOLVE_INVENTORY);
 
         if (assetPlan.isRequireAggregation()) {
             processor.setProcessorParameter(INPUT_INVENTORY_FILE,
@@ -497,7 +501,7 @@ public class Pipeline {
 
     private void addScanProcessor(AssetPlan assetPlan) {
         Asset asset = assetPlan.getAsset();
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("scan-inventory");
+        MavenProcessor processor = processorCatalog.getProcessorById(SCAN_INVENTORY);
 
         if (assetPlan.isRequireResolve()) {
             processor.setProcessorParameter(INPUT_INVENTORY_FILE,
@@ -526,7 +530,7 @@ public class Pipeline {
 
     private void addVulnerabilityEnrichmentProcessor(AssetPlan assetPlan) {
         Asset asset = assetPlan.getAsset();
-        MavenProcessor processor = yamlProcessorCatalog.getProcessorById("enrich-inventory");
+        MavenProcessor processor = processorCatalog.getProcessorById(ENRICH_INVENTORY);
 
         if (assetPlan.isRequireResolve()) {
             processor.setProcessorParameter(INPUT_INVENTORY_FILE,

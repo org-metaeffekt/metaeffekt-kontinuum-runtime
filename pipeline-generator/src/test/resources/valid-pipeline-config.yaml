@@ -2,6 +2,7 @@
 # The compiler reads this file and generates a GitLab CI child pipeline (or local execution plan).
 projectProperties:
   project:
+    id: "metaeffekt-examples"
     name: "metaeffekt-gitlab-components"
     version: "1.0.0"
     tenant: "metaeffekt"
@@ -27,23 +28,24 @@ projectProperties:
 # Supported types: VR, VSR, CR, SDA, LD, ILD, CA
 # The compiler derives per-asset processing requirements from these types.
 reports:
-  - assetId: "alacritty-0.17.0"
+  - assetIds: ["alacritty-0.17.0"]
     types: ["VR", "LD"]
     organization: "metaeffekt"
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"
     watermark: "Sample"
-  - assetId: "spdx"
+    language: "en"
+  - assetIds: ["spdx"]
     types: ["CR"]
     organization: "metaeffekt"
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"
     watermark: "Sample"
+    language: "de"
 
 # Dashboards define which assets should have vulnerability dashboards generated.
 dashboards:
-  - assetId: "alacritty-0.17.0"
-  - assetId: "spdx"
+  - assetIds: ["alacritty-0.17.0", "spdx"]
 
 portfolioManager:
   project: "metaeffekt-kontinuum"
@@ -51,8 +53,6 @@ portfolioManager:
 
 # Optional: global pipeline configuration
 options:
-  global:
-    documentLanguage: "en"
   enrichment:
     securityPolicyFile: "policies/security-policy/security-policy.json"
     securityPolicyActiveIds: ["base_configuration"]

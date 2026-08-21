@@ -10,7 +10,10 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Data
 public class PipelineConfiguration {
@@ -27,25 +30,25 @@ public class PipelineConfiguration {
         private Project project;
         private List<Asset> assets;
 
+        public List<Asset> getAllAssets() {
+            if (this.assets == null || this.assets.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return this.assets.stream()
+                    .flatMap(Asset::flattenStream)
+                    .collect(Collectors.toList());
+        }
+
         @Data
         public static class Project {
+            private String id;
             private String name;
             private String version;
             private String tenant;
 
             @Override
             public String toString() {
-                StringBuilder sb = new StringBuilder();
-                if (StringUtils.isNotBlank(getName())) {
-                    sb.append(getName());
-                } else {
-                    sb.append("unnamed-project");
-                }
-
-                if (StringUtils.isNotBlank(getVersion())) {
-                    sb.append("-").append(getVersion());
-                }
-                return sb.toString();
+                return id;
             }
         }
 
@@ -54,6 +57,8 @@ public class PipelineConfiguration {
             private String id;
             private String name;
             private String version;
+
+            private List<Asset> assets;
 
             private String assessmentId;
             private String reference;
@@ -124,6 +129,14 @@ public class PipelineConfiguration {
                 return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getTenant(), assessmentId);
             }
 
+            public Stream<Asset> flattenStream() {
+                Stream<Asset> children = (this.assets == null)
+                        ? Stream.empty()
+                        : this.assets.stream().flatMap(Asset::flattenStream);
+
+                return Stream.concat(Stream.of(this), children);
+            }
+
             @Override
             public String toString() {
                 StringBuilder sb = new StringBuilder();
@@ -143,18 +156,19 @@ public class PipelineConfiguration {
 
     @Data
     public static class Report {
-        private String assetId;
+        private List<String> assetIds;
         private List<String> types;
         private List<String> overviewAdvisors;
         private String watermark;
         private String organization;
         private String classificationRating;
         private String controlRating;
+        private String language = "en";
     }
 
     @Data
     public static class Dashboard {
-        private String assetId;
+        private List<String> assetIds;
     }
 
     @Data
@@ -171,7 +185,6 @@ public class PipelineConfiguration {
 
         @Data
         public static class GlobalOptions{
-            private String documentLanguage = "en";
             private Boolean enableResolve = false;
             private Boolean enableSpdxBom = false;
             private Boolean enableCycloneDxBom = false;

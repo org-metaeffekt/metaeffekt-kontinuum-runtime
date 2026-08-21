@@ -27,7 +27,6 @@ public class PipelineConfigurationLoader {
     private PipelineConfiguration pipelineConfiguration;
 
     public PipelineConfiguration readConfig(File pipelineConfigFile) {
-        isValid = true;
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         try {
             validatePipelineConfigFile(objectMapper.readValue(pipelineConfigFile, PipelineConfiguration.class));
@@ -58,6 +57,7 @@ public class PipelineConfigurationLoader {
         validateReports();
         validateDashboards();
         validatePortfolioManager();
+        validateOptions();
 
         if (!isValid) {
             throw new IllegalStateException("Pipeline configuration contains errors.");
@@ -69,34 +69,29 @@ public class PipelineConfigurationLoader {
         if (project == null) {
             log.error("Project is missing.");
             isValid = false;
-            return;
         }
 
-        if (StringUtils.isBlank(project.getName())) {
-            log.error("Project name is empty.");
+        if (StringUtils.isBlank(project.getId())) {
+            log.error("Project id is missing.");
             isValid = false;
         }
 
-        if (StringUtils.isBlank(project.getVersion())) {
-            log.error("Project version is empty.");
-            isValid = false;
-        }
-
-        if (StringUtils.isBlank(project.getTenant()) && assessmentFieldsRequired(null)) {
+        if (StringUtils.isBlank(project.getTenant()) && assessmentFieldsRequired()) {
             log.error("Project tenant is empty but required for reports or dashboards.");
             isValid = false;
         }
     }
 
     private void validateAssets() {
-        List<Asset> assets = pipelineConfiguration.getProjectProperties().getAssets();
-        if (assets == null || assets.isEmpty()) {
+        List<Asset> topLevelAssets = pipelineConfiguration.getProjectProperties().getAssets();
+        if (topLevelAssets == null || topLevelAssets.isEmpty()) {
             log.error("Assets are missing.");
             isValid = false;
-            return;
         }
 
-        for (Asset asset : assets) {
+        List<Asset> allAssets = getAllAssets();
+
+        for (Asset asset : allAssets) {
             if (asset == null) {
                 log.error("Asset entry is null.");
                 isValid = false;
@@ -107,12 +102,12 @@ public class PipelineConfigurationLoader {
                 isValid = false;
             }
 
-            if (StringUtils.isBlank(asset.getAssessmentId()) && assessmentFieldsRequired(asset)) {
+            if (StringUtils.isBlank(asset.getAssessmentId()) && assessmentFieldsRequiredForAsset(asset)) {
                 log.error("Asset {} requires 'assessmentId' to be set because either reports or dashboards require it.", asset);
                 isValid = false;
             }
 
-            if (StringUtils.isBlank(asset.getContext()) && assessmentFieldsRequired(asset)) {
+            if (StringUtils.isBlank(asset.getContext()) && assessmentFieldsRequiredForAsset(asset)) {
                 log.error("Asset {} requires 'context' to be set because either reports or dashboards require it.", asset);
                 isValid = false;
             }
@@ -129,6 +124,7 @@ public class PipelineConfigurationLoader {
 
             validateMavenResolver(asset);
             validateUrlResolver(asset);
+            validateContainerResolver(asset);
         }
     }
 
@@ -151,19 +147,20 @@ public class PipelineConfigurationLoader {
     }
     
     private void validateUrlResolver(Asset asset) {
-        if (asset.getUrlResolver() == null) {
+        Asset.UrlResolver urlResolver = asset.getUrlResolver();
+        if (urlResolver == null) {
             return;
         }
 
-        if (StringUtils.isNotBlank(asset.getUrlResolver().getUrl())) {
+        if (StringUtils.isNotBlank(urlResolver.getUrl())) {
             try {
-                new URL(asset.getUrlResolver().getUrl());
+                new URL(urlResolver.getUrl());
             } catch (MalformedURLException e) {
                 isValid = false;
                 log.error("Asset {} requires 'urlResolver.url' to contain a valid URL.", asset);
             }
-        } else if (StringUtils.isNotBlank(asset.getUrlResolver().getUrlPattern())) {
-            String urlPattern = asset.getUrlResolver().getUrlPattern();
+        } else if (StringUtils.isNotBlank(urlResolver.getUrlPattern())) {
+            String urlPattern = urlResolver.getUrlPattern();
             if ((urlPattern.contains("${name}") && StringUtils.isBlank(asset.getName()))
                     || (urlPattern.contains("${version}") && StringUtils.isBlank(asset.getVersion()))) {
                 isValid = false;
@@ -175,7 +172,7 @@ public class PipelineConfigurationLoader {
                 if (urlPattern.contains("${version}")) {
                     urlPattern = urlPattern.replace("${version}", asset.getVersion());
                 }
-                asset.getUrlResolver().setUrl(urlPattern);
+                urlResolver.setUrl(urlPattern);
             }
         } else {
             log.error("Asset {} requires 'urlResolver' to contain either a valid 'url' or 'urlPattern'.", asset);
@@ -183,59 +180,83 @@ public class PipelineConfigurationLoader {
         }
     }
 
+    private void validateContainerResolver(Asset asset) {
+        Asset.ContainerResolver containerResolver = asset.getContainerResolver();
+        if (containerResolver == null) {
+            return;
+        }
+
+        if (StringUtils.isBlank(containerResolver.getImage())) {
+            log.error("Asset {} requires 'containerResolver.image' to be set.", asset);
+            isValid = false;
+        }
+
+        if (StringUtils.isBlank(containerResolver.getTag())) {
+            log.error("Asset {} requires 'containerResolver.tag' to be set.", asset);
+            isValid = false;
+        }
+    }
+
     private void validateReports() {
-        List<String> assetIds = getAssets()
+        List<String> assetIds = getAllAssets()
             .stream()
             .map(Asset::getId)
             .toList();
 
+        List<Report> reports = getReports();
+
+        if (reports == null || reports.isEmpty()) {
+            return;
+        }
+
         for (PipelineConfiguration.Report report : getReports()) {
-            if (report == null) {
-                log.error("Report entry is null.");
+            if (report.getAssetIds().isEmpty()) {
+                log.error("A report is missing 'assetIds'.");
                 isValid = false;
                 continue;
             }
 
-            if (StringUtils.isBlank(report.getAssetId()) || !assetIds.contains(report.getAssetId())) {
-                log.error("A report contains an 'assetId' which does not exist: {}", report.getAssetId());
+            if (!new HashSet<>(assetIds).containsAll(report.getAssetIds())) {
+                log.error("A report contains an invalid 'assetIds'.");
                 isValid = false;
             }
 
             if (report.getTypes() == null || report.getTypes().isEmpty()) {
-                log.error("A report with 'assetId': {} contains an empty 'types' list.", report.getAssetId());
+                log.error("A report with 'assetIds': {} contains an empty 'types' list.", report.getAssetIds());
                 isValid = false;
                 continue;
             }
 
             for (String type : report.getTypes()) {
-                if (StringUtils.isBlank(type)) {
-                    log.error("A report with 'assetId': {} contains an empty 'type'.", report.getAssetId());
-                    isValid = false;
-                    continue;
-                }
                 if (!ReportType.allKeys().contains(type)) {
-                    log.error("A report with 'assetId': {} contains an invalid 'type': {}.", report.getAssetId(), type);
+                    log.error("A report with 'assetIds': {} contains an invalid type in 'types': {}.", report.getAssetIds(), type);
                     isValid = false;
                 }
-
             }
         }
     }
 
     private void validateDashboards() {
-        List<String> assetIds = getAssets()
+        List<String> assetIds = getAllAssets()
             .stream()
             .map(Asset::getId)
             .toList();
 
-        for (PipelineConfiguration.Dashboard dashboard : getDashboards()) {
-            if (dashboard == null) {
-                log.error("Dashboard entry is null.");
+        List<Dashboard> dashboards = getDashboards();
+
+        if (dashboards == null || dashboards.isEmpty()) {
+            return;
+        }
+
+        for (PipelineConfiguration.Dashboard dashboard : dashboards) {
+            if (dashboard.getAssetIds().isEmpty()) {
+                log.error("A dashboard is missing 'assetIds'.");
                 isValid = false;
                 continue;
             }
-            if (StringUtils.isBlank(dashboard.getAssetId()) || !new HashSet<>(assetIds).contains(dashboard.getAssetId())) {
-                log.error("A dashboard contains an 'assetId' which does not exist: {}", dashboard.getAssetId());
+
+            if (!new HashSet<>(assetIds).containsAll(dashboard.getAssetIds())) {
+                log.error("A dashboard contains invalid 'assetIds'.");
                 isValid = false;
             }
         }
@@ -259,8 +280,50 @@ public class PipelineConfigurationLoader {
         }
     }
 
-    private boolean assessmentFieldsRequired(Asset asset) {
-        List<Report> reportsRequiringAssessmentFields = new ArrayList<>();
+    private void validateOptions() {
+        if (pipelineConfiguration.getOptions() == null) {
+            if (assessmentFieldsRequired()) {
+                log.error("Pipeline configuration requires 'options' and 'enrichment' to be set because either reports or dashboards require it.");
+                isValid = false;
+                return;
+            }
+            return;
+        }
+
+        validateGlobalOptions();
+        validateEnrichmentOptions();
+    }
+
+    private void validateGlobalOptions() {
+        // Nothing to validate for now
+        return;
+    }
+
+    private void validateEnrichmentOptions() {
+        assert pipelineConfiguration.getOptions() != null;
+        PipelineConfiguration.Options.EnrichmentOptions enrichmentOptions = pipelineConfiguration.getOptions().getEnrichment();
+        if (enrichmentOptions == null) {
+            return;
+        }
+
+        if (StringUtils.isBlank(enrichmentOptions.getSecurityPolicyFile()) && assessmentFieldsRequired()) {
+            log.error("Enrichment Options requires 'securityPolicyFile' to be set because either reports or dashboards require it.");
+            isValid = false;
+        }
+    }
+
+    private boolean assessmentFieldsRequired() {
+        for (Asset asset : getAllAssets()) {
+            if (assessmentFieldsRequiredForAsset(asset)) {
+                 return true;
+            }
+        }
+        return false;
+    }
+
+
+    private boolean assessmentFieldsRequiredForAsset(Asset asset) {
+        List<Report> reportsRequiringAssessmentFields;
         List<Dashboard> dashboardsRequiringAssessmentFields = new ArrayList<>();
 
         if (asset == null) {
@@ -272,12 +335,12 @@ public class PipelineConfigurationLoader {
         } else {
             reportsRequiringAssessmentFields = getReports()
                 .stream()
-                .filter(r -> StringUtils.equals(r.getAssetId(), asset.getId()))
+                .filter(r -> r.getAssetIds().contains(asset.getId()))
                 .filter(r -> hasAssessmentType(r, asset.getId()))
                 .toList();
             dashboardsRequiringAssessmentFields.addAll(getDashboards()
                 .stream()
-                .filter(d -> StringUtils.equals(d.getAssetId(), asset.getId()))
+                .filter(d -> d.getAssetIds().contains(asset.getId()))
                 .toList());
         }
         
@@ -293,7 +356,7 @@ public class PipelineConfigurationLoader {
                 continue;
             }
             if (ASSESSMENT_REPORT_TYPES.contains(ReportType.fromKey(type))) {
-                if (assetId == null || StringUtils.equals(report.getAssetId(), assetId)) {
+                if (assetId == null || report.getAssetIds().contains(assetId)) {
                     return true;
                 }
             }
@@ -301,12 +364,10 @@ public class PipelineConfigurationLoader {
         return false;
     }
 
-    private List<Asset> getAssets() {
-        PipelineConfiguration.ProjectProperties projectProperties = pipelineConfiguration.getProjectProperties();
-        if (projectProperties == null || projectProperties.getAssets() == null) {
-            return Collections.emptyList();
-        }
-        return projectProperties.getAssets();
+    private List<Asset> getAllAssets() {
+        assert pipelineConfiguration != null && pipelineConfiguration.getProjectProperties() != null;
+        return pipelineConfiguration.getProjectProperties().getAllAssets();
+
     }
 
     private List<Report> getReports() {
@@ -322,4 +383,5 @@ public class PipelineConfigurationLoader {
         }
         return pipelineConfiguration.getDashboards();
     }
+
 }

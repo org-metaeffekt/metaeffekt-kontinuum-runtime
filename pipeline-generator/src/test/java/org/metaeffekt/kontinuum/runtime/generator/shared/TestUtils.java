@@ -5,7 +5,28 @@ import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 
 import java.util.List;
 
+import static org.metaeffekt.kontinuum.runtime.generator.shared.TestUtils.TestUtilParams.*;
+
 public class TestUtils {
+
+
+    enum TestUtilParams{
+
+        PROJECT_ID("project-id"),
+        PROJECT_NAME("project-name"),
+        PROJECT_VERSION("project-version"),
+        ASSET_ID("asset-id"),
+        ASSET_NAME("asset-name"),
+        ASSET_VERSION("1.0.0"),
+        ASSET_REFERENCE_INVENTORY("src/test/resources/reference-inventory.xls"),
+        URL_RESOLVER_URL("https://test-url.com");
+
+        final String value;
+
+        TestUtilParams(String value) {
+            this.value = value;
+        }
+    }
 
 
     public static PipelineConfiguration buildMinimalPipelineConfiguration() {
@@ -14,17 +35,18 @@ public class TestUtils {
         PipelineConfiguration.ProjectProperties projectProperties = new PipelineConfiguration.ProjectProperties();
 
         PipelineConfiguration.ProjectProperties.Project project = new PipelineConfiguration.ProjectProperties.Project();
-        project.setName("project-name");
-        project.setVersion("1.0.0");
+        project.setId(PROJECT_ID.value);
+        project.setName(PROJECT_NAME.value);
+        project.setVersion(PROJECT_VERSION.value);
 
         PipelineConfiguration.ProjectProperties.Asset asset = new PipelineConfiguration.ProjectProperties.Asset();
-        asset.setId("asset-id");
-        asset.setName("asset-name");
-        asset.setVersion("1.0.0");
-        asset.setReference("src/test/resources/reference-inventory.xls");
+        asset.setId(ASSET_ID.value);
+        asset.setName(ASSET_NAME.value);
+        asset.setVersion(ASSET_VERSION.value);
+        asset.setReference(ASSET_REFERENCE_INVENTORY.value);
 
         PipelineConfiguration.ProjectProperties.Asset.UrlResolver urlResolver = new PipelineConfiguration.ProjectProperties.Asset.UrlResolver();
-        urlResolver.setUrl("https://test-url.com");
+        urlResolver.setUrl(URL_RESOLVER_URL.value);
 
         asset.setUrlResolver(urlResolver);
         projectProperties.setAssets(List.of(asset));

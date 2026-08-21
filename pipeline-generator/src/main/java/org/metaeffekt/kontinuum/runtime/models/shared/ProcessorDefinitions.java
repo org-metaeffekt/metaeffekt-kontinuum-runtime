@@ -1,12 +1,12 @@
 package org.metaeffekt.kontinuum.runtime.models.shared;
 
-
+import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import java.util.List;
-
+import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public class ProcessorDefinitions {
@@ -20,7 +20,9 @@ public class ProcessorDefinitions {
     }
 
     @Data
-    public static class MavenProcessor extends Processor{
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MavenProcessor extends Processor {
         String description;
         String pomLocation;
         String goal;
@@ -28,10 +30,30 @@ public class ProcessorDefinitions {
         String preScript;
         String postScript;
 
+        public MavenProcessor copy() {
+            MavenProcessor copy = new MavenProcessor();
+            copy.setId(this.getId());
+            copy.setName(this.getName());
+            copy.setStage(this.getStage());
+            copy.setDescription(this.getDescription());
+            copy.setPomLocation(this.getPomLocation());
+            copy.setGoal(this.getGoal());
+            copy.setPreScript(this.getPreScript());
+            copy.setPostScript(this.getPostScript());
+            if (this.getParameters() != null) {
+                List<ProcessorParameter> copiedParams = new ArrayList<>(this.getParameters().size());
+                for (ProcessorParameter parameter : this.getParameters()) {
+                    copiedParams.add(parameter.copy());
+                }
+                copy.setParameters(copiedParams);
+            }
+            return copy;
+        }
+
         public void setProcessorParameter(ProcessorParameterKey key, String value) {
             if (parameters.stream().noneMatch(p -> p.key == key)) {
                 throw new IllegalStateException("The key " + key + " for processor " + id + " required during pipeline " +
-                        "creation does not exist. Consider checking with the processors.yaml.");
+                        "creation does not exist in the processor definition.");
             }
 
             for (ProcessorParameter processorParameter : parameters) {
@@ -43,6 +65,7 @@ public class ProcessorDefinitions {
                 }
             }
         }
+
         public String getPreScript(int indent) {
             return indentScript(preScript, indent);
         }
@@ -61,23 +84,22 @@ public class ProcessorDefinitions {
         public String buildMavenCall() {
             StringBuilder mavenCall = new StringBuilder();
             mavenCall.append("mvn ")
-            .append("-f ").append(pomLocation).append(" ")
-            .append(goal).append(" ");
-            
+                    .append("-f ").append(pomLocation).append(" ")
+                    .append(goal).append(" ");
+
             for (ProcessorParameter parameter : parameters) {
                 if (StringUtils.isNotBlank(parameter.value)) {
                     mavenCall.append("-D").append(parameter.getKey()).append("=")
-                    .append("'").append(parameter.getValue()).append("' ");
+                            .append("'").append(parameter.getValue()).append("' ");
                 }
             }
 
             return mavenCall.toString();
         }
-
     }
 
     @Data
-    public static class StandaloneProcessor extends Processor{
+    public static class StandaloneProcessor extends Processor {
         String script;
 
         public StandaloneProcessor(String id, String name, String stage) {
@@ -88,10 +110,24 @@ public class ProcessorDefinitions {
     }
 
     @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class ProcessorParameter {
         ProcessorParameterKey key;
-        String description;
         Boolean required;
         String value;
+
+        public ProcessorParameter(ProcessorParameterKey key, Boolean required) {
+            this.key = key;
+            this.required = required;
+        }
+
+        public ProcessorParameter copy() {
+            ProcessorParameter copy = new ProcessorParameter();
+            copy.setKey(this.getKey());
+            copy.setRequired(this.getRequired());
+            copy.setValue(this.getValue());
+            return copy;
+        }
     }
 }

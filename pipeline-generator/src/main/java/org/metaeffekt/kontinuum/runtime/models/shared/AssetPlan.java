@@ -41,8 +41,7 @@ public class AssetPlan {
 
     private PipelineConfiguration.ProjectProperties.Asset asset;
 
-    public AssetPlan(PipelineConfiguration.ProjectProperties.Asset asset, PipelineConfiguration pipelineConfiguration,
-                     EnvironmentConfiguration environmentConfiguration) {
+    public AssetPlan(PipelineConfiguration.ProjectProperties.Asset asset, PipelineConfiguration pipelineConfiguration) {
         this.asset = asset;
         requireSpdx = pipelineConfiguration.getOptions().getGlobal().getEnableSpdxBom();
         requireCycloneDx = pipelineConfiguration.getOptions().getGlobal().getEnableCycloneDxBom();
@@ -77,7 +76,7 @@ public class AssetPlan {
 
         evaluateOptions(pipelineConfiguration);
         evaluateDashboards(pipelineConfiguration);
-        evaluateReports(asset.getId(), pipelineConfiguration);
+        evaluateReports(pipelineConfiguration);
         validateAssetPlan(pipelineConfiguration);
     }
 
@@ -97,7 +96,7 @@ public class AssetPlan {
         Optional.ofNullable(pipelineConfiguration.getDashboards())
                 .orElse(Collections.emptyList())
                 .stream()
-                .filter(d -> asset.getId().equals(d.getAssetId()))
+                .filter(d -> d.getAssetIds().contains(asset.getId()))
                 .findAny()
                 .ifPresent(d -> {
                     requireVulnerabilityMirror = true;
@@ -106,11 +105,11 @@ public class AssetPlan {
                 });
     }
 
-    private void evaluateReports(String assetId, PipelineConfiguration pipelineConfiguration) {
+    private void evaluateReports(PipelineConfiguration pipelineConfiguration) {
         List<PipelineConfiguration.Report> reportsForAsset = Optional.ofNullable(pipelineConfiguration.getReports())
                 .orElse(Collections.emptyList())
                 .stream()
-                .filter(r -> assetId.equals(r.getAssetId()))
+                .filter(r -> r.getAssetIds().contains(asset.getId()))
                 .toList();
 
         if (reportsForAsset.isEmpty()) {

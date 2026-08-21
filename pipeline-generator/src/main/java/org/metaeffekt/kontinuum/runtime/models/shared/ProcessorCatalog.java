@@ -8,4 +8,6 @@ public interface ProcessorCatalog {
 
     ProcessorDefinitions.MavenProcessor getProcessorById(String processorId);
 
+    ProcessorDefinitions.MavenProcessor getProcessorById(DefaultProcessorCatalog.ProcessorIds processorId);
+
 }

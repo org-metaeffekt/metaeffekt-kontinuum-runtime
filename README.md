@@ -8,8 +8,7 @@
 
 The repository contains Maven modules responsible for generating CI/CD pipelines dynamically from project configurations:
 
-- **`generator-codegen`**: Code generation utilities for generating model classes and parameter keys from specifications (e.g. `processors.yaml`).
-- **`generator`**: Core engine for parsing configurations and generating CI/CD pipelines.
+- **`pipeline-generator`**: Core engine and models for parsing configurations and generating CI/CD pipelines.
 - **`execution`**: `kontinuum-maven-plugin` providing Maven goal integration for executing pipeline generation.
 - **`container`**: Packaging module for building the runtime Docker container image.
 
