@@ -295,8 +295,21 @@ public class PipelineConfigurationLoader {
     }
 
     private void validateGlobalOptions() {
-        // Nothing to validate for now
-        return;
+        assert pipelineConfiguration.getOptions() != null;
+        PipelineConfiguration.Options.GlobalOptions globalOptions = pipelineConfiguration.getOptions().getGlobal();
+        if (globalOptions == null) {
+            return;
+        }
+
+        if (globalOptions.getEnableResolve() && Objects.nonNull(pipelineConfiguration.getPortfolioManager())) {
+            log.error("Global Options 'enableResolve' can not be set to true if portfolio manager is configured.");
+            isValid = false;
+        }
+
+        if (globalOptions.getEnableScan() && Objects.nonNull(pipelineConfiguration.getPortfolioManager())) {
+            log.error("Global Options 'enableScan' can not be set to true if portfolio manager is configured.");
+            isValid = false;
+        }
     }
 
     private void validateEnrichmentOptions() {

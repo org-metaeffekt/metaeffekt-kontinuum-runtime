@@ -1,0 +1,35 @@
+package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
+
+import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
+import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
+import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
+import org.metaeffekt.kontinuum.runtime.models.shared.ReportType;
+import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
+
+import java.util.Objects;
+
+import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.DOWNLOAD_INDEX;
+import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
+
+public class PreStageHandler implements StageHandler {
+
+    @Override
+    public Stage getStage() {
+        return Stage.PRE;
+    }
+
+    @Override
+    public void process(AssetExecutionContext context) {
+
+        if (context.getConfiguration().requiresVulnerabilityEnrichment()) {
+            addDownloadIndexProcessor(context);
+        }
+    }
+
+    private void addDownloadIndexProcessor(AssetExecutionContext context) {
+        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(DOWNLOAD_INDEX);
+        processor.setProcessorParameter(PARAM_MIRROR_ARCHIVE_URL, context.getEnvironment().VULNERABILITY_MIRROR_URL);
+        processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR, context.getEnvironment().getMirrorDir());
+        context.addProcessor(processor);
+    }
+}

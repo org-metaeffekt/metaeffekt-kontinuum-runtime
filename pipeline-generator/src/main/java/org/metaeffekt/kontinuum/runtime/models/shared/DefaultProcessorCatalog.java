@@ -48,6 +48,7 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
         DOWNLOAD_ASSET("download-asset"),
         DOWNLOAD_DATA_SOURCES("download-data-sources"),
         DOWNLOAD_INDEX("download-index"),
+        DOWNLOAD_MAVEN_ARTIFACT("download-maven-artifact"),
         ENRICH_ADVISORS("enrich-advisors"),
         ENRICH_INVENTORY("enrich-inventory"),
         ENRICH_WITH_REFERENCE("enrich-with-reference"),
@@ -133,6 +134,7 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
         list.add(downloadAsset());
         list.add(downloadDataSources());
         list.add(downloadIndex());
+        list.add(downloadMavenArtifact());
         list.add(enrichAdvisors());
         list.add(enrichInventory());
         list.add(enrichWithReference());
@@ -371,6 +373,15 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
             processorParameter(PARAM_MIRROR_ARCHIVE_URL, true),
             processorParameter(PARAM_MIRROR_ARCHIVE_PASSWORD, false),
             processorParameter(PARAM_MIRROR_ARCHIVE_USERNAME, false)
+        );
+    }
+    private static ProcessorDefinitions.MavenProcessor downloadMavenArtifact() {
+        return mavenProcessor(DOWNLOAD_MAVEN_ARTIFACT, "Download Maven Artifact", "FETCH", "fetch/fetch_download-maven-artifact.xml", "process-resources", "This processor downloads a remote Maven artifact specified by its group ID, artifact ID, and version from Maven Central or a custom repository URL into a target directory.",
+            processorParameter(OUTPUT_ASSET_DIR, true),
+            processorParameter(PARAM_ARTIFACT_ID, true),
+            processorParameter(PARAM_GROUP_ID, true),
+            processorParameter(PARAM_VERSION, true),
+            processorParameter(PARAM_REPO_URL, false)
         );
     }
     private static ProcessorDefinitions.MavenProcessor enrichAdvisors() {

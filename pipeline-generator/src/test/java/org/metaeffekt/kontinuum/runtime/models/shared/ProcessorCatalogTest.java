@@ -33,6 +33,7 @@ public class ProcessorCatalogTest {
                 DOWNLOAD_ASSET,
                 DOWNLOAD_DATA_SOURCES,
                 DOWNLOAD_INDEX,
+                DOWNLOAD_MAVEN_ARTIFACT,
                 ENRICH_ADVISORS,
                 ENRICH_INVENTORY,
                 ENRICH_WITH_REFERENCE,

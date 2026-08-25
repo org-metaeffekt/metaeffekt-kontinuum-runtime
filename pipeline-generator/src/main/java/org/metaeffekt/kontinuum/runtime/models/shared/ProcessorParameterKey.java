@@ -192,6 +192,7 @@ public enum ProcessorParameterKey {
     PARAM_REFERENCE_LICENSE_DIR("param.reference.license.dir"),
     PARAM_REFERENCE_LICENSE_PATH("param.reference.license.path"),
     PARAM_REMOVE_GHSA_UNREVIEWED("param.remove.ghsa.unreviewed"),
+    PARAM_REPO_URL("param.repo.url"),
     PARAM_REPORT_PERIOD_SINCE("param.report.period.since"),
     PARAM_REPORT_PERIOD_UNTIL("param.report.period.until"),
     PARAM_SECURITY_POLICY_ACTIVE_IDS("param.security.policy.active.ids"),

@@ -9,9 +9,7 @@ import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -23,6 +21,28 @@ public class PipelineConfiguration {
     private List<Dashboard> dashboards;
     private PortfolioManager portfolioManager;
     private Options options;
+
+    public boolean requiresVulnerabilityEnrichment() {
+        return reports.stream()
+                .map(Report::getTypes)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .map(ReportType::fromKey)
+                .anyMatch(ReportType::requiresVulnerabilityEnrichment);
+    }
+
+    public boolean requiresLicenseScan() {
+        if (options.getGlobal().getEnableScan()) {
+            return true;
+        }
+
+        return reports.stream()
+                .map(Report::getTypes)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .map(ReportType::fromKey)
+                .anyMatch(ReportType::requiresScan);
+    }
 
     @Data
     public static class ProjectProperties {
@@ -186,6 +206,7 @@ public class PipelineConfiguration {
         @Data
         public static class GlobalOptions{
             private Boolean enableResolve = false;
+            private Boolean enableScan = false;
             private Boolean enableSpdxBom = false;
             private Boolean enableCycloneDxBom = false;
         }
