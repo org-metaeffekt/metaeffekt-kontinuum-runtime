@@ -46,19 +46,18 @@ public abstract class EnvironmentConfiguration {
         return KontinuumUtils.normalizeFilePath(WORKBENCH_DIR, PORTFOLIO_MANAGER_CLIENT_KEYSTORE_FILE);
     }
 
-    public String getMirrorDatabaseDir() {
+    public String getMirrorDatabaseDirNormalized() {
         return KontinuumUtils.normalizeDir(VULNERABILITY_MIRROR_DIR, ".database");
     }
 
-    public String getCorrelationDir() {
+    public String getCorrelationDirNormalized() {
         return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "correlations/");
     }
 
     public String getDescriptorsDirNormalized() { return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "descriptors/"); }
 
-    public String getAssessmentsDir() {
-        return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "assessments/");
-    }
+
+    public String getScriptsDirNormalized() { return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "scripts/"); }
 
     public String getWorkbenchDirNormalized() {
         return KontinuumUtils.normalizeDir(WORKBENCH_DIR);

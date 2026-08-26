@@ -46,6 +46,7 @@
                                         <argument>${ae.core.version}</argument>
                                         <argument>${ae.artifact.analysis.version}</argument>
                                         <argument>${ae.portfolio.manager.version}</argument>
+                                        <argument>${ae.kontinuum.version}</argument>
                                         <argument>${docker.image.tag}</argument>
                                         <argument>${docker.username}</argument>
                                         <argument>${docker.access.token}</argument>

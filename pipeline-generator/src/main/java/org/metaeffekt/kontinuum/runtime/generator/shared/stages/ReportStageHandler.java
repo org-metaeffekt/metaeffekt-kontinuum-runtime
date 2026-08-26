@@ -68,7 +68,7 @@ public class ReportStageHandler implements StageHandler {
                 processor.setProcessorParameter(PARAM_ASSESSMENT_CONTEXT,
                         asset.getContext());
                 processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
-                        context.getEnvironment().getMirrorDatabaseDir());
+                        context.getEnvironment().getMirrorDatabaseDirNormalized());
 
                 context.addProcessor(processor);
             }
@@ -156,7 +156,7 @@ public class ReportStageHandler implements StageHandler {
         processor.setProcessorParameter(ENV_WORKBENCH_DIR,
                 context.getEnvironment().getWorkbenchDirNormalized());
         processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
-                context.getEnvironment().getMirrorDatabaseDir());
+                context.getEnvironment().getMirrorDatabaseDirNormalized());
 
         context.addProcessor(processor);
     }

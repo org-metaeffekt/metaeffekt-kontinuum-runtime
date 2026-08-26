@@ -20,11 +20,11 @@ strip_quotes() {
 readonly AE_CORE_VERSION="$(strip_quotes "$1")"
 readonly AE_ARTIFACT_ANALYSIS_VERSION="$(strip_quotes "$2")"
 readonly AE_PORTFOLIO_MANAGER_VERSION="$(strip_quotes "$3")"
-readonly DOCKER_TAG="$(strip_quotes "$4")"
-readonly DOCKER_USERNAME="$(strip_quotes "$5")"
-readonly DOCKER_ACCESS_TOKEN="$(strip_quotes "$6")"
-readonly DOCKER_REGISTRY="$(strip_quotes "$7")"
-readonly AE_KONTINUUM_VERSION="$(strip_quotes "${AE_KONTINUUM_VERSION:-HEAD-SNAPSHOT}")"
+readonly AE_KONTINUUM_VERSION="$(strip_quotes "$4")"
+readonly DOCKER_TAG="$(strip_quotes "$5")"
+readonly DOCKER_USERNAME="$(strip_quotes "$6")"
+readonly DOCKER_ACCESS_TOKEN="$(strip_quotes "$7")"
+readonly DOCKER_REGISTRY="$(strip_quotes "$8")"
 
 # Function to check all required input argument variables
 check_args() {
@@ -40,6 +40,10 @@ check_args() {
     fi
     if [[ -z "$AE_PORTFOLIO_MANAGER_VERSION" ]]; then
         echo "Error: AE_PORTFOLIO_MANAGER_VERSION (argument 3) is missing or empty." >&2
+        missing=1
+    fi
+    if [[ -z "$AE_KONTINUUM_VERSION" ]]; then
+        echo "Error: AE_KONTINUUM_VERSION (argument 8) is missing or empty." >&2
         missing=1
     fi
     if [[ -z "$DOCKER_TAG" ]]; then
@@ -61,7 +65,7 @@ check_args() {
 
     if [[ $missing -ne 0 ]]; then
         echo "" >&2
-        echo "Usage: $0 <AE_CORE_VERSION> <AE_ARTIFACT_ANALYSIS_VERSION> <AE_PORTFOLIO_MANAGER_VERSION> <DOCKER_TAG> <DOCKER_USERNAME> <DOCKER_ACCESS_TOKEN> <DOCKER_REGISTRY>" >&2
+        echo "Usage: $0 <AE_CORE_VERSION> <AE_ARTIFACT_ANALYSIS_VERSION> <AE_PORTFOLIO_MANAGER_VERSION> <AE_KONTINUUM_VERSION> <DOCKER_TAG> <DOCKER_USERNAME> <DOCKER_ACCESS_TOKEN> <DOCKER_REGISTRY>" >&2
         exit 1
     fi
 }

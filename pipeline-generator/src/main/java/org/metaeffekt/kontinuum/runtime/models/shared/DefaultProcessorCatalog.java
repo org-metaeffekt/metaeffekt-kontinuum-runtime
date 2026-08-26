@@ -466,10 +466,9 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
     private static ProcessorDefinitions.MavenProcessor executeKotlinScript() {
         return mavenProcessor(EXECUTE_KOTLIN_SCRIPT, "Execute Kotlin Script", "util/util_execute-kotlin-script.xml", "This process executes a specified kotlin script file. Instead of calling the `kotlin` CLI directly, the script is executed via the `ae-kotlin-scripting-maven-plugin` (akin to `util_transform-inventories`). The script is evaluated as an `InventoryFilterScript` and receives its arguments as a named parameter map, accessed in the script via the implicit `params` receiver.",
             processorParameter(INPUT_KOTLIN_SCRIPT_FILE, true),
-            processorParameter(INPUT_PROPERTIES_FILE, false),
-            processorParameter(INPUT_WORKSPACE_DIR, false),
-            processorParameter(OUTPUT_ENV_FILE, false),
-            processorParameter(PARAM_CURL_ARGUMENTS, false)
+            processorParameter(INPUT_INVENTORY_FILE, true),
+            processorParameter(OUTPUT_INVENTORY_FILE, true),
+            processorParameter(PARAM_ASSET_ID, false)
         );
     }
     private static ProcessorDefinitions.MavenProcessor generateReportSvg() {

@@ -33,7 +33,7 @@ public class AdviseStageHandler implements StageHandler {
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
                 context.getStageDirForAsset(Stage.ADVISE).appendAssetInventory());
         processor.setProcessorParameter(PARAM_CORRELATION_DIR,
-                context.getEnvironment().getCorrelationDir());
+                context.getEnvironment().getCorrelationDirNormalized());
 
         EnrichmentOptions enrichment = context.getConfiguration().getOptions().getEnrichment();
 
@@ -63,7 +63,7 @@ public class AdviseStageHandler implements StageHandler {
                 asset.getContextDir(project, context.getEnvironment().getWorkbenchDirNormalized()));
 
         processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
-                context.getEnvironment().getMirrorDatabaseDir());
+                context.getEnvironment().getMirrorDatabaseDirNormalized());
 
         try {
             processor.setProcessorParameter(OUTPUT_TMP_DIR, context.getStageDirForAsset(Stage.ADVISE).appendVulnerabilityEnrichmentTempDir());

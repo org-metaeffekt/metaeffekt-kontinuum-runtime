@@ -92,13 +92,13 @@ public class GitlabPipeline {
             for (Processor processor : entry.getValue()) {
 
                 StringBuilder job = new StringBuilder();
-                job.append(generateJobName(processor, entry.getKey().toString())).append(":").append(System.lineSeparator());
+                job.append(generateJobName(processor, entry.getKey().toString(), processor.getStage())).append(":").append(System.lineSeparator());
                 job.append("  ").append("stage: ").append(processor.getStage().name()).append(System.lineSeparator());
                 job.append("  ").append("image: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(System.lineSeparator());
 
                 if (lastProcessor != null && Objects.equals(lastProcessor.getStage().name(), processor.getStage().name())) {
                     job.append("  ").append("needs: [")
-                            .append(generateJobName(lastProcessor, entry.getKey().toString()))
+                            .append(generateJobName(lastProcessor, entry.getKey().toString(), processor.getStage()))
                             .append("]").append(System.lineSeparator());
                 }
 
@@ -196,11 +196,13 @@ public class GitlabPipeline {
 
     }
 
-    private String generateJobName(Processor processor, String assetName) {
+    private String generateJobName(Processor processor, String assetName, Stage stage) {
         StringBuilder processorName =  new StringBuilder()
                 .append(assetName)
                 .append("-")
-                .append(processor.getId());
+                .append(processor.getId())
+                .append("-")
+                .append(stage.name());
 
         if (processor instanceof MavenProcessor mavenProcessor
                 && processor.getId().equals("create-document")) {
