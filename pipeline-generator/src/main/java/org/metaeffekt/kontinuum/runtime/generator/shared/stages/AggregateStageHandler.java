@@ -21,23 +21,22 @@ public class AggregateStageHandler implements StageHandler {
 
         // Use portfolio manager inventory from previous stage
         if (Objects.nonNull(context.getConfiguration().getPortfolioManager())) {
-            handleInventoryReferenceEnrichment(context, context.getPortfolioManagerReferenceInventoryPath());
+            handleInventoryReferenceEnrichment(context, context.getPortfolioManagerReferenceInventoryDir());
         } else {
             handleInventoryReferenceEnrichment(context, context.getAsset().getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized()));
         }
-
-        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
-        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.AGGREGATE).toString());
     }
 
     private void handleInventoryReferenceEnrichment(AssetExecutionContext context, String referenceInventoryDir) {
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(ENRICH_INVENTORY_WITH_REFERENCE);
-        processor.setStage(Stage.AGGREGATE.name());
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(ENRICH_WITH_REFERENCE);
+        processor.setStage(Stage.AGGREGATE);
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
         processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, referenceInventoryDir);
+        processor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
 
-
+        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
+        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.AGGREGATE).toString());
         context.addProcessor(processor);
     }
 }

@@ -69,6 +69,7 @@ public class PipelineConfigurationLoader {
         if (project == null) {
             log.error("Project is missing.");
             isValid = false;
+            return;
         }
 
         if (StringUtils.isBlank(project.getId())) {
@@ -302,13 +303,11 @@ public class PipelineConfigurationLoader {
         }
 
         if (globalOptions.getEnableResolve() && Objects.nonNull(pipelineConfiguration.getPortfolioManager())) {
-            log.error("Global Options 'enableResolve' can not be set to true if portfolio manager is configured.");
-            isValid = false;
+            log.warn("Global Options 'enableResolve' is set to true even though portfolio manager is configured.");
         }
 
         if (globalOptions.getEnableScan() && Objects.nonNull(pipelineConfiguration.getPortfolioManager())) {
-            log.error("Global Options 'enableScan' can not be set to true if portfolio manager is configured.");
-            isValid = false;
+            log.warn("Global Options 'enableScan' is set to true even though portfolio manager is configured.");
         }
     }
 

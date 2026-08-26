@@ -93,9 +93,9 @@
                         </goals>
                         <configuration>
                             <files>
-                                <file>${project.basedir}/../../.project.properties</file>
-                                <file>${project.basedir}/../.project.properties</file>
-                                <file>${project.basedir}/.project.properties</file>
+                                <file>${project.basedir}/../../.local.properties</file>
+                                <file>${project.basedir}/../.local.properties</file>
+                                <file>${project.basedir}/.local.properties</file>
                             </files>
                             <quiet>true</quiet>
                         </configuration>

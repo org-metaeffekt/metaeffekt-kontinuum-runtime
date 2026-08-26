@@ -43,7 +43,8 @@ public class ReportStageHandler implements StageHandler {
                 }
 
                 EnrichmentOptions enrichmentOptions = context.getConfiguration().getOptions().getEnrichment();
-                MavenProcessor processor = context.getProcessorCatalog().getProcessorById(CREATE_DASHBOARD);
+                MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_DASHBOARD);
+                processor.setStage(Stage.REPORT);
                 PipelineConfiguration.ProjectProperties.Project project = context.getConfiguration()
                         .getProjectProperties()
                         .getProject();
@@ -103,21 +104,12 @@ public class ReportStageHandler implements StageHandler {
     }
 
     private void addReportProcessor(AssetExecutionContext context, Report report, String type) {
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(CREATE_DOCUMENT);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_DOCUMENT);
+        processor.setStage(Stage.REPORT);
         ReportType reportType = ReportType.fromKey(type);
         Asset asset = context.getAsset();
 
-        if (ReportType.requiresScan(reportType)) {
-            processor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.SCAN).toString());
-        } else if (ReportType.requiresVulnerabilityEnrichment(reportType)) {
-            processor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.ADVISE).toString());
-        } else if (context.getPlan().isRequireResolve()) {
-            processor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.RESOLVE).toString());
-        } else if (context.getPlan().isRequireAggregation()) {
-            processor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.AGGREGATE).toString());
-        } else {
-            processor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.PREPARE).toString());
-        }
+        processor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getCurrentInventoryDir());
 
         if (ReportType.fromKey(type).equals(ReportType.CERT_REPORT)) {
             processor.setProcessorParameter(PARAM_OVERVIEW_ADVISORS, "[\"CERT_FR\"]");

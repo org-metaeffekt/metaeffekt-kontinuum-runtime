@@ -4,6 +4,6 @@ metaeffekt-kontinuum
 **/target/
 **/*.iml
 
-**/.project.properties
+**/.local.properties
 buildkitd.toml
 **/buildkitd.toml

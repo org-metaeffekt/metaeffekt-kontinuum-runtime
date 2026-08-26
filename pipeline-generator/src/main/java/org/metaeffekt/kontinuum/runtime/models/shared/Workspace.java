@@ -38,7 +38,7 @@ public class Workspace {
         }
 
         public String appendPortfolioManagerReferenceDir() {
-            return dir + assetName + "portfolio-manager/";
+            return dir + "portfolio-manager/";
         }
 
         public String appendPortfolioManagerReferenceInventory() {

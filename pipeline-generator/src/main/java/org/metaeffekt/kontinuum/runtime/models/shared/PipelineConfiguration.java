@@ -22,6 +22,10 @@ public class PipelineConfiguration {
     private PortfolioManager portfolioManager;
     private Options options;
 
+    public boolean requiresResolve() {
+        return options.getGlobal().enableResolve;
+    }
+
     public boolean requiresVulnerabilityEnrichment() {
         return reports.stream()
                 .map(Report::getTypes)
@@ -34,6 +38,10 @@ public class PipelineConfiguration {
     public boolean requiresLicenseScan() {
         if (options.getGlobal().getEnableScan()) {
             return true;
+        }
+
+        if (Objects.nonNull(portfolioManager)) {
+            return false;
         }
 
         return reports.stream()

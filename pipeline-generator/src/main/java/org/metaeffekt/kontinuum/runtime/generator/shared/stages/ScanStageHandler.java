@@ -4,6 +4,8 @@ import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
+import java.util.Objects;
+
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.SCAN_INVENTORY;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 
@@ -19,13 +21,11 @@ public class ScanStageHandler implements StageHandler {
         if (context.getConfiguration().requiresLicenseScan()) {
             handleLicenseScan(context);
         }
-
-        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.SCAN).appendAssetInventory());
-        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.SCAN).toString());
     }
 
     public void handleLicenseScan(AssetExecutionContext context) {
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(SCAN_INVENTORY);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(SCAN_INVENTORY);
+        processor.setStage(Stage.SCAN);
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
@@ -44,6 +44,8 @@ public class ScanStageHandler implements StageHandler {
             throw new RuntimeException(e);
         }
 
+        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.SCAN).appendAssetInventory());
+        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.SCAN).toString());
         context.addProcessor(processor);
     }
 }

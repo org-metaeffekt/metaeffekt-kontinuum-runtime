@@ -22,14 +22,12 @@ public class AdviseStageHandler implements StageHandler {
         if (context.getConfiguration().requiresVulnerabilityEnrichment()) {
             handleVulnerabilityEnrichment(context);
         }
-
-        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.ADVISE).appendAssetInventory());
-        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.ADVISE).toString());
     }
 
     public void handleVulnerabilityEnrichment(AssetExecutionContext context) {
         Asset asset = context.getAsset();
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(ENRICH_INVENTORY);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(ENRICH_INVENTORY);
+        processor.setStage(Stage.ADVISE);
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
@@ -73,6 +71,8 @@ public class AdviseStageHandler implements StageHandler {
             throw new RuntimeException(e);
         }
 
+        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.ADVISE).appendAssetInventory());
+        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.ADVISE).toString());
         context.addProcessor(processor);
     }
 }

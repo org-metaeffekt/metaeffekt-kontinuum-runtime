@@ -27,7 +27,9 @@ public class PreStageHandler implements StageHandler {
     }
 
     private void addDownloadIndexProcessor(AssetExecutionContext context) {
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(DOWNLOAD_INDEX);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(DOWNLOAD_INDEX);
+        processor.setStage(Stage.PRE);
+
         processor.setProcessorParameter(PARAM_MIRROR_ARCHIVE_URL, context.getEnvironment().VULNERABILITY_MIRROR_URL);
         processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR, context.getEnvironment().getMirrorDir());
         context.addProcessor(processor);

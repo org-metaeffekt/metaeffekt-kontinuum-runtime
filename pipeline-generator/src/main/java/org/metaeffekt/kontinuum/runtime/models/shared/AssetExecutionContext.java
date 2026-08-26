@@ -42,7 +42,7 @@ public class AssetExecutionContext {
      * Tracks the path of the reference inventory pulled from the portfolio manager if active.
      */
     @Setter
-    private String portfolioManagerReferenceInventoryPath;
+    private String portfolioManagerReferenceInventoryDir;
 
     public AssetExecutionContext(Asset asset,
                                  PipelineConfiguration configuration,

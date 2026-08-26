@@ -63,14 +63,14 @@ public class LocalPipeline {
             for (Processor processor : entry.getValue()) {
                 ProcessorStep step = new ProcessorStep(processor, assetName);
 
-                scriptDocument.append("# --- ").append(step.processor.getStage()).append(": ")
+                scriptDocument.append("# --- ").append(step.processor.getStage().name()).append(": ")
                         .append(step.processor.getId()).append(" (").append(step.assetName).append(") ----")
                         .append(System.lineSeparator());
 
                 if (step.processor instanceof MavenProcessor mavenProcessor) {
                     scriptDocument.append(generateMavenScriptBlock(mavenProcessor));
                 } else if (step.processor instanceof StandaloneProcessor standaloneProcessor) {
-                    scriptDocument.append(standaloneProcessor.getScript()).append(System.lineSeparator());
+                    scriptDocument.append(generateStandaloneScriptBlock(standaloneProcessor));
                 }
             }
         }
@@ -85,8 +85,8 @@ public class LocalPipeline {
 
         script.append("mvn -f ")
                 .append(localConfiguration.getKontinuumProcessorsDirNormalized())
-                .append(processor.getPomLocation()).append(" ")
-                .append(processor.getGoal()).append(" \\").append(System.lineSeparator());
+                .append(processor.getPomLocation())
+                .append(" process-resources").append(" \\").append(System.lineSeparator());
 
         List<ProcessorParameter> nonBlankParams = processor.getParameters().stream()
                 .filter(p -> StringUtils.isNotBlank(p.getValue()))
@@ -106,6 +106,18 @@ public class LocalPipeline {
         }
 
         return script.toString();
+    }
+
+    private String generateStandaloneScriptBlock(StandaloneProcessor processor) {
+        StringBuilder script = new StringBuilder();
+        script.append("sh ")
+                .append(localConfiguration.getKontinuumProcessorsDirNormalized())
+                .append(processor.getScriptLocation());
+
+        for (ProcessorParameter parameter : processor.getParameters()) {
+            script.append(" ").append(parameter.getValue());
+        }
+        return script.append(System.lineSeparator()).toString();
     }
 
     private record ProcessorStep(Processor processor, String assetName) {}

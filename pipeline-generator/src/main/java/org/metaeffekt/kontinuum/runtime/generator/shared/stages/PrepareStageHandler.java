@@ -2,6 +2,7 @@ package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
+import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
@@ -20,6 +21,8 @@ public class PrepareStageHandler implements StageHandler {
     @Override
     public void process(AssetExecutionContext context) {
 
+        handleInventoryCopy(context);
+
         if (context.getConfiguration().getOptions().getGlobal().getEnableCycloneDxBom()) {
             handleInventoryToCycloneDxConversion(context);
         }
@@ -32,15 +35,24 @@ public class PrepareStageHandler implements StageHandler {
             handlePortfolioUpload(context);
             handlePortfolioDownload(context);
         }
+    }
 
-        context.setPortfolioManagerReferenceInventoryPath(context.getStageDirForAsset(Stage.PREPARE).appendPortfolioManagerReferenceInventory());
+    private void handleInventoryCopy(AssetExecutionContext context) {
+        ProcessorDefinitions.StandaloneProcessor standaloneProcessor = (ProcessorDefinitions.StandaloneProcessor) context.getProcessorCatalog().getProcessorById(COPY_INVENTORY);
+        standaloneProcessor.setStage(Stage.PREPARE);
+
+        standaloneProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        standaloneProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
+
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.PREPARE).toString());
         context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
+        context.addProcessor(standaloneProcessor);
     }
 
     private void handleInventoryToCycloneDxConversion(AssetExecutionContext context) {
         Asset asset = context.getAsset();
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(INVENTORY_TO_CYCLONEDX);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(INVENTORY_TO_CYCLONEDX);
+        processor.setStage(Stage.PREPARE);
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
         processor.setProcessorParameter(OUTPUT_BOM_FILE, context.getStageDirForAsset(Stage.PREPARE).appendCycloneDxFile("JSON"));
@@ -54,7 +66,8 @@ public class PrepareStageHandler implements StageHandler {
 
     private void handleInventoryToSpdxConversion(AssetExecutionContext context) {
         Asset asset = context.getAsset();
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(INVENTORY_TO_SPDX);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(INVENTORY_TO_SPDX);
+        processor.setStage(Stage.PREPARE);
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
         processor.setProcessorParameter(OUTPUT_BOM_FILE, context.getStageDirForAsset(Stage.PREPARE).appendSpdxFile("JSON"));
@@ -68,7 +81,8 @@ public class PrepareStageHandler implements StageHandler {
 
     private void handlePortfolioUpload(AssetExecutionContext context) {
         Asset asset = context.getAsset();
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(PORTFOLIO_UPLOAD);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(PORTFOLIO_UPLOAD);
+        processor.setStage(Stage.PREPARE);
 
         processor.setProcessorParameter(INPUT_FILE, context.getCurrentInventoryPath());
         processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_URL, context.getEnvironment().PORTFOLIO_MANAGER_URL);
@@ -86,9 +100,10 @@ public class PrepareStageHandler implements StageHandler {
     }
 
     private void handlePortfolioDownload(AssetExecutionContext context) {
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(PORTFOLIO_DOWNLOAD);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(PORTFOLIO_DOWNLOAD);
+        processor.setStage(Stage.PREPARE);
 
-        processor.setProcessorParameter(OUTPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.PREPARE).toString());
+        processor.setProcessorParameter(OUTPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.PREPARE).appendPortfolioManagerReferenceDir());
         processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_URL, context.getEnvironment().PORTFOLIO_MANAGER_URL);
         processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_TOKEN, context.getEnvironment().PORTFOLIO_MANAGER_TOKEN);
         processor.setProcessorParameter(PARAM_PROJECT_NAME, context.getConfiguration().getPortfolioManager().getProject());
@@ -103,7 +118,7 @@ public class PrepareStageHandler implements StageHandler {
         String targetInventoryPath = context.getStageDirForAsset(Stage.PREPARE).appendPortfolioManagerReferenceInventory();
 
         StringBuilder postScript = new StringBuilder();
-        postScript.append("find ").append(context.getStageDirForAsset(Stage.PREPARE).toString()).append(" -type f -name \"*.zip\" -print0 | while IFS= read -r -d '' zip_file; do").append(System.lineSeparator());
+        postScript.append("find ").append(context.getStageDirForAsset(Stage.PREPARE).appendPortfolioManagerReferenceDir()).append(" -type f -name \"*.zip\" -print0 | while IFS= read -r -d '' zip_file; do").append(System.lineSeparator());
         postScript.append("    zip_dir=$(dirname \"$zip_file\")").append(System.lineSeparator());
         postScript.append("    unzip -q -j \"$zip_file\" \"*_report.xlsx\" \"*_report.xls\" -d \"$zip_dir\" || true").append(System.lineSeparator());
         postScript.append("    extracted_file=$(find \"$zip_dir\" -maxdepth 1 -type f \\( -name \"*_report.xlsx\" -o -name \"*_report.xls\" \\) | head -n 1)").append(System.lineSeparator());
@@ -113,6 +128,10 @@ public class PrepareStageHandler implements StageHandler {
         postScript.append("done").append(System.lineSeparator());
 
         processor.setPostScript(postScript.toString());
+
+        context.setPortfolioManagerReferenceInventoryDir(context.getStageDirForAsset(Stage.PREPARE).appendPortfolioManagerReferenceDir());
+        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.PREPARE).toString());
+        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
         context.addProcessor(processor);
     }
 }

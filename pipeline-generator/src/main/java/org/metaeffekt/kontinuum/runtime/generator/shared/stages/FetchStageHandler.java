@@ -32,7 +32,8 @@ public class FetchStageHandler implements StageHandler {
 
     private void handleUrlResolver(AssetExecutionContext context) {
         Asset asset = context.getAsset();
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(DOWNLOAD_ASSET);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(DOWNLOAD_ASSET);
+        processor.setStage(Stage.FETCH);
         processor.setProcessorParameter(PARAM_ASSET_URL, asset.getUrlResolver().getUrl());
         processor.setProcessorParameter(OUTPUT_ASSET_DIR, context.getStageDirForAsset(Stage.FETCH).toString());
 
@@ -44,7 +45,8 @@ public class FetchStageHandler implements StageHandler {
         Asset asset = context.getAsset();
         Asset.MavenResolver mavenResolver = asset.getMavenResolver();
 
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(DOWNLOAD_MAVEN_ARTIFACT);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(DOWNLOAD_MAVEN_ARTIFACT);
+        processor.setStage(Stage.FETCH);
         processor.setProcessorParameter(PARAM_GROUP_ID, mavenResolver.getGroupId());
         processor.setProcessorParameter(PARAM_ARTIFACT_ID, mavenResolver.getArtifactId());
         processor.setProcessorParameter(PARAM_VERSION, mavenResolver.getArtifactVersion());
@@ -57,7 +59,8 @@ public class FetchStageHandler implements StageHandler {
 
     private void handleContainerResolver(AssetExecutionContext context) {
         Asset asset = context.getAsset();
-        MavenProcessor processor = context.getProcessorCatalog().getProcessorById(SAVE_INSPECT_IMAGE);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(SAVE_INSPECT_IMAGE);
+        processor.setStage(Stage.FETCH);
 
         processor.setProcessorParameter(OUTPUT_DIR, context.getStageDirForAsset(Stage.FETCH).toString());
         processor.setProcessorParameter(PARAM_IMAGE_ID, asset.getContainerResolver().getImage());

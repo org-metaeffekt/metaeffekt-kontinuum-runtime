@@ -52,7 +52,7 @@ public class GitlabPipeline {
 
         assetProcessorsMap.values().stream()
             .flatMap(List::stream)
-            .forEach(p -> requiredStages.add(p.getStage()));
+            .forEach(p -> requiredStages.add(p.getStage().name()));
 
         for (String stage : requiredStages.stream()
                 .sorted(Comparator.comparingInt(s -> Stage.valueOf(s).ordinal()))
@@ -93,10 +93,10 @@ public class GitlabPipeline {
 
                 StringBuilder job = new StringBuilder();
                 job.append(generateJobName(processor, entry.getKey().toString())).append(":").append(System.lineSeparator());
-                job.append("  ").append("stage: ").append(processor.getStage()).append(System.lineSeparator());
+                job.append("  ").append("stage: ").append(processor.getStage().name()).append(System.lineSeparator());
                 job.append("  ").append("image: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(System.lineSeparator());
 
-                if (lastProcessor != null && Objects.equals(lastProcessor.getStage(), processor.getStage())) {
+                if (lastProcessor != null && Objects.equals(lastProcessor.getStage().name(), processor.getStage().name())) {
                     job.append("  ").append("needs: [")
                             .append(generateJobName(lastProcessor, entry.getKey().toString()))
                             .append("]").append(System.lineSeparator());
@@ -121,8 +121,7 @@ public class GitlabPipeline {
                         job.append(mavenProcessor.getPostScript(6)).append(System.lineSeparator());
                     }
                 } else if (processor instanceof StandaloneProcessor standaloneProcessor) {
-                    String indent = "      ";
-                    job.append(indent).append(standaloneProcessor.getScript().replace("\n", "\n" + indent)).append(System.lineSeparator());
+                    job.append(generateStandaloneScriptBlock(standaloneProcessor));
                 }
 
                 gitlabPipelineDocument.append(job).append(System.lineSeparator());
@@ -136,8 +135,8 @@ public class GitlabPipeline {
         StringBuilder script = new StringBuilder();
         script.append("      mvn -f ")
                 .append(gitlabConfiguration.getKontinuumProcessorsDirNormalized())
-                .append(processor.getPomLocation()).append(" ")
-                .append(processor.getGoal()).append(" \\").append(System.lineSeparator());
+                .append(processor.getPomLocation())
+                .append(" process-resources").append(" \\").append(System.lineSeparator());
         
         List<ProcessorParameter> nonBlankParams = processor.getParameters().stream()
             .filter(p -> StringUtils.isNotBlank(p.getValue()))
@@ -152,6 +151,18 @@ public class GitlabPipeline {
             script.append(System.lineSeparator());
         }
         return script.toString();
+    }
+
+    private String generateStandaloneScriptBlock(StandaloneProcessor processor) {
+        StringBuilder script = new StringBuilder();
+        script.append("      sh ")
+                .append(gitlabConfiguration.getKontinuumProcessorsDirNormalized())
+                .append(processor.getScriptLocation());
+
+        for (ProcessorParameter parameter : processor.getParameters()) {
+            script.append(" ").append(parameter.getValue());
+        }
+        return script.append(System.lineSeparator()).toString();
     }
 
     private String generateBeforeScriptBlock() {

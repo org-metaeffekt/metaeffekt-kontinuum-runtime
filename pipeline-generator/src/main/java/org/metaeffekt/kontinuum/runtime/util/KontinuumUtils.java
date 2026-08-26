@@ -11,18 +11,18 @@ import java.util.Properties;
 public class KontinuumUtils {
 
     public static Properties getLocalProperties() {
-        File localPropertiesFile = new File(".project.properties");
+        File localPropertiesFile = new File(".local.properties");
         if (!localPropertiesFile.exists()) {
-            localPropertiesFile = new File("../.project.properties");
+            localPropertiesFile = new File("../.local.properties");
         }
         if (!localPropertiesFile.exists()) {
-            localPropertiesFile = new File("../../.project.properties");
+            localPropertiesFile = new File("../../.local.properties");
         }
         if (!localPropertiesFile.exists()) {
-            localPropertiesFile = new File("../../../.project.properties");
+            localPropertiesFile = new File("../../../.local.properties");
         }
         if (!localPropertiesFile.exists()) {
-            throw new IllegalStateException("Provide .project.properties file.");
+            throw new IllegalStateException("Provide .local.properties file.");
         }
 
         Properties properties = new Properties();
