@@ -657,7 +657,7 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
             ProcessorIds id, String name, String pomLocation, String description,
             ProcessorDefinitions.ProcessorParameter... parameters) {
         ProcessorDefinitions.MavenProcessor processor = new ProcessorDefinitions.MavenProcessor(
-                description, pomLocation, null, null);
+                description, pomLocation);
         processor.setParameters(Arrays.asList(parameters));
         processor.setId(id.getValue());
         processor.setName(name);

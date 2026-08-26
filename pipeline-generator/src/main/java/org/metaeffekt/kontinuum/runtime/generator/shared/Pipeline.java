@@ -1,5 +1,6 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared;
 
+import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.generator.shared.stages.*;
 import org.metaeffekt.kontinuum.runtime.models.shared.*;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
@@ -60,9 +61,30 @@ public class Pipeline {
                 handler.process(context);
             }
 
+            appendPreScriptToProcessors(context);
+
             assetProcessorsMap.put(asset, context.getProcessors());
         }
 
         return assetProcessorsMap;
     }
+
+    private void appendPreScriptToProcessors(AssetExecutionContext context) {
+        if (StringUtils.isBlank(environmentConfiguration.SETUP_COMMAND)) {
+            return;
+        }
+
+        for (Processor processor : context.getProcessors()) {
+            String preScript = processor.getPreScript();
+
+            if (StringUtils.isBlank(preScript)) {
+                processor.setPreScript(environmentConfiguration.SETUP_COMMAND);
+            } else {
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append(environmentConfiguration.SETUP_COMMAND).append(System.lineSeparator()).append(preScript);
+                processor.setPreScript(stringBuilder.toString());
+            }
+        }
+    }
+
 }

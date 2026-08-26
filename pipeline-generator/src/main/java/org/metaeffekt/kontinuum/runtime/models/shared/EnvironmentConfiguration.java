@@ -24,7 +24,7 @@ public abstract class EnvironmentConfiguration {
     public final String SCAN_PROPERTIES_FILE;
     public final String KOSMOS_PASSWORD;
     public final String KOSMOS_USERKEYS_FILE;
-    public final File SETUP_COMMAND;
+    public final String SETUP_COMMAND;
     private final String KONTINUUM_DIR;
 
     private final String PORTFOLIO_MANAGER_CLIENT_KEYSTORE_FILE;
@@ -33,6 +33,7 @@ public abstract class EnvironmentConfiguration {
     public final String PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD;
     public final String PORTFOLIO_MANAGER_TOKEN;
     public final String PORTFOLIO_MANAGER_URL;
+    public final String MAVEN_CLI_OPTS;
 
     public String getMirrorDir() {
         return VULNERABILITY_MIRROR_DIR;

@@ -83,7 +83,9 @@ public class LocalPipeline {
             script.append(processor.getPreScript()).append(System.lineSeparator());
         }
 
-        script.append("mvn -f ")
+        script.append("mvn ")
+                .append(localConfiguration.MAVEN_CLI_OPTS)
+                .append(" -f ")
                 .append(localConfiguration.getKontinuumProcessorsDirNormalized())
                 .append(processor.getPomLocation())
                 .append(" process-resources").append(" \\").append(System.lineSeparator());

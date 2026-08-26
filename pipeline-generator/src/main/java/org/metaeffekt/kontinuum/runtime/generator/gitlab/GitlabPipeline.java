@@ -102,11 +102,6 @@ public class GitlabPipeline {
                             .append("]").append(System.lineSeparator());
                 }
 
-
-                if (generateBeforeScriptBlock() != null) {
-                    job.append(generateBeforeScriptBlock());
-                }
-
                 job.append("  ").append("script: ").append(System.lineSeparator());
                 job.append("    - |").append(System.lineSeparator());
 
@@ -133,7 +128,9 @@ public class GitlabPipeline {
 
     private String generateMavenScriptBlock(ProcessorDefinitions.MavenProcessor processor) {
         StringBuilder script = new StringBuilder();
-        script.append("      mvn -f ")
+        script.append("      mvn ")
+                .append(gitlabConfiguration.MAVEN_CLI_OPTS)
+                .append(" -f ")
                 .append(gitlabConfiguration.getKontinuumProcessorsDirNormalized())
                 .append(processor.getPomLocation())
                 .append(" process-resources").append(" \\").append(System.lineSeparator());
@@ -150,6 +147,7 @@ public class GitlabPipeline {
             }
             script.append(System.lineSeparator());
         }
+
         return script.toString();
     }
 
@@ -163,37 +161,6 @@ public class GitlabPipeline {
             script.append(" ").append(parameter.getValue());
         }
         return script.append(System.lineSeparator()).toString();
-    }
-
-    private String generateBeforeScriptBlock() {
- 
-        if (gitlabConfiguration.SETUP_COMMAND == null) {
-            return null;
-        }
-
-        if (!gitlabConfiguration.SETUP_COMMAND.exists()) {
-            throw new IllegalStateException("The designated 'before script' file " 
-                + gitlabConfiguration.SETUP_COMMAND.getAbsolutePath() + " does not exist.");
-        }
-
-        StringBuilder beforeScriptBuilder = new StringBuilder();
-
-
-        beforeScriptBuilder.append("  ").append("before_script: ").append(System.lineSeparator());
-        beforeScriptBuilder.append("    - |").append(System.lineSeparator());
-        
-        try {
-            List<String> scriptLines = Files.readAllLines(gitlabConfiguration.SETUP_COMMAND.toPath());
-            for (String line : scriptLines) {
-                beforeScriptBuilder.append("      ").append(line).append(System.lineSeparator());
-            }
-            beforeScriptBuilder.append(System.lineSeparator());
-            return beforeScriptBuilder.toString();
-        } catch (IOException e) {
-            log.error("Could not read lines from 'before script' file. The pipeline will still be generated but the before script section will be left empty!", e);
-            return "echo 'Before script was left empty as the contents of the provided before-script file could not be read.'";
-        }
-
     }
 
     private String generateJobName(Processor processor, String assetName, Stage stage) {

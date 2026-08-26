@@ -28,8 +28,8 @@ public abstract class AbstractGeneratePipelineMojo extends AbstractMojo {
     @Parameter(property = "artifactResolverProxyFile")
     protected String artifactResolverProxyFile;
 
-    @Parameter(property = "setupCommandFile")
-    protected String setupCommandFile;
+    @Parameter(property = "setupCommand")
+    protected String setupCommand;
 
     @Parameter(property = "scanPropertiesFile")
     protected String scanPropertiesFile;

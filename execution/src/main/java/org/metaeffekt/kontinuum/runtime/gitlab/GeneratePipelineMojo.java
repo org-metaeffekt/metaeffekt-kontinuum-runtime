@@ -1,7 +1,6 @@
 package org.metaeffekt.kontinuum.runtime.gitlab;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -37,15 +36,9 @@ public class GeneratePipelineMojo extends AbstractGeneratePipelineMojo {
 
        GitlabConfiguration.GitlabConfigurationBuilder gitlabConfiguration = GitlabConfiguration.builder()
                 .ARTIFACT_RESOLVER_CONFIG_FILE(artifactResolverConfigFile)
-                .ARTIFACT_RESOLVER_PROXY_FILE(artifactResolverProxyFile);
+                .ARTIFACT_RESOLVER_PROXY_FILE(artifactResolverProxyFile)
+                .RUNNER_TAG(runnerTag);
 
-        if (StringUtils.isNotBlank(setupCommandFile)) {
-            File setupCommand = new File(setupCommandFile);
-
-            if (setupCommand.exists()) {
-                gitlabConfiguration.SETUP_COMMAND(setupCommand);
-            }
-        }
 
         gitlabConfiguration.CONTAINER_IMAGE(containerImage)
                 .KOSMOS_PASSWORD(kosmosPassword)
@@ -61,7 +54,10 @@ public class GeneratePipelineMojo extends AbstractGeneratePipelineMojo {
                 .PORTFOLIO_MANAGER_CLIENT_KEYSTORE_FILE(portfolioManagerClientKeystoreFile)
                 .PORTFOLIO_MANAGER_CLIENT_KEYSTORE_PASSWORD(portfolioManagerClientKeystorePassword)
                 .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_FILE(portfolioManagerClientTruststoreFile)
-                .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD(portfolioManagerClientTruststorePassword);
+                .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD(portfolioManagerClientTruststorePassword)
+                .MAVEN_CLI_OPTS(mavenCliOpts)
+                .SETUP_COMMAND(setupCommand);
+
 
         PipelineConfiguration pipelineConfiguration = new PipelineConfigurationLoader().readConfig(pipelineConfigFile);
 

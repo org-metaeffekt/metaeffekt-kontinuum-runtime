@@ -14,9 +14,10 @@ public class GitlabConfiguration extends EnvironmentConfiguration {
     
     @Builder.Default
     public final String GIT_STRATEGY = "CLONE";
-    
-    public final String CONTAINER_IMAGE;
+
     public final String RUNNER_TAG;
+
+    public final String CONTAINER_IMAGE;
 
     @Override
     public String getWorkspaceDirNormalized() {

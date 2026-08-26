@@ -16,6 +16,8 @@ public class ProcessorDefinitions {
         String id;
         String name;
         Stage stage;
+        String preScript;
+        String postScript;
         List<ProcessorParameter> parameters;
 
         public void setProcessorParameter(ProcessorParameterKey key, String value) {
@@ -48,8 +50,6 @@ public class ProcessorDefinitions {
     public static class MavenProcessor extends Processor {
         String description;
         String pomLocation;
-        String preScript;
-        String postScript;
 
         public MavenProcessor copy() {
             MavenProcessor copy = new MavenProcessor();
