@@ -7,3 +7,4 @@ metaeffekt-kontinuum
 **/.local.properties
 buildkitd.toml
 **/buildkitd.toml
+.local.properties
