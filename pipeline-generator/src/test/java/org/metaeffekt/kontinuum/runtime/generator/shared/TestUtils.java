@@ -52,8 +52,11 @@ public class TestUtils {
         projectProperties.setAssets(List.of(asset));
         projectProperties.setProject(project);
         pipelineConfiguration.setProjectProperties(projectProperties);
+        pipelineConfiguration.setReports(List.of());
+        pipelineConfiguration.setDashboards(List.of());
+        pipelineConfiguration.setOptions(new PipelineConfiguration.Options());
 
-        return  pipelineConfiguration;
+        return pipelineConfiguration;
     }
 
     public static LocalConfiguration buildMinimalLocalConfiguration() {

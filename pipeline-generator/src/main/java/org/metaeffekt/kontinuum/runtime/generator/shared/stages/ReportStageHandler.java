@@ -127,8 +127,7 @@ public class ReportStageHandler implements StageHandler {
 
         processor.setProcessorParameter(OUTPUT_DOCUMENT_FILE, context.getStageDirForAsset(Stage.REPORT).appendReportFile(ReportType.fromKey(type)));
 
-        processor.setProcessorParameter(PARAM_COMPUTED_INVENTORY_DIR,
-                context.getStageDirForAsset(Stage.REPORT).toString());
+        processor.setProcessorParameter(PARAM_COMPUTED_INVENTORY_DIR, context.getStageDirForAsset(Stage.REPORT) + "computed/");
         processor.setProcessorParameter(PARAM_DOCUMENT_TYPE, type);
         processor.setProcessorParameter(PARAM_DOCUMENT_LANGUAGE, report.getLanguage());
 

@@ -368,7 +368,12 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
     private static ProcessorDefinitions.MavenProcessor downloadAsset() {
         return mavenProcessor(DOWNLOAD_ASSET, "Download Asset", "fetch/fetch_download-asset.xml", "This processor downloads a remote asset from a specified URL into a target directory.",
             processorParameter(OUTPUT_ASSET_DIR, true),
-            processorParameter(PARAM_ASSET_URL, true)
+            processorParameter(PARAM_ASSET_URL, true),
+            processorParameter(PARAM_ASSET_USERNAME, false),
+            processorParameter(PARAM_ASSET_PASSWORD, false),
+            processorParameter(PARAM_ASSET_TOKEN, false),
+            processorParameter(PARAM_ASSET_HEADER_NAME, false),
+            processorParameter(PARAM_ASSET_HEADER_VALUE, false)
         );
     }
     private static ProcessorDefinitions.MavenProcessor downloadDataSources() {

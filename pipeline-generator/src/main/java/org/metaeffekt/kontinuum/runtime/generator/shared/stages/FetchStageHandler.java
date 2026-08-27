@@ -32,10 +32,16 @@ public class FetchStageHandler implements StageHandler {
 
     private void handleUrlResolver(AssetExecutionContext context) {
         Asset asset = context.getAsset();
+        Asset.UrlResolver urlResolver = asset.getUrlResolver();
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(DOWNLOAD_ASSET);
         processor.setStage(Stage.FETCH);
-        processor.setProcessorParameter(PARAM_ASSET_URL, asset.getUrlResolver().getUrl());
+        processor.setProcessorParameter(PARAM_ASSET_URL, urlResolver.getUrl());
         processor.setProcessorParameter(OUTPUT_ASSET_DIR, context.getStageDirForAsset(Stage.FETCH).toString());
+        processor.setProcessorParameter(PARAM_ASSET_USERNAME, urlResolver.getUsername());
+        processor.setProcessorParameter(PARAM_ASSET_PASSWORD, urlResolver.getPassword());
+        processor.setProcessorParameter(PARAM_ASSET_TOKEN, urlResolver.getToken());
+        processor.setProcessorParameter(PARAM_ASSET_HEADER_NAME, urlResolver.getHeaderName());
+        processor.setProcessorParameter(PARAM_ASSET_HEADER_VALUE, urlResolver.getHeaderValue());
 
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.FETCH).toString());
         context.addProcessor(processor);

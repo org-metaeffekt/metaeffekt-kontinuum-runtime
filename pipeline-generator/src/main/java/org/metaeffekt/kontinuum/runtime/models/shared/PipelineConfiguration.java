@@ -23,10 +23,13 @@ public class PipelineConfiguration {
     private Options options;
 
     public boolean requiresResolve() {
-        return options.getGlobal().enableResolve;
+        return options != null && options.getGlobal() != null && Boolean.TRUE.equals(options.getGlobal().getEnableResolve());
     }
 
     public boolean requiresVulnerabilityEnrichment() {
+        if (reports == null) {
+            return false;
+        }
         return reports.stream()
                 .map(Report::getTypes)
                 .filter(Objects::nonNull)
@@ -36,11 +39,15 @@ public class PipelineConfiguration {
     }
 
     public boolean requiresLicenseScan() {
-        if (options.getGlobal().getEnableScan()) {
+        if (options != null && options.getGlobal() != null && Boolean.TRUE.equals(options.getGlobal().getEnableScan())) {
             return true;
         }
 
         if (Objects.nonNull(portfolioManager)) {
+            return false;
+        }
+
+        if (reports == null) {
             return false;
         }
 
@@ -100,6 +107,11 @@ public class PipelineConfiguration {
             public static class UrlResolver {
                 private String url;
                 private String urlPattern;
+                private String username;
+                private String password;
+                private String token;
+                private String headerName;
+                private String headerValue;
             }
 
             @Data
