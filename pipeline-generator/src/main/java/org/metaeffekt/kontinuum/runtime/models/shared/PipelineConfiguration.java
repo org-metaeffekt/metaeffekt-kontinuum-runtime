@@ -38,6 +38,16 @@ public class PipelineConfiguration {
                 .anyMatch(ReportType::requiresVulnerabilityEnrichment);
     }
 
+    /**
+     * Evaluates whether the pipeline requires a dedicated scan stage in a predefined order.
+     * <ol>
+     *     <li>enableScan in the global options is set to true</li>
+     *     <li>portfolio manager is not set</li>
+     *     <li>reports are non-empty</li>
+     *     <li>a specified report requires licensing information</li>
+     * </ol>
+     * @return true if the pipeline requires a dedicated license scan stage
+     */
     public boolean requiresLicenseScan() {
         if (options != null && options.getGlobal() != null && Boolean.TRUE.equals(options.getGlobal().getEnableScan())) {
             return true;

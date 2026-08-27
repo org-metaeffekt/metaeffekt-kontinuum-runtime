@@ -16,8 +16,7 @@ COPY target/.m2/repository/com/google/guava/guava /root/.m2/repository/com/googl
 COPY target/.m2/repository/com/ibm/icu/icu4j /root/.m2/repository/com/ibm/icu/icu4j
 COPY target/.m2/repository/io/fabric8/knative-model /root/.m2/repository/io/fabric8/knative-model
 COPY target/.m2/repository/io/fabric8/kubernetes-model-core /root/.m2/repository/io/fabric8/kubernetes-model-core
-COPY target/.m2/repository/org/apache/lucene/lucene-core /root/.m2/repository/org/apache/lucene/lucene-core
-COPY target/.m2/repository/org/apache/poi /root/.m2/repository/org/apache/poi
+COPY target/.m2/repository/org/apache/ /root/.m2/repository/org/apache
 COPY target/.m2/repository/org/bouncycastle/bcprov-jdk18on /root/.m2/repository/org/bouncycastle/bcprov-jdk18on
 COPY target/.m2/repository/org/scala-lang/scala-library /root/.m2/repository/org/scala-lang/scala-library
 COPY target/.m2/repository/org/spdx/java-spdx-library /root/.m2/repository/org/spdx/java-spdx-library
