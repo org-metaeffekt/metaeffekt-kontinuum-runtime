@@ -1,0 +1,33 @@
+# Versioning
+ae.core.version=HEAD-SNAPSHOT
+ae.artifact.analysis.version=HEAD-SNAPSHOT
+ae.kontinuum.version=HEAD-SNAPSHOT
+ae.workbench.version=HEAD-SNAPSHOT
+ae.kontinuum.runtime.version=HEAD-SNAPSHOT
+ae.portfolio.manager.version=HEAD-SNAPSHOT
+s-dit-007.workbench.version=HEAD-SNAPSHOT
+
+
+# TermsMetaData
+kosmos.password=
+
+# Docker Build Process
+docker.image.tag=
+docker.username=
+docker.access.token=
+docker.registry=
+
+# Portfolio Manager Credentials
+portfolio.manager.url=
+portfolio.manager.client.keystore.password=
+portfolio.manager.client.truststore.password=
+portfolio.manager.token=
+
+# Vulnerability Mirrror
+vulnerability.mirror.dir=
+vulnerability.mirror.url=http://vulnerabilty.mirror.download.url/index.zip
+nvd.api.key=
+
+# Repository Paths
+ae.kontinuum.dir="/ABSOLUTE/PATH/TO/KONTINUUM"
+ae.workbench.dir="/ABSOLUTE/PATH/TO/WORKBENCH"
