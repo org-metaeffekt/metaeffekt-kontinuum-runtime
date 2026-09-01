@@ -97,11 +97,9 @@ public class GitlabPipeline {
                 job.append("  ").append("image: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(System.lineSeparator());
 
                 if (lastProcessor != null && Objects.equals(lastProcessor.getStage().name(), processor.getStage().name())) {
-                    if (!processor.getStage().equals(Stage.REPORT)) {
-                        job.append("  ").append("needs: [")
-                                .append(generateJobName(lastProcessor, entry.getKey().toString(), processor.getStage()))
-                                .append("]").append(System.lineSeparator());
-                    }
+                    job.append("  ").append("needs: [")
+                            .append(generateJobName(lastProcessor, entry.getKey().toString(), processor.getStage()))
+                            .append("]").append(System.lineSeparator());
                 }
 
                 job.append("  ").append("script: ").append(System.lineSeparator());
@@ -175,12 +173,22 @@ public class GitlabPipeline {
 
         if (processor instanceof MavenProcessor mavenProcessor
                 && processor.getId().equals("create-document")) {
-            Optional<ProcessorParameter> processorParameter = mavenProcessor.getParameters()
+            Optional<ProcessorParameter> documentTypeParameter = mavenProcessor.getParameters()
                     .stream()
                     .filter(p -> p.getKey() == ProcessorParameterKey.PARAM_DOCUMENT_TYPE)
                     .findFirst();
 
-            processorParameter.ifPresent(parameter -> processorName.append("-").append(parameter.getValue()));
+            Optional<ProcessorParameter> documentLanguageParameter = mavenProcessor.getParameters()
+                    .stream()
+                    .filter(p -> p.getKey() == ProcessorParameterKey.PARAM_DOCUMENT_LANGUAGE)
+                    .findFirst();
+
+
+            documentTypeParameter.ifPresent(parameter -> processorName.append("-")
+                    .append(parameter.getValue()));
+
+            documentLanguageParameter.ifPresent(parameter -> processorName.append("-")
+                    .append(parameter.getValue()));
         }
         return processorName.toString();
     }

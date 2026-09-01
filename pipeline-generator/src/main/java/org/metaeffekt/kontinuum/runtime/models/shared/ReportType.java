@@ -44,7 +44,7 @@ public enum ReportType {
 
     public static boolean requiresScan(ReportType... reportTypes) {
         for (ReportType reportType : reportTypes) {
-            if (reportType.equals(INITIAL_LICENSE_DOCUMENTATION) || reportType.equals(LICENSE_DOCUMENTATION)) {
+            if (reportType.equals(INITIAL_LICENSE_DOCUMENTATION) || reportType.equals(LICENSE_DOCUMENTATION) || reportType.equals(SOFTWARE_DISTRIBUTION_ANNEX)) {
                 return true;
             }
         }

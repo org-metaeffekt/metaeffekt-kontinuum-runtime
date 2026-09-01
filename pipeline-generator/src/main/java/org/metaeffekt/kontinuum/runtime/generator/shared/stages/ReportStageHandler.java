@@ -214,7 +214,6 @@ public class ReportStageHandler implements StageHandler {
     private void handleAnnexArchiveCreation(AssetExecutionContext context, Report report) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_ANNEX_ARCHIVE);
         processor.setStage(Stage.REPORT);
-        Asset asset = context.getAsset();
 
         processor.setProcessorParameter(OUTPUT_ANNEX_ARCHIVE_FILE, context.getStageDirForAsset(Stage.REPORT).appendAnnexArchiveFile());
 
