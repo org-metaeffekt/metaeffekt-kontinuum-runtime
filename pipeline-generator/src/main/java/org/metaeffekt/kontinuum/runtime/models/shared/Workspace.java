@@ -30,6 +30,8 @@ public class Workspace {
 
         public String appendReportFile(ReportType reportType) { return dir + assetName + "-" + reportType.getKey() + ".pdf"; }
 
+        public String appendAnnexArchiveFile() { return dir + assetName + "-annex-archive.pdf"; }
+
         public String appendSpdxFile(String format) {
             if (format.equals("XML")) {
                 return dir + assetName + "-spdx" + ".xml";

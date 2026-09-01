@@ -63,4 +63,11 @@ public class AssetExecutionContext {
     public Workspace.AssetPath getStageDirForAsset(Stage stage) {
         return workspace.getStageDirForAsset(asset, stage);
     }
+
+    public Asset getRootAsset() {
+        if (configuration == null || configuration.getProjectProperties() == null) {
+            return asset;
+        }
+        return configuration.getProjectProperties().getRootAssetFor(asset);
+    }
 }

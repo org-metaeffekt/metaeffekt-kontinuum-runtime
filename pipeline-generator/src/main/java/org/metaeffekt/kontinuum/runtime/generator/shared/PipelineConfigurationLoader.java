@@ -234,6 +234,19 @@ public class PipelineConfigurationLoader {
                     isValid = false;
                 }
             }
+
+            if (report.getLanguages() == null || report.getLanguages().isEmpty()) {
+                log.error("A report with 'assetIds': {} is missing or contains an empty 'languages' list.", report.getAssetIds());
+                isValid = false;
+                continue;
+            }
+
+            for (String lang : report.getLanguages()) {
+                if (lang == null || lang.isBlank()) {
+                    log.error("A report with 'assetIds': {} contains an empty or blank language in 'languages'.", report.getAssetIds());
+                    isValid = false;
+                }
+            }
         }
     }
 
@@ -272,11 +285,6 @@ public class PipelineConfigurationLoader {
 
         if (StringUtils.isBlank(portfolioManager.getProject())) {
             log.error("Portfolio Manager entry exists, but 'project' is not defined.");
-            isValid = false;
-        }
-
-        if (StringUtils.isBlank(portfolioManager.getAssetGroup())) {
-            log.error("Portfolio Manager entry exists, but 'assetGroup' is not defined.");
             isValid = false;
         }
     }

@@ -1,12 +1,8 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
-import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
-import org.metaeffekt.kontinuum.runtime.models.shared.ReportType;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
-
-import java.util.Objects;
 
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.DOWNLOAD_INDEX;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
@@ -22,11 +18,11 @@ public class PreStageHandler implements StageHandler {
     public void process(AssetExecutionContext context) {
 
         if (context.getConfiguration().requiresVulnerabilityEnrichment()) {
-            addDownloadIndexProcessor(context);
+            handleVulnerabilityIndexDownload(context);
         }
     }
 
-    private void addDownloadIndexProcessor(AssetExecutionContext context) {
+    private void handleVulnerabilityIndexDownload(AssetExecutionContext context) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(DOWNLOAD_INDEX);
         processor.setStage(Stage.PRE);
 

@@ -30,6 +30,8 @@ reports:
   - assetId: "asset1"
     types:
       - "VR"
+    languages:
+      - "en"
     organization: "metaeffekt"
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"
@@ -37,6 +39,8 @@ reports:
   - assetId: "asset2"
     types:
       - "CR"
+    languages:
+      - "en"
     organization: "metaeffekt"
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"

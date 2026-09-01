@@ -84,6 +84,32 @@ public class PipelineConfiguration {
                     .collect(Collectors.toList());
         }
 
+        public Asset getRootAssetFor(Asset targetAsset) {
+            if (this.assets == null || this.assets.isEmpty() || targetAsset == null) {
+                return targetAsset;
+            }
+            for (Asset root : this.assets) {
+                if (containsAsset(root, targetAsset)) {
+                    return root;
+                }
+            }
+            return targetAsset;
+        }
+
+        private boolean containsAsset(Asset current, Asset target) {
+            if (current == target || (current.getId() != null && current.getId().equals(target.getId()))) {
+                return true;
+            }
+            if (current.getAssets() != null) {
+                for (Asset child : current.getAssets()) {
+                    if (containsAsset(child, target)) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
         @Data
         public static class Project {
             private String id;
@@ -213,7 +239,7 @@ public class PipelineConfiguration {
         private String organization;
         private String classificationRating;
         private String controlRating;
-        private String language = "en";
+        private List<String> languages;
     }
 
     @Data
@@ -224,7 +250,6 @@ public class PipelineConfiguration {
     @Data
     public static class PortfolioManager {
         private String project;
-        private String assetGroup;
     }
 
     @Data

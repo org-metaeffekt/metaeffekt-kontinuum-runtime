@@ -85,11 +85,15 @@ public class PrepareStageHandler implements StageHandler {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(PORTFOLIO_UPLOAD);
         processor.setStage(Stage.PREPARE);
 
+        Asset rootAsset = context.getRootAsset();
+        Asset target = (rootAsset != null) ? rootAsset : asset;
+        String assetGroupId = target.getId() + ":" + target.getVersion();
+
         processor.setProcessorParameter(INPUT_FILE, context.getCurrentInventoryPath());
         processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_URL, context.getEnvironment().PORTFOLIO_MANAGER_URL);
         processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_TOKEN, context.getEnvironment().PORTFOLIO_MANAGER_TOKEN);
         processor.setProcessorParameter(PARAM_PROJECT_NAME, context.getConfiguration().getPortfolioManager().getProject());
-        processor.setProcessorParameter(PARAM_ASSET_GROUP_ID, context.getConfiguration().getPortfolioManager().getAssetGroup());
+        processor.setProcessorParameter(PARAM_ASSET_GROUP_ID, assetGroupId);
         processor.setProcessorParameter(PARAM_ASSET_NAME, asset.getName());
         processor.setProcessorParameter(PARAM_ASSET_VERSION, asset.getVersion());
         processor.setProcessorParameter(PARAM_KEYSTORE_CONFIG_FILE, context.getEnvironment().getPortfolioManagerClientKeystoreFile());

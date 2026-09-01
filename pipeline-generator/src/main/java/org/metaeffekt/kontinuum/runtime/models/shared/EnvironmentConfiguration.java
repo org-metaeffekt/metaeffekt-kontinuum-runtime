@@ -60,6 +60,8 @@ public abstract class EnvironmentConfiguration {
 
     public String getScriptsDirNormalized() { return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "scripts/"); }
 
+    public String getConfigDirNormalized() { return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "config/"); }
+
     public String getWorkbenchDirNormalized() {
         return KontinuumUtils.normalizeDir(WORKBENCH_DIR);
     }

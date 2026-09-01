@@ -92,18 +92,40 @@ public class ReportStageHandler implements StageHandler {
                     continue;
                 }
 
-                for (String type : types) {
-                    if (type == null) {
+                List<String> languages = report.getLanguages();
+                if (languages == null || languages.isEmpty()) {
+                    continue;
+                }
+
+                boolean hasSda = false;
+                for (String language : languages) {
+                    if (language == null) {
                         continue;
                     }
 
-                    addReportProcessor(context, report, type);
+                    for (String type : types) {
+                        if (type == null) {
+                            continue;
+                        }
+
+                        handleReportGeneration(context, report, type, language);
+
+                        if (type.equals(ReportType.SOFTWARE_DISTRIBUTION_ANNEX.getKey())) {
+                            hasSda = true;
+                        }
+                    }
+                }
+
+                if (hasSda) {
+                    handleLicenseAggregation(context);
+                    handleSourceAggregation(context);
+                    handleAnnexArchiveCreation(context, report);
                 }
             }
         }
     }
 
-    private void addReportProcessor(AssetExecutionContext context, Report report, String type) {
+    private void handleReportGeneration(AssetExecutionContext context, Report report, String type, String language) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_DOCUMENT);
         processor.setStage(Stage.REPORT);
         ReportType reportType = ReportType.fromKey(type);
@@ -129,7 +151,7 @@ public class ReportStageHandler implements StageHandler {
 
         processor.setProcessorParameter(PARAM_COMPUTED_INVENTORY_DIR, context.getStageDirForAsset(Stage.REPORT) + "computed/");
         processor.setProcessorParameter(PARAM_DOCUMENT_TYPE, type);
-        processor.setProcessorParameter(PARAM_DOCUMENT_LANGUAGE, report.getLanguage());
+        processor.setProcessorParameter(PARAM_DOCUMENT_LANGUAGE, language);
 
         processor.setProcessorParameter(PARAM_ASSET_ID, asset.getId());
         processor.setProcessorParameter(PARAM_ASSET_NAME, asset.getName());
@@ -156,6 +178,60 @@ public class ReportStageHandler implements StageHandler {
                 context.getEnvironment().getWorkbenchDirNormalized());
         processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
                 context.getEnvironment().getMirrorDatabaseDirNormalized());
+
+        context.addProcessor(processor);
+    }
+
+    private void handleLicenseAggregation(AssetExecutionContext context) {
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(AGGREGATE_LICENSES);
+        processor.setStage(Stage.REPORT);
+        Asset asset = context.getAsset();
+
+        processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().KOSMOS_PASSWORD);
+        processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().KOSMOS_USERKEYS_FILE);
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(PARAM_REFERENCE_COMPONENT_PATH, "../components"); // FIXME: Why this path?
+        processor.setProcessorParameter(PARAM_REFERENCE_LICENSE_PATH, "../licenses");  // FIXME: Why this path?
+
+        processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, asset.getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized())); // FIXME: Why this path?
+        processor.setProcessorParameter(PARAM_TARGET_COMPONENT_DIR, context.getWorkspace().getStageDirForAsset(asset, Stage.REPORT).toString() + "components/");
+        processor.setProcessorParameter(PARAM_TARGET_LICENSE_DIR, context.getWorkspace().getStageDirForAsset(asset, Stage.REPORT).toString() + "licenses/");
+
+        context.addProcessor(processor);
+    }
+
+    private void handleSourceAggregation(AssetExecutionContext context) {
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(AGGREGATE_SOURCES);
+        processor.setStage(Stage.REPORT);
+
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(OUTPUT_TARGET_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/");
+        processor.setProcessorParameter(PARAM_CONFIG_FILE, context.getEnvironment().getConfigDirNormalized() + "source-aggregation/config.yaml" );
+
+        context.addProcessor(processor);
+    }
+
+    private void handleAnnexArchiveCreation(AssetExecutionContext context, Report report) {
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_ANNEX_ARCHIVE);
+        processor.setStage(Stage.REPORT);
+        Asset asset = context.getAsset();
+
+        processor.setProcessorParameter(OUTPUT_ANNEX_ARCHIVE_FILE, context.getStageDirForAsset(Stage.REPORT).appendAnnexArchiveFile());
+
+        List<String> languages = report.getLanguages();
+        if (languages != null) {
+            for (String lang : languages) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    processor.setProcessorParameter(INPUT_DOCUMENT_DE_PDF_FILE, context.getStageDirForAsset(Stage.REPORT).appendReportFile(ReportType.SOFTWARE_DISTRIBUTION_ANNEX));
+                } else if ("en".equalsIgnoreCase(lang)) {
+                    processor.setProcessorParameter(INPUT_DOCUMENT_EN_PDF_FILE, context.getStageDirForAsset(Stage.REPORT).appendReportFile(ReportType.SOFTWARE_DISTRIBUTION_ANNEX));
+                }
+            }
+        }
+
+        processor.setProcessorParameter(INPUT_INVENTORY_COMPONENTS_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "components/");
+        processor.setProcessorParameter(INPUT_INVENTORY_LICENSES_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "licenses/");
+        processor.setProcessorParameter(INPUT_INVENTORY_SOURCES_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/");
 
         context.addProcessor(processor);
     }
