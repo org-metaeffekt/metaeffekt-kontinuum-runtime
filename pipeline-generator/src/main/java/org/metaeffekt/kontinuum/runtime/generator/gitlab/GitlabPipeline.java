@@ -97,9 +97,11 @@ public class GitlabPipeline {
                 job.append("  ").append("image: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(System.lineSeparator());
 
                 if (lastProcessor != null && Objects.equals(lastProcessor.getStage().name(), processor.getStage().name())) {
-                    job.append("  ").append("needs: [")
-                            .append(generateJobName(lastProcessor, entry.getKey().toString(), processor.getStage()))
-                            .append("]").append(System.lineSeparator());
+                    if (!processor.getStage().equals(Stage.REPORT)) {
+                        job.append("  ").append("needs: [")
+                                .append(generateJobName(lastProcessor, entry.getKey().toString(), processor.getStage()))
+                                .append("]").append(System.lineSeparator());
+                    }
                 }
 
                 job.append("  ").append("script: ").append(System.lineSeparator());
