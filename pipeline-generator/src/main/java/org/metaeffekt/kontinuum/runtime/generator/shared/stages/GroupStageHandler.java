@@ -60,7 +60,7 @@ public class GroupStageHandler implements StageHandler {
 
     private void handleApplyBusinessCase(AssetExecutionContext context, SupportedLocale locale) {
         ProcessorDefinitions.MavenProcessor processor = (ProcessorDefinitions.MavenProcessor) context.getProcessorCatalog().getProcessorById(APPLY_BUSINESS_CASE);
-        processor.setStage(Stage.REPORT);
+        processor.setStage(Stage.GROUP);
 
         processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().TMD_PASSWORD);
         processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE,context.getEnvironment().TMD_USERKEYS_FILE);

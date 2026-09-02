@@ -90,23 +90,20 @@ public class ReportStageHandler implements StageHandler {
                 assert !locales.isEmpty();
                 assert !types.isEmpty();
 
+                for (String type : types) {
+                    boolean isSda = false;
+                    if (ReportType.fromKey(type).equals(ReportType.SOFTWARE_DISTRIBUTION_ANNEX)) {
+                        handleSourceAggregation(context);
+                        isSda = true;
+                    }
 
-                boolean hasSda = false;
-                for (SupportedLocale locale : locales) {
-                    for (String type : types) {
+                    for (SupportedLocale locale : locales) {
                         handleReportGeneration(context, report, type, locale);
 
-                        if (type.equals(ReportType.SOFTWARE_DISTRIBUTION_ANNEX.getKey())) {
-                            hasSda = true;
+                        if (isSda) {
+                            handleLicenseAggregation(context, locale);
+                            handleAnnexArchiveCreation(context, locale);
                         }
-                    }
-                }
-
-                if (hasSda) {
-                    for (SupportedLocale locale : locales) {
-                        handleLicenseAggregation(context, locale);
-                        handleSourceAggregation(context, locale);
-                        handleAnnexArchiveCreation(context, locale);
                     }
                 }
             }
@@ -170,6 +167,17 @@ public class ReportStageHandler implements StageHandler {
         context.addProcessor(processor);
     }
 
+    private void handleSourceAggregation(AssetExecutionContext context) {
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(AGGREGATE_SOURCES);
+        processor.setStage(Stage.REPORT);
+
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
+        processor.setProcessorParameter(OUTPUT_TARGET_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/");
+        processor.setProcessorParameter(PARAM_CONFIG_FILE, context.getEnvironment().getConfigDirNormalized() + "source-aggregation/config.yaml" );
+
+        context.addProcessor(processor);
+    }
+
     private void handleLicenseAggregation(AssetExecutionContext context, SupportedLocale locale) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(AGGREGATE_LICENSES);
         processor.setStage(Stage.REPORT);
@@ -184,17 +192,6 @@ public class ReportStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, asset.getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized())); // FIXME: Why this path?
         processor.setProcessorParameter(PARAM_TARGET_COMPONENT_DIR, context.getWorkspace().getStageDirForAsset(asset, Stage.REPORT).toString() + "components/");
         processor.setProcessorParameter(PARAM_TARGET_LICENSE_DIR, context.getWorkspace().getStageDirForAsset(asset, Stage.REPORT).toString() + "licenses/");
-
-        context.addProcessor(processor);
-    }
-
-    private void handleSourceAggregation(AssetExecutionContext context, SupportedLocale locale) {
-        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(AGGREGATE_SOURCES);
-        processor.setStage(Stage.REPORT);
-
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getGroupedStageForAsset(ReportType.SOFTWARE_DISTRIBUTION_ANNEX, locale).appendAssetInventory());
-        processor.setProcessorParameter(OUTPUT_TARGET_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/");
-        processor.setProcessorParameter(PARAM_CONFIG_FILE, context.getEnvironment().getConfigDirNormalized() + "source-aggregation/config.yaml" );
 
         context.addProcessor(processor);
     }
