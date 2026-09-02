@@ -32,11 +32,11 @@ public class AggregateStageHandler implements StageHandler {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(ENRICH_WITH_REFERENCE);
         processor.setStage(Stage.AGGREGATE);
 
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, referenceInventoryDir);
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
 
-        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
+        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.AGGREGATE).toString());
         context.addProcessor(processor);
     }
@@ -47,11 +47,11 @@ public class AggregateStageHandler implements StageHandler {
         processor.setStage(Stage.AGGREGATE);
 
         processor.setProcessorParameter(INPUT_KOTLIN_SCRIPT_FILE, context.getEnvironment().getScriptsDirNormalized() + "inventory.asset.filter.kts");
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
-        processor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
+        processor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(PARAM_ASSET_ID, context.getAsset().getId());
 
-        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
+        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.AGGREGATE).toString());
         context.addProcessor(processor);
     }

@@ -1,9 +1,12 @@
 package org.metaeffekt.kontinuum.runtime.models.shared;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
+
+import javax.swing.*;
 
 public class Workspace {
 
@@ -18,6 +21,10 @@ public class Workspace {
         return new AssetPath(WORKSPACE_DIR + stage.getStageDirectory() + "/" + asset + "/", asset);
     }
 
+    public AssetPath getGroupedDirForAsset(PipelineConfiguration.ProjectProperties.Asset asset, ReportType reportType, SupportedLocale locale) {
+        return new AssetPath(WORKSPACE_DIR + Stage.GROUP.getStageDirectory() + "/" + asset + "/" + reportType.getWorkspaceFolder() + "/" + locale + "/", asset);
+    }
+
     public record AssetPath(String dir, PipelineConfiguration.ProjectProperties.Asset assetName) {
 
         public String appendAssetInventory() {
@@ -28,9 +35,9 @@ public class Workspace {
             return dir + assetName + ".html";
         }
 
-        public String appendReportFile(ReportType reportType) { return dir + assetName + "-" + reportType.getKey() + ".pdf"; }
+        public String appendReportFile(ReportType reportType, SupportedLocale locale) { return dir + assetName + "-" + reportType.getKey() + "-" + locale.getIdentifier() + ".pdf"; }
 
-        public String appendAnnexArchiveFile() { return dir + assetName + "-annex-archive.pdf"; }
+        public String appendAnnexArchiveFile(SupportedLocale locale) { return dir + assetName + "-" + locale + "-annex-archive.pdf"; }
 
         public String appendSpdxFile(String format) {
             if (format.equals("XML")) {

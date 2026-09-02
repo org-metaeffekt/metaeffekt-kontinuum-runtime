@@ -1,7 +1,6 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
-import org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
@@ -42,11 +41,11 @@ public class PrepareStageHandler implements StageHandler {
         ProcessorDefinitions.StandaloneProcessor standaloneProcessor = (ProcessorDefinitions.StandaloneProcessor) context.getProcessorCatalog().getProcessorById(COPY_INVENTORY);
         standaloneProcessor.setStage(Stage.PREPARE);
 
-        standaloneProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        standaloneProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         standaloneProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
 
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.PREPARE).toString());
-        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
+        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
         context.addProcessor(standaloneProcessor);
     }
 
@@ -55,7 +54,7 @@ public class PrepareStageHandler implements StageHandler {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(INVENTORY_TO_CYCLONEDX);
         processor.setStage(Stage.PREPARE);
 
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(OUTPUT_BOM_FILE, context.getStageDirForAsset(Stage.PREPARE).appendCycloneDxFile("JSON"));
         processor.setProcessorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, "JSON");
         processor.setProcessorParameter(PARAM_DOCUMENT_NAME, asset.getName());
@@ -70,7 +69,7 @@ public class PrepareStageHandler implements StageHandler {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(INVENTORY_TO_SPDX);
         processor.setStage(Stage.PREPARE);
 
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(OUTPUT_BOM_FILE, context.getStageDirForAsset(Stage.PREPARE).appendSpdxFile("JSON"));
         processor.setProcessorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, "JSON");
         processor.setProcessorParameter(PARAM_DOCUMENT_NAME, asset.getName());
@@ -89,7 +88,7 @@ public class PrepareStageHandler implements StageHandler {
         Asset target = (rootAsset != null) ? rootAsset : asset;
         String assetGroupId = target.getId() + ":" + target.getVersion();
 
-        processor.setProcessorParameter(INPUT_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(INPUT_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_URL, context.getEnvironment().PORTFOLIO_MANAGER_URL);
         processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_TOKEN, context.getEnvironment().PORTFOLIO_MANAGER_TOKEN);
         processor.setProcessorParameter(PARAM_PROJECT_NAME, context.getConfiguration().getPortfolioManager().getProject());
@@ -136,7 +135,7 @@ public class PrepareStageHandler implements StageHandler {
 
         context.setPortfolioManagerReferenceInventoryDir(context.getStageDirForAsset(Stage.PREPARE).appendPortfolioManagerReferenceDir());
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.PREPARE).toString());
-        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
+        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
         context.addProcessor(processor);
     }
 }

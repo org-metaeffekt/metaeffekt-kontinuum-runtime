@@ -1,7 +1,5 @@
 package org.metaeffekt.kontinuum.runtime.models.shared;
 
-import java.io.File;
-
 import lombok.Builder;
 import lombok.experimental.SuperBuilder;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
@@ -22,8 +20,9 @@ public abstract class EnvironmentConfiguration {
     public final String ARTIFACT_RESOLVER_CONFIG_FILE;
     public final String ARTIFACT_RESOLVER_PROXY_FILE;
     public final String SCAN_PROPERTIES_FILE;
-    public final String KOSMOS_PASSWORD;
-    public final String KOSMOS_USERKEYS_FILE;
+    public final String TMD_PASSWORD;
+    public final String TMD_USERKEYS_FILE;
+    public final String TMD_SOURCE = "ae-kosmos";
     public final String SETUP_COMMAND;
     private final String KONTINUUM_DIR;
 

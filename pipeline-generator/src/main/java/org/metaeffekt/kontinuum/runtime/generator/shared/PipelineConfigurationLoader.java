@@ -235,13 +235,13 @@ public class PipelineConfigurationLoader {
                 }
             }
 
-            if (report.getLanguages() == null || report.getLanguages().isEmpty()) {
+            if (report.getLocales() == null || report.getLocales().isEmpty()) {
                 log.error("A report with 'assetIds': {} is missing or contains an empty 'languages' list.", report.getAssetIds());
                 isValid = false;
                 continue;
             }
 
-            for (String lang : report.getLanguages()) {
+            for (String lang : report.getLocales()) {
                 if (lang == null || lang.isBlank()) {
                     log.error("A report with 'assetIds': {} contains an empty or blank language in 'languages'.", report.getAssetIds());
                     isValid = false;

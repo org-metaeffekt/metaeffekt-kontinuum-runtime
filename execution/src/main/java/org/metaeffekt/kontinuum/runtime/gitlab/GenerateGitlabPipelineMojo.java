@@ -1,6 +1,6 @@
 package org.metaeffekt.kontinuum.runtime.gitlab;
 
-import org.apache.commons.lang3.StringUtils;
+import lombok.Setter;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -16,7 +16,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 
 @Mojo(name = "generate-gitlab-pipeline", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
-public class GeneratePipelineMojo extends AbstractGeneratePipelineMojo {
+@Setter
+public class GenerateGitlabPipelineMojo extends AbstractGeneratePipelineMojo {
 
     @Parameter(property = "containerImage", required = true)
     private String containerImage;
@@ -41,8 +42,8 @@ public class GeneratePipelineMojo extends AbstractGeneratePipelineMojo {
 
 
         gitlabConfiguration.CONTAINER_IMAGE(containerImage)
-                .KOSMOS_PASSWORD(kosmosPassword)
-                .KOSMOS_USERKEYS_FILE(userkeysFile)
+                .TMD_PASSWORD(kosmosPassword)
+                .TMD_USERKEYS_FILE(userkeysFile)
                 .SCAN_PROPERTIES_FILE(scanPropertiesFile)
                 .VULNERABILITY_MIRROR_DIR(vulnerabilityMirrorDir)
                 .VULNERABILITY_MIRROR_URL(vulnerabilityMirrorUrl)

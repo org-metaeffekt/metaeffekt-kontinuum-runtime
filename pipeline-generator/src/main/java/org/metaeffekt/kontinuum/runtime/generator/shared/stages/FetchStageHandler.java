@@ -37,11 +37,11 @@ public class FetchStageHandler implements StageHandler {
         processor.setStage(Stage.FETCH);
         processor.setProcessorParameter(PARAM_ASSET_URL, urlResolver.getUrl());
         processor.setProcessorParameter(OUTPUT_ASSET_DIR, context.getStageDirForAsset(Stage.FETCH).toString());
-        processor.setProcessorParameter(PARAM_ASSET_USERNAME, urlResolver.getUsername());
-        processor.setProcessorParameter(PARAM_ASSET_PASSWORD, urlResolver.getPassword());
-        processor.setProcessorParameter(PARAM_ASSET_TOKEN, urlResolver.getToken());
-        processor.setProcessorParameter(PARAM_ASSET_HEADER_NAME, urlResolver.getHeaderName());
-        processor.setProcessorParameter(PARAM_ASSET_HEADER_VALUE, urlResolver.getHeaderValue());
+        processor.setProcessorParameter(PARAM_USERNAME, urlResolver.getUsername());
+        processor.setProcessorParameter(PARAM_PASSWORD, urlResolver.getPassword());
+        processor.setProcessorParameter(PARAM_TOKEN, urlResolver.getToken());
+        processor.setProcessorParameter(PARAM_HEADER_NAME, urlResolver.getHeaderName());
+        processor.setProcessorParameter(PARAM_HEADER_VALUE, urlResolver.getHeaderValue());
 
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.FETCH).toString());
         context.addProcessor(processor);

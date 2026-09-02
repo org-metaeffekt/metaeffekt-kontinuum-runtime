@@ -1,4 +1,4 @@
-package org.metaeffekt.kontinuum.runtime.generator.shared;
+package org.metaeffekt.kontinuum.runtime;
 
 import org.metaeffekt.kontinuum.runtime.models.gitlab.GitlabConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.local.LocalConfiguration;
@@ -7,29 +7,9 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey;
 
 import java.util.List;
 
-import static org.metaeffekt.kontinuum.runtime.generator.shared.TestUtils.TestUtilParams.*;
+import static org.metaeffekt.kontinuum.runtime.TestUtilParams.*;
 
 public class TestUtils {
-
-
-    enum TestUtilParams{
-
-        PROJECT_ID("project-id"),
-        PROJECT_NAME("project-name"),
-        PROJECT_VERSION("project-version"),
-        ASSET_ID("asset-id"),
-        ASSET_NAME("asset-name"),
-        ASSET_VERSION("1.0.0"),
-        ASSET_REFERENCE_INVENTORY("src/test/resources/reference-inventory.xls"),
-        URL_RESOLVER_URL("https://test-url.com");
-
-        final String value;
-
-        TestUtilParams(String value) {
-            this.value = value;
-        }
-    }
-
 
     public static PipelineConfiguration buildMinimalPipelineConfiguration() {
         PipelineConfiguration pipelineConfiguration = new PipelineConfiguration();

@@ -1,8 +1,7 @@
 package org.metaeffekt.kontinuum.runtime.models.shared;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,10 +11,15 @@ public class ProcessorDefinitions {
     List<Processor> processors;
 
     @Data
+    @SuperBuilder
     public abstract static class Processor {
+        @NonNull
         String id;
+        @NonNull
         String name;
+        @NonNull
         Stage stage;
+
         String preScript;
         String postScript;
         List<ProcessorParameter> parameters;
@@ -38,36 +42,26 @@ public class ProcessorDefinitions {
     }
 
     @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
+    @Builder
     public static class StandaloneProcessor extends Processor {
+        @NonNull
         String scriptLocation;
     }
 
     @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
+    @Builder
     public static class MavenProcessor extends Processor {
-        String description;
+        @Builder.Default
+        String lifecyclePhase = "process-resources";
+
+        @NonNull
         String pomLocation;
 
+        String description;
+        String profile;
+
         public MavenProcessor copy() {
-            MavenProcessor copy = new MavenProcessor();
-            copy.setId(this.getId());
-            copy.setName(this.getName());
-            copy.setStage(this.getStage());
-            copy.setDescription(this.getDescription());
-            copy.setPomLocation(this.getPomLocation());
-            copy.setPreScript(this.getPreScript());
-            copy.setPostScript(this.getPostScript());
-            if (this.getParameters() != null) {
-                List<ProcessorParameter> copiedParams = new ArrayList<>(this.getParameters().size());
-                for (ProcessorParameter parameter : this.getParameters()) {
-                    copiedParams.add(parameter.copy());
-                }
-                copy.setParameters(copiedParams);
-            }
-            return copy;
+
         }
 
         public String getPreScript(int indent) {

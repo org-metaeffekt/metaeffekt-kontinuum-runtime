@@ -369,11 +369,11 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
         return mavenProcessor(DOWNLOAD_ASSET, "Download Asset", "fetch/fetch_download-asset.xml", "This processor downloads a remote asset from a specified URL into a target directory.",
             processorParameter(OUTPUT_ASSET_DIR, true),
             processorParameter(PARAM_ASSET_URL, true),
-            processorParameter(PARAM_ASSET_USERNAME, false),
-            processorParameter(PARAM_ASSET_PASSWORD, false),
-            processorParameter(PARAM_ASSET_TOKEN, false),
-            processorParameter(PARAM_ASSET_HEADER_NAME, false),
-            processorParameter(PARAM_ASSET_HEADER_VALUE, false)
+            processorParameter(PARAM_USERNAME, false),
+            processorParameter(PARAM_PASSWORD, false),
+            processorParameter(PARAM_TOKEN, false),
+            processorParameter(PARAM_HEADER_NAME, false),
+            processorParameter(PARAM_HEADER_VALUE, false)
         );
     }
     private static ProcessorDefinitions.MavenProcessor downloadDataSources() {
@@ -652,6 +652,7 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
             processorParameter(PARAM_PROXY_USER, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor validateReferenceInventory() {
         return mavenProcessor(VALIDATE_REFERENCE_INVENTORY, "Validate Reference Inventory", "util/util_validate-reference-inventory.xml", "This process takes an input inventory directory and validates the contained inventories.",
             processorParameter(INPUT_INVENTORY_DIR, true)

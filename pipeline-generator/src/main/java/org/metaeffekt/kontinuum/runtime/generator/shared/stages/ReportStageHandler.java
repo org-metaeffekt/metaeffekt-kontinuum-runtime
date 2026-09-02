@@ -1,14 +1,11 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
-import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
-import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
+import org.metaeffekt.kontinuum.runtime.models.shared.*;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Dashboard;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Options.EnrichmentOptions;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Report;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
-import org.metaeffekt.kontinuum.runtime.models.shared.ReportType;
-import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
 import java.util.List;
@@ -88,27 +85,16 @@ public class ReportStageHandler implements StageHandler {
                 }
 
                 List<String> types = report.getTypes();
-                if (types == null || types.isEmpty()) {
-                    continue;
-                }
+                List<SupportedLocale> locales = report.getLocales();
 
-                List<String> languages = report.getLanguages();
-                if (languages == null || languages.isEmpty()) {
-                    continue;
-                }
+                assert !locales.isEmpty();
+                assert !types.isEmpty();
+
 
                 boolean hasSda = false;
-                for (String language : languages) {
-                    if (language == null) {
-                        continue;
-                    }
-
+                for (SupportedLocale locale : locales) {
                     for (String type : types) {
-                        if (type == null) {
-                            continue;
-                        }
-
-                        handleReportGeneration(context, report, type, language);
+                        handleReportGeneration(context, report, type, locale);
 
                         if (type.equals(ReportType.SOFTWARE_DISTRIBUTION_ANNEX.getKey())) {
                             hasSda = true;
@@ -117,21 +103,23 @@ public class ReportStageHandler implements StageHandler {
                 }
 
                 if (hasSda) {
-                    handleLicenseAggregation(context);
-                    handleSourceAggregation(context);
-                    handleAnnexArchiveCreation(context, report);
+                    for (SupportedLocale locale : locales) {
+                        handleLicenseAggregation(context, locale);
+                        handleSourceAggregation(context, locale);
+                        handleAnnexArchiveCreation(context, locale);
+                    }
                 }
             }
         }
     }
 
-    private void handleReportGeneration(AssetExecutionContext context, Report report, String type, String language) {
+    private void handleReportGeneration(AssetExecutionContext context, Report report, String type, SupportedLocale locale) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_DOCUMENT);
         processor.setStage(Stage.REPORT);
         ReportType reportType = ReportType.fromKey(type);
         Asset asset = context.getAsset();
 
-        processor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getCurrentInventoryDir());
+        processor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getGroupedStageForAsset(ReportType.fromKey(type), locale).toString());
 
         if (ReportType.fromKey(type).equals(ReportType.CERT_REPORT)) {
             processor.setProcessorParameter(PARAM_OVERVIEW_ADVISORS, "[\"CERT_FR\"]");
@@ -147,11 +135,11 @@ public class ReportStageHandler implements StageHandler {
                     context.getConfiguration().getOptions().getEnrichment().getSecurityPolicyFile(context.getEnvironment().getWorkbenchDirNormalized()));
         }
 
-        processor.setProcessorParameter(OUTPUT_DOCUMENT_FILE, context.getStageDirForAsset(Stage.REPORT).appendReportFile(ReportType.fromKey(type)));
+        processor.setProcessorParameter(OUTPUT_DOCUMENT_FILE, context.getStageDirForAsset(Stage.REPORT).appendReportFile(ReportType.fromKey(type), locale));
 
         processor.setProcessorParameter(PARAM_COMPUTED_INVENTORY_DIR, context.getStageDirForAsset(Stage.REPORT) + "computed/");
         processor.setProcessorParameter(PARAM_DOCUMENT_TYPE, type);
-        processor.setProcessorParameter(PARAM_DOCUMENT_LANGUAGE, language);
+        processor.setProcessorParameter(PARAM_DOCUMENT_LANGUAGE, locale.getLanguage());
 
         processor.setProcessorParameter(PARAM_ASSET_ID, asset.getId());
         processor.setProcessorParameter(PARAM_ASSET_NAME, asset.getName());
@@ -182,14 +170,14 @@ public class ReportStageHandler implements StageHandler {
         context.addProcessor(processor);
     }
 
-    private void handleLicenseAggregation(AssetExecutionContext context) {
+    private void handleLicenseAggregation(AssetExecutionContext context, SupportedLocale locale) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(AGGREGATE_LICENSES);
         processor.setStage(Stage.REPORT);
         Asset asset = context.getAsset();
 
-        processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().KOSMOS_PASSWORD);
-        processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().KOSMOS_USERKEYS_FILE);
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().TMD_PASSWORD);
+        processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().TMD_USERKEYS_FILE);
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getGroupedStageForAsset(ReportType.SOFTWARE_DISTRIBUTION_ANNEX, locale).appendAssetInventory());
         processor.setProcessorParameter(PARAM_REFERENCE_COMPONENT_PATH, "../components"); // FIXME: Why this path?
         processor.setProcessorParameter(PARAM_REFERENCE_LICENSE_PATH, "../licenses");  // FIXME: Why this path?
 
@@ -200,37 +188,31 @@ public class ReportStageHandler implements StageHandler {
         context.addProcessor(processor);
     }
 
-    private void handleSourceAggregation(AssetExecutionContext context) {
+    private void handleSourceAggregation(AssetExecutionContext context, SupportedLocale locale) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(AGGREGATE_SOURCES);
         processor.setStage(Stage.REPORT);
 
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getGroupedStageForAsset(ReportType.SOFTWARE_DISTRIBUTION_ANNEX, locale).appendAssetInventory());
         processor.setProcessorParameter(OUTPUT_TARGET_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/");
         processor.setProcessorParameter(PARAM_CONFIG_FILE, context.getEnvironment().getConfigDirNormalized() + "source-aggregation/config.yaml" );
 
         context.addProcessor(processor);
     }
 
-    private void handleAnnexArchiveCreation(AssetExecutionContext context, Report report) {
+    private void handleAnnexArchiveCreation(AssetExecutionContext context, SupportedLocale locale) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_ANNEX_ARCHIVE);
         processor.setStage(Stage.REPORT);
 
-        processor.setProcessorParameter(OUTPUT_ANNEX_ARCHIVE_FILE, context.getStageDirForAsset(Stage.REPORT).appendAnnexArchiveFile());
-
-        List<String> languages = report.getLanguages();
-        if (languages != null) {
-            for (String lang : languages) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    processor.setProcessorParameter(INPUT_DOCUMENT_DE_PDF_FILE, context.getStageDirForAsset(Stage.REPORT).appendReportFile(ReportType.SOFTWARE_DISTRIBUTION_ANNEX));
-                } else if ("en".equalsIgnoreCase(lang)) {
-                    processor.setProcessorParameter(INPUT_DOCUMENT_EN_PDF_FILE, context.getStageDirForAsset(Stage.REPORT).appendReportFile(ReportType.SOFTWARE_DISTRIBUTION_ANNEX));
-                }
-            }
-        }
-
+        processor.setProcessorParameter(OUTPUT_ANNEX_ARCHIVE_FILE, context.getStageDirForAsset(Stage.REPORT).appendAnnexArchiveFile(locale));
         processor.setProcessorParameter(INPUT_INVENTORY_COMPONENTS_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "components/");
         processor.setProcessorParameter(INPUT_INVENTORY_LICENSES_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "licenses/");
         processor.setProcessorParameter(INPUT_INVENTORY_SOURCES_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/");
+
+        if (locale.equals(SupportedLocale.DE_DE)) {
+            processor.setProcessorParameter(INPUT_DOCUMENT_DE_PDF_FILE, context.getStageDirForAsset(Stage.REPORT).appendReportFile(ReportType.SOFTWARE_DISTRIBUTION_ANNEX, locale));
+        } else {
+            processor.setProcessorParameter(INPUT_DOCUMENT_EN_PDF_FILE, context.getStageDirForAsset(Stage.REPORT).appendReportFile(ReportType.SOFTWARE_DISTRIBUTION_ANNEX, locale));
+        }
 
         context.addProcessor(processor);
     }

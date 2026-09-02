@@ -1,8 +1,6 @@
 package org.metaeffekt.kontinuum.runtime.models.shared;
 
-import lombok.AccessLevel;
 import lombok.Data;
-import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
@@ -239,7 +237,8 @@ public class PipelineConfiguration {
         private String organization;
         private String classificationRating;
         private String controlRating;
-        private List<String> languages;
+        private List<SupportedLocale> locales;
+
     }
 
     @Data

@@ -1,10 +1,12 @@
 package org.metaeffekt.kontinuum.runtime;
 
+import lombok.Setter;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 
+@Setter
 public abstract class AbstractGeneratePipelineMojo extends AbstractMojo {
 
     @Parameter(property = "pipelineConfigPath", required = true)

@@ -33,7 +33,7 @@ public class SummarizeStageHandler implements StageHandler {
         ProcessorDefinitions.MavenProcessor processor = (ProcessorDefinitions.MavenProcessor) context.getProcessorCatalog().getProcessorById(INVENTORY_TO_CYCLONEDX);
         processor.setStage(Stage.SUMMARIZE);
 
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(OUTPUT_BOM_FILE, context.getStageDirForAsset(Stage.SUMMARIZE).appendCycloneDxFile("JSON"));
         processor.setProcessorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, "JSON");
         processor.setProcessorParameter(PARAM_DOCUMENT_NAME, asset.getName());
@@ -48,7 +48,7 @@ public class SummarizeStageHandler implements StageHandler {
         ProcessorDefinitions.MavenProcessor processor = (ProcessorDefinitions.MavenProcessor) context.getProcessorCatalog().getProcessorById(INVENTORY_TO_SPDX);
         processor.setStage(Stage.SUMMARIZE);
 
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(OUTPUT_BOM_FILE, context.getStageDirForAsset(Stage.SUMMARIZE).appendSpdxFile("JSON"));
         processor.setProcessorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, "JSON");
         processor.setProcessorParameter(PARAM_DOCUMENT_NAME, asset.getName());

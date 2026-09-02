@@ -7,6 +7,7 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Proce
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Execution context that utilized by stage handlers during pipeline generation.
@@ -29,7 +30,7 @@ public class AssetExecutionContext {
      * stages can consume it.
      */
     @Setter
-    private String currentInventoryPath;
+    private String currentInventoryFile;
 
     /**
      * Tracks the directory containing the last output artifact.
@@ -62,6 +63,10 @@ public class AssetExecutionContext {
 
     public Workspace.AssetPath getStageDirForAsset(Stage stage) {
         return workspace.getStageDirForAsset(asset, stage);
+    }
+
+    public Workspace.AssetPath getGroupedStageForAsset(ReportType reportType, SupportedLocale locale) {
+        return workspace.getGroupedDirForAsset(asset, reportType, locale);
     }
 
     public Asset getRootAsset() {

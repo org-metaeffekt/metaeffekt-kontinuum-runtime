@@ -7,9 +7,6 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Maven
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.ENRICH_WITH_REFERENCE;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.PARAM_METADATA_ASSET_NAME;
-import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.PARAM_METADATA_ASSET_PATH;
-import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.PARAM_METADATA_ASSET_TYPE;
-import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.PARAM_METADATA_ASSET_VERSION;
 
 public class ExtractStageHandler implements StageHandler {
 
@@ -39,7 +36,7 @@ public class ExtractStageHandler implements StageHandler {
         mavenProcessor.setProcessorParameter(ProcessorParameterKey.PARAM_REFERENCE_INVENTORY_DIR, asset.getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized()));
 
         context.setCurrentInventoryDir(context.getWorkspace().getStageDirForAsset(context.getAsset(), Stage.EXTRACT).toString());
-        context.setCurrentInventoryPath(context.getWorkspace().getStageDirForAsset(context.getAsset(), Stage.EXTRACT).appendAssetInventory());
+        context.setCurrentInventoryFile(context.getWorkspace().getStageDirForAsset(context.getAsset(), Stage.EXTRACT).appendAssetInventory());
         context.addProcessor(mavenProcessor);
     }
 
@@ -47,13 +44,13 @@ public class ExtractStageHandler implements StageHandler {
         Asset asset = context.getAsset();
         MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(DefaultProcessorCatalog.ProcessorIds.ATTACH_METADATA);
         mavenProcessor.setStage(Stage.EXTRACT);
-        mavenProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
-        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        mavenProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
+        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         mavenProcessor.setProcessorParameter(PARAM_METADATA_ASSET_ID, asset.getId());
         mavenProcessor.setProcessorParameter(PARAM_METADATA_ASSET_NAME, asset.getName());
 
         context.setCurrentInventoryDir(context.getWorkspace().getStageDirForAsset(context.getAsset(), Stage.EXTRACT).toString());
-        context.setCurrentInventoryPath(context.getWorkspace().getStageDirForAsset(context.getAsset(), Stage.EXTRACT).appendAssetInventory());
+        context.setCurrentInventoryFile(context.getWorkspace().getStageDirForAsset(context.getAsset(), Stage.EXTRACT).appendAssetInventory());
         context.addProcessor(mavenProcessor);
     }
 
@@ -62,11 +59,11 @@ public class ExtractStageHandler implements StageHandler {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(ENRICH_WITH_REFERENCE);
         processor.setStage(Stage.EXTRACT);
 
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, asset.getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized()));
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
 
-        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
+        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.EXTRACT).toString());
         context.addProcessor(processor);
     }

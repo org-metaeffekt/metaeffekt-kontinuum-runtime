@@ -29,7 +29,7 @@ public class AdviseStageHandler implements StageHandler {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(ENRICH_INVENTORY);
         processor.setStage(Stage.ADVISE);
 
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
                 context.getStageDirForAsset(Stage.ADVISE).appendAssetInventory());
         processor.setProcessorParameter(PARAM_CORRELATION_DIR,
@@ -71,7 +71,7 @@ public class AdviseStageHandler implements StageHandler {
             throw new RuntimeException(e);
         }
 
-        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.ADVISE).appendAssetInventory());
+        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.ADVISE).appendAssetInventory());
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.ADVISE).toString());
         context.addProcessor(processor);
     }

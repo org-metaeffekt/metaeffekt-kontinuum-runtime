@@ -4,8 +4,6 @@ import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
-import java.util.Objects;
-
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.SCAN_INVENTORY;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 
@@ -27,15 +25,15 @@ public class ScanStageHandler implements StageHandler {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(SCAN_INVENTORY);
         processor.setStage(Stage.SCAN);
 
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryPath());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
                 context.getStageDirForAsset(Stage.SCAN).appendAssetInventory());
         processor.setProcessorParameter(PARAM_PROPERTIES_FILE,
                 context.getEnvironment().SCAN_PROPERTIES_FILE);
         processor.setProcessorParameter(ENV_KOSMOS_PASSWORD,
-                context.getEnvironment().KOSMOS_PASSWORD);
+                context.getEnvironment().TMD_PASSWORD);
         processor.setProcessorParameter(ENV_KOSMOS_USERKEYS_FILE,
-                context.getEnvironment().KOSMOS_USERKEYS_FILE);
+                context.getEnvironment().TMD_USERKEYS_FILE);
 
         try {
             processor.setProcessorParameter(INPUT_OUTPUT_ANALYSIS_BASE_DIR,
@@ -44,7 +42,7 @@ public class ScanStageHandler implements StageHandler {
             throw new RuntimeException(e);
         }
 
-        context.setCurrentInventoryPath(context.getStageDirForAsset(Stage.SCAN).appendAssetInventory());
+        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.SCAN).appendAssetInventory());
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.SCAN).toString());
         context.addProcessor(processor);
     }
