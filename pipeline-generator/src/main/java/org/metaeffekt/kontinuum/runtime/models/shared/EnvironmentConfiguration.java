@@ -35,6 +35,7 @@ public abstract class EnvironmentConfiguration {
     public final String PORTFOLIO_MANAGER_TOKEN;
     public final String PORTFOLIO_MANAGER_URL;
     public final String MAVEN_CLI_OPTS;
+    public final String LOCAL_MAVEN_REPO;
 
     public String getMirrorDir() {
         return VULNERABILITY_MIRROR_DIR;

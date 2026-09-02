@@ -8,15 +8,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.generator.shared.Pipeline;
 import org.metaeffekt.kontinuum.runtime.models.gitlab.GitlabConfiguration;
-import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
+import org.metaeffekt.kontinuum.runtime.models.shared.*;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.ProcessorParameter;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.StandaloneProcessor;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey;
-import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
 /**
  * This class generates a gitlab pipeline from the given configuration files to include as a
@@ -86,19 +83,31 @@ public class GitlabPipeline {
         }
     }
 
+    private static final List<ProcessorParameterKey> DISCRIMINATOR_KEYS = List.of(
+            ProcessorParameterKey.PARAM_DOCUMENT_TYPE,
+            ProcessorParameterKey.PARAM_DOCUMENT_LANGUAGE,
+            ProcessorParameterKey.PARAM_LANGUAGE_MODE,
+            ProcessorParameterKey.PARAM_OUTPUT_FORMAT,
+            ProcessorParameterKey.PARAM_OUTPUT_MODE,
+            ProcessorParameterKey.PARAM_SOURCE_MODE
+    );
+
     public void generateJobsSection() {
+        Map<Processor, String> jobNames = assignJobNames();
+
         for (Map.Entry<Asset, List<Processor>> entry : assetProcessorsMap.entrySet()) {
             Processor lastProcessor = null;
             for (Processor processor : entry.getValue()) {
+                String jobName = jobNames.get(processor);
 
                 StringBuilder job = new StringBuilder();
-                job.append(generateJobName(processor, entry.getKey().toString(), processor.getStage())).append(":").append(System.lineSeparator());
+                job.append(jobName).append(":").append(System.lineSeparator());
                 job.append("  ").append("stage: ").append(processor.getStage().name()).append(System.lineSeparator());
                 job.append("  ").append("image: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(System.lineSeparator());
 
                 if (lastProcessor != null && Objects.equals(lastProcessor.getStage().name(), processor.getStage().name())) {
                     job.append("  ").append("needs: [")
-                            .append(generateJobName(lastProcessor, entry.getKey().toString(), processor.getStage()))
+                            .append(jobNames.get(lastProcessor))
                             .append("]").append(System.lineSeparator());
                 }
 
@@ -125,20 +134,24 @@ public class GitlabPipeline {
         }
     }
 
-
     private String generateMavenScriptBlock(ProcessorDefinitions.MavenProcessor processor) {
         StringBuilder script = new StringBuilder();
-        script.append("      mvn ")
-                .append(gitlabConfiguration.MAVEN_CLI_OPTS)
-                .append(" -f ")
+        script.append("      mvn ");
+        if (StringUtils.isNotBlank(gitlabConfiguration.MAVEN_CLI_OPTS)) {
+            script.append(gitlabConfiguration.MAVEN_CLI_OPTS).append(" ");
+        }
+        if (StringUtils.isNotBlank(gitlabConfiguration.LOCAL_MAVEN_REPO)) {
+            script.append("-Dmaven.repo.local=").append(gitlabConfiguration.LOCAL_MAVEN_REPO).append(" ");
+        }
+        script.append("-f ")
                 .append(gitlabConfiguration.getKontinuumProcessorsDirNormalized())
                 .append(processor.getPomLocation())
                 .append(" process-resources").append(" \\").append(System.lineSeparator());
-        
+
         List<ProcessorParameter> nonBlankParams = processor.getParameters().stream()
-            .filter(p -> StringUtils.isNotBlank(p.getValue()))
-            .toList();
-        
+                .filter(p -> StringUtils.isNotBlank(p.getValue()))
+                .toList();
+
         for (int i = 0; i < nonBlankParams.size(); i++) {
             ProcessorParameter param = nonBlankParams.get(i);
             script.append("      -D").append(param.getKey()).append("='").append(param.getValue()).append("'");
@@ -163,33 +176,43 @@ public class GitlabPipeline {
         return script.append(System.lineSeparator()).toString();
     }
 
-    private String generateJobName(Processor processor, String assetName, Stage stage) {
-        StringBuilder processorName =  new StringBuilder()
+    private Map<Processor, String> assignJobNames() {
+        Map<Processor, String> jobNameMap = new IdentityHashMap<>();
+        Map<String, Integer> nameCounts = new HashMap<>();
+
+        for (Map.Entry<Asset, List<Processor>> entry : assetProcessorsMap.entrySet()) {
+            String assetName = entry.getKey().toString();
+            for (Processor processor : entry.getValue()) {
+                String baseName = buildBaseJobName(processor, assetName);
+                int count = nameCounts.getOrDefault(baseName, 0) + 1;
+                nameCounts.put(baseName, count);
+
+                String uniqueName = (count == 1) ? baseName : baseName + "-" + count;
+                jobNameMap.put(processor, uniqueName);
+            }
+        }
+        return jobNameMap;
+    }
+
+    private String buildBaseJobName(Processor processor, String assetName) {
+        StringBuilder name = new StringBuilder()
                 .append(assetName)
                 .append("-")
                 .append(processor.getId())
                 .append("-")
-                .append(stage.name());
+                .append(processor.getStage().name());
 
-        if (processor instanceof MavenProcessor mavenProcessor
-                && processor.getId().equals("create-document")) {
-            Optional<ProcessorParameter> documentTypeParameter = mavenProcessor.getParameters()
-                    .stream()
-                    .filter(p -> p.getKey() == ProcessorParameterKey.PARAM_DOCUMENT_TYPE)
-                    .findFirst();
-
-            Optional<ProcessorParameter> documentLanguageParameter = mavenProcessor.getParameters()
-                    .stream()
-                    .filter(p -> p.getKey() == ProcessorParameterKey.PARAM_DOCUMENT_LANGUAGE)
-                    .findFirst();
-
-
-            documentTypeParameter.ifPresent(parameter -> processorName.append("-")
-                    .append(parameter.getValue()));
-
-            documentLanguageParameter.ifPresent(parameter -> processorName.append("-")
-                    .append(parameter.getValue()));
+        for (ProcessorParameterKey key : DISCRIMINATOR_KEYS) {
+            processor.getParameters().stream()
+                    .filter(p -> p.getKey() == key && StringUtils.isNotBlank(p.getValue()))
+                    .findFirst()
+                    .ifPresent(p -> name.append("-").append(sanitizeNameSegment(p.getValue())));
         }
-        return processorName.toString();
+
+        return name.toString();
+    }
+
+    private String sanitizeNameSegment(String segment) {
+        return segment.trim().replaceAll("[^a-zA-Z0-9_.-]+", "-");
     }
  }

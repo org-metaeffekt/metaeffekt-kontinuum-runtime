@@ -83,9 +83,14 @@ public class LocalPipeline {
             script.append(processor.getPreScript()).append(System.lineSeparator());
         }
 
-        script.append("mvn ")
-                .append(localConfiguration.MAVEN_CLI_OPTS)
-                .append(" -f ")
+        script.append("mvn ");
+        if (StringUtils.isNotBlank(localConfiguration.MAVEN_CLI_OPTS)) {
+            script.append(localConfiguration.MAVEN_CLI_OPTS).append(" ");
+        }
+        if (StringUtils.isNotBlank(localConfiguration.LOCAL_MAVEN_REPO)) {
+            script.append("-Dmaven.repo.local=").append(localConfiguration.LOCAL_MAVEN_REPO).append(" ");
+        }
+        script.append("-f ")
                 .append(localConfiguration.getKontinuumProcessorsDirNormalized())
                 .append(processor.getPomLocation())
                 .append(" process-resources").append(" \\").append(System.lineSeparator());

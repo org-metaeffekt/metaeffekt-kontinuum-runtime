@@ -59,7 +59,6 @@ public class GroupStageHandler implements StageHandler {
     }
 
     private void handleApplyBusinessCase(AssetExecutionContext context, SupportedLocale locale) {
-
         ProcessorDefinitions.MavenProcessor processor = (ProcessorDefinitions.MavenProcessor) context.getProcessorCatalog().getProcessorById(APPLY_BUSINESS_CASE);
         processor.setStage(Stage.REPORT);
 

@@ -18,6 +18,9 @@ public abstract class AbstractGeneratePipelineMojo extends AbstractMojo {
     @Parameter(property = "mavenCliOpts")
     protected String mavenCliOpts;
 
+    @Parameter(property = "localMavenRepo", alias = "local.maven.repo")
+    protected String localMavenRepo;
+
     @Parameter(property = "tmdPassword")
     protected String tmdPassword;
 

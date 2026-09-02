@@ -58,6 +58,7 @@ public class GenerateGitlabPipelineMojo extends AbstractGeneratePipelineMojo {
                 .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_FILE(portfolioManagerClientTruststoreFile)
                 .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD(portfolioManagerClientTruststorePassword)
                 .MAVEN_CLI_OPTS(mavenCliOpts)
+                .LOCAL_MAVEN_REPO(localMavenRepo)
                 .SETUP_COMMAND(setupCommand);
 
 
