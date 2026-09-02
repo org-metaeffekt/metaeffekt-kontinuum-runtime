@@ -34,14 +34,14 @@ reports:
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"
     watermark: "Sample"
-    languages: ["en"]
+    locales: ["en_US"]
   - assetIds: ["spdx"]
     types: ["CR"]
     organization: "metaeffekt"
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"
     watermark: "Sample"
-    languages: ["de"]
+    locales: ["de_DE"]
 
 # Dashboards define which assets should have vulnerability dashboards generated.
 dashboards:

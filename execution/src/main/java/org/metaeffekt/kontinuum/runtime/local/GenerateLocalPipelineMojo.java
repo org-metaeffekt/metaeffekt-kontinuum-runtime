@@ -32,8 +32,9 @@ public class GenerateLocalPipelineMojo extends AbstractGeneratePipelineMojo {
 
         LocalConfiguration localConfiguration = LocalConfiguration.builder()
                 .executionEnvironment(executionEnvironment)
-                .TMD_PASSWORD(kosmosPassword)
-                .TMD_USERKEYS_FILE(userkeysFile)
+                .TMD_PASSWORD(tmdPassword)
+                .TMD_USERKEYS_FILE(tmdUserkeysFile)
+                .TMD_SOURCE(tmdSource)
                 .ARTIFACT_RESOLVER_CONFIG_FILE(artifactResolverConfigFile)
                 .ARTIFACT_RESOLVER_PROXY_FILE(artifactResolverProxyFile)
                 .SCAN_PROPERTIES_FILE(scanPropertiesFile)

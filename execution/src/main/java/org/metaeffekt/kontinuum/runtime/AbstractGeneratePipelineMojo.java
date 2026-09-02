@@ -18,11 +18,14 @@ public abstract class AbstractGeneratePipelineMojo extends AbstractMojo {
     @Parameter(property = "mavenCliOpts")
     protected String mavenCliOpts;
 
-    @Parameter(property = "kosmosPassword")
-    protected String kosmosPassword;
+    @Parameter(property = "tmdPassword")
+    protected String tmdPassword;
 
-    @Parameter(property = "userkeysFile")
-    protected String userkeysFile;
+    @Parameter(property = "tmdUserkeysFile")
+    protected String tmdUserkeysFile;
+
+    @Parameter(property = "tmdSource")
+    protected String tmdSource;
 
     @Parameter(property = "artifactResolverConfigFile")
     protected String artifactResolverConfigFile;

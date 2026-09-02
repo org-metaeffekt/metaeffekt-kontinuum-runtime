@@ -9,6 +9,7 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ReportType;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Dashboard;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Report;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
+import org.metaeffekt.kontinuum.runtime.models.shared.SupportedLocale;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Project;
 
 import java.io.File;
@@ -236,14 +237,14 @@ public class PipelineConfigurationLoader {
             }
 
             if (report.getLocales() == null || report.getLocales().isEmpty()) {
-                log.error("A report with 'assetIds': {} is missing or contains an empty 'languages' list.", report.getAssetIds());
+                log.error("A report with 'assetIds': {} is missing or contains an empty 'locales' list.", report.getAssetIds());
                 isValid = false;
                 continue;
             }
 
-            for (String lang : report.getLocales()) {
-                if (lang == null || lang.isBlank()) {
-                    log.error("A report with 'assetIds': {} contains an empty or blank language in 'languages'.", report.getAssetIds());
+            for (SupportedLocale locale : report.getLocales()) {
+                if (locale == null) {
+                    log.error("A report with 'assetIds': {} contains a null locale in 'locales'.", report.getAssetIds());
                     isValid = false;
                 }
             }

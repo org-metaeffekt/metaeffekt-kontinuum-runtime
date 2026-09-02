@@ -93,11 +93,7 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
     public List<ProcessorDefinitions.Processor> getProcessors() {
         List<ProcessorDefinitions.Processor> copies = new ArrayList<>(catalog.size());
         for (ProcessorDefinitions.Processor processor : catalog) {
-            if (processor instanceof ProcessorDefinitions.MavenProcessor mavenProcessor) {
-                copies.add(mavenProcessor.copy());
-            } else if (processor instanceof ProcessorDefinitions.StandaloneProcessor standaloneProcessor) {
-                copies.add(standaloneProcessor);
-            }
+            copies.add(processor != null ? processor.copy() : null);
         }
         return copies;
     }
@@ -108,13 +104,7 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
             return null;
         }
         ProcessorDefinitions.Processor processor = catalogById.get(processorId);
-        if (processor == null) {
-            return null;
-        }
-        if (processor instanceof ProcessorDefinitions.MavenProcessor mavenProcessor) {
-            return mavenProcessor.copy();
-        }
-        return processor;
+        return processor != null ? processor.copy() : null;
     }
 
     @Override

@@ -42,8 +42,9 @@ public class GenerateGitlabPipelineMojo extends AbstractGeneratePipelineMojo {
 
 
         gitlabConfiguration.CONTAINER_IMAGE(containerImage)
-                .TMD_PASSWORD(kosmosPassword)
-                .TMD_USERKEYS_FILE(userkeysFile)
+                .TMD_PASSWORD(tmdPassword)
+                .TMD_USERKEYS_FILE(tmdUserkeysFile)
+                .TMD_SOURCE(tmdSource)
                 .SCAN_PROPERTIES_FILE(scanPropertiesFile)
                 .VULNERABILITY_MIRROR_DIR(vulnerabilityMirrorDir)
                 .VULNERABILITY_MIRROR_URL(vulnerabilityMirrorUrl)

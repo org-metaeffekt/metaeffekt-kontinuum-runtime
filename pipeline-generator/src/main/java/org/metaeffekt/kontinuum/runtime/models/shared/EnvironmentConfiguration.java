@@ -22,6 +22,8 @@ public abstract class EnvironmentConfiguration {
     public final String SCAN_PROPERTIES_FILE;
     public final String TMD_PASSWORD;
     public final String TMD_USERKEYS_FILE;
+
+    @Builder.Default
     public final String TMD_SOURCE = "ae-kosmos";
     public final String SETUP_COMMAND;
     private final String KONTINUUM_DIR;
