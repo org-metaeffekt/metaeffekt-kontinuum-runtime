@@ -22,7 +22,7 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Stand
 @Slf4j
 public class GitlabPipeline {
 
-    Map<Asset, List<Processor>> assetProcessorsMap;
+    Map<Asset, AssetExecutionContext> assetExecutionContextMap;
 
     StringBuilder gitlabPipelineDocument = new StringBuilder();
 
@@ -31,7 +31,15 @@ public class GitlabPipeline {
     public GitlabPipeline(PipelineConfiguration pipelineConfiguration, GitlabConfiguration gitlabConfiguration) {
         this.gitlabConfiguration = gitlabConfiguration;
         Pipeline pipeline = new Pipeline(pipelineConfiguration, gitlabConfiguration);
-        assetProcessorsMap = pipeline.generatePipeline();
+        assetExecutionContextMap = pipeline.generatePipeline();
+    }
+
+    public Map<Asset, List<Processor>> getAssetProcessorsMap() {
+        Map<Asset, List<Processor>> map = new LinkedHashMap<>();
+        for (Map.Entry<Asset, AssetExecutionContext> entry : assetExecutionContextMap.entrySet()) {
+            map.put(entry.getKey(), entry.getValue().getProcessors());
+        }
+        return map;
     }
 
     public String generatePipeline() {
@@ -47,8 +55,8 @@ public class GitlabPipeline {
         stagesSection.append("stages:").append(System.lineSeparator());
         Set<String> requiredStages = new HashSet<>();
 
-        assetProcessorsMap.values().stream()
-            .flatMap(List::stream)
+        assetExecutionContextMap.values().stream()
+            .flatMap(ctx -> ctx.getProcessors().stream())
             .forEach(p -> requiredStages.add(p.getStage().name()));
 
         for (String stage : requiredStages.stream()
@@ -95,9 +103,10 @@ public class GitlabPipeline {
     public void generateJobsSection() {
         Map<Processor, String> jobNames = assignJobNames();
 
-        for (Map.Entry<Asset, List<Processor>> entry : assetProcessorsMap.entrySet()) {
+        for (Map.Entry<Asset, AssetExecutionContext> entry : assetExecutionContextMap.entrySet()) {
+            AssetExecutionContext context = entry.getValue();
             Processor lastProcessor = null;
-            for (Processor processor : entry.getValue()) {
+            for (Processor processor : context.getProcessors()) {
                 String jobName = jobNames.get(processor);
 
                 StringBuilder job = new StringBuilder();
@@ -105,10 +114,17 @@ public class GitlabPipeline {
                 job.append("  ").append("stage: ").append(processor.getStage().name()).append(System.lineSeparator());
                 job.append("  ").append("image: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(System.lineSeparator());
 
-                if (lastProcessor != null && Objects.equals(lastProcessor.getStage().name(), processor.getStage().name())) {
-                    job.append("  ").append("needs: [")
-                            .append(jobNames.get(lastProcessor))
-                            .append("]").append(System.lineSeparator());
+                Set<Processor> dependencies = context.getDependencies(processor);
+                if (dependencies != null && !dependencies.isEmpty()) {
+                    List<String> needJobNames = dependencies.stream()
+                            .map(jobNames::get)
+                            .filter(Objects::nonNull)
+                            .toList();
+                    if (!needJobNames.isEmpty()) {
+                        job.append("  ").append("needs: [")
+                                .append(String.join(", ", needJobNames))
+                                .append("]").append(System.lineSeparator());
+                    }
                 }
 
                 job.append("  ").append("script: ").append(System.lineSeparator());
@@ -171,7 +187,9 @@ public class GitlabPipeline {
                 .append(processor.getScriptLocation());
 
         for (ProcessorParameter parameter : processor.getParameters()) {
-            script.append(" ").append(parameter.getValue());
+            if (parameter != null && StringUtils.isNotBlank(parameter.getValue())) {
+                script.append(" ").append(parameter.getValue());
+            }
         }
         return script.append(System.lineSeparator()).toString();
     }
@@ -180,9 +198,9 @@ public class GitlabPipeline {
         Map<Processor, String> jobNameMap = new IdentityHashMap<>();
         Map<String, Integer> nameCounts = new HashMap<>();
 
-        for (Map.Entry<Asset, List<Processor>> entry : assetProcessorsMap.entrySet()) {
+        for (Map.Entry<Asset, AssetExecutionContext> entry : assetExecutionContextMap.entrySet()) {
             String assetName = entry.getKey().toString();
-            for (Processor processor : entry.getValue()) {
+            for (Processor processor : entry.getValue().getProcessors()) {
                 String baseName = buildBaseJobName(processor, assetName);
                 int count = nameCounts.getOrDefault(baseName, 0) + 1;
                 nameCounts.put(baseName, count);

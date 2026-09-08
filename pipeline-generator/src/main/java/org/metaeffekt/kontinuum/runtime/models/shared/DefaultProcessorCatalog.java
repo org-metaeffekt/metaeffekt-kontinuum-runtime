@@ -585,10 +585,11 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
         );
     }
     private static ProcessorDefinitions.MavenProcessor saveInspectImage() {
-        return mavenProcessor(SAVE_INSPECT_IMAGE, "Save Inspect Image", "fetch/fetch_inspect-image.xml", "This process saves and inspects a docker container image via its id and version. The extracted container information is then saved into a specified directory for further processing.",
+        return mavenProcessor(SAVE_INSPECT_IMAGE, "Save Inspect Image", "fetch/fetch_save-image.xml", "This process saves and inspects a docker container image via its id and version. The extracted container information is then saved into a specified directory for further processing.",
             processorParameter(OUTPUT_DIR, true),
             processorParameter(PARAM_IMAGE_ID, true),
-            processorParameter(PARAM_IMAGE_VERSION, true)
+            processorParameter(PARAM_IMAGE_VERSION, true),
+            processorParameter(PARAM_REPO_URL, false)
         );
     }
     private static ProcessorDefinitions.MavenProcessor scanDirectory() {

@@ -24,6 +24,11 @@ public enum SupportedLocale {
         return identifier;
     }
 
+    @Override
+    public String toString() {
+        return identifier;
+    }
+
     @JsonCreator
     public static SupportedLocale fromString(String value) {
         if (value == null || value.trim().isEmpty()) {

@@ -22,7 +22,14 @@ public class Workspace {
     }
 
     public AssetPath getGroupedDirForAsset(PipelineConfiguration.ProjectProperties.Asset asset, ReportType reportType, SupportedLocale locale) {
-        return new AssetPath(WORKSPACE_DIR + Stage.GROUP.getStageDirectory() + "/" + asset + "/" + reportType.getWorkspaceFolder() + "/" + locale + "/", asset);
+        String localeStr = locale != null ? locale.getIdentifier() : "";
+        return new AssetPath(WORKSPACE_DIR + Stage.GROUP.getStageDirectory() + "/" + asset + "/" + reportType.getWorkspaceFolder() + "/" + localeStr + "/", asset);
+    }
+
+    public AssetPath getGroupedDir(PipelineConfiguration.Report report, PipelineConfiguration.ProjectProperties.Asset asset, ReportType reportType, SupportedLocale locale) {
+        String groupName = report != null ? report.getGroupId() : (asset != null ? asset.toString() : "default");
+        String localeStr = locale != null ? locale.getIdentifier() : "";
+        return new AssetPath(WORKSPACE_DIR + Stage.GROUP.getStageDirectory() + "/" + groupName + "/" + reportType.getWorkspaceFolder() + "/" + localeStr + "/", asset);
     }
 
     public record AssetPath(String dir, PipelineConfiguration.ProjectProperties.Asset assetName) {
@@ -37,7 +44,7 @@ public class Workspace {
 
         public String appendReportFile(ReportType reportType, SupportedLocale locale) { return dir + assetName + "-" + reportType.getKey() + "-" + locale.getIdentifier() + ".pdf"; }
 
-        public String appendAnnexArchiveFile(SupportedLocale locale) { return dir + assetName + "-" + locale + "-annex-archive.pdf"; }
+        public String appendAnnexArchiveFile(SupportedLocale locale) { return dir + assetName + "-" + locale + "-annex-archive.zip"; }
 
         public String appendSpdxFile(String format) {
             if (format.equals("XML")) {

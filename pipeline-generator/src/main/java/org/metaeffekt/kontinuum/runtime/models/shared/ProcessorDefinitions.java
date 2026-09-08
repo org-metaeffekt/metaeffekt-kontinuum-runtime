@@ -5,6 +5,7 @@ import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Data
 public class ProcessorDefinitions {
@@ -15,13 +16,14 @@ public class ProcessorDefinitions {
     @NoArgsConstructor
     @AllArgsConstructor
     public abstract static class Processor {
+        @Builder.Default
+        UUID uid = UUID.randomUUID();
         @NonNull
         String id;
         @NonNull
         String name;
 
         Stage stage;
-
         String preScript;
         String postScript;
         List<ProcessorParameter> parameters;

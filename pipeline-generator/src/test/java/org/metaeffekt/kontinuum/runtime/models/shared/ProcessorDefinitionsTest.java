@@ -87,6 +87,67 @@ public class ProcessorDefinitionsTest {
     }
 
     @Test
+    public void testContextAddDependency() {
+        AssetExecutionContext context = new AssetExecutionContext(
+                null, null, null, null, null
+        );
+
+        ProcessorDefinitions.MavenProcessor p1 = new ProcessorDefinitions.MavenProcessor("p1", "pom1.xml");
+        p1.setId("p1");
+        p1.setName("P1");
+
+        ProcessorDefinitions.MavenProcessor p2 = new ProcessorDefinitions.MavenProcessor("p2", "pom2.xml");
+        p2.setId("p2");
+        p2.setName("P2");
+
+        ProcessorDefinitions.MavenProcessor p3 = new ProcessorDefinitions.MavenProcessor("p3", "pom3.xml");
+        p3.setId("p3");
+        p3.setName("P3");
+
+        context.addProcessor(p1);
+        context.addProcessor(p2);
+        context.addProcessor(p3);
+
+        context.addDependency(p3, p1, p2);
+        assertEquals(2, context.getDependencies(p3).size());
+        assertTrue(context.getDependencies(p3).contains(p1));
+        assertTrue(context.getDependencies(p3).contains(p2));
+
+        // Duplicate dependencies should not be added multiple times
+        context.addDependency(p3, p1);
+        assertEquals(2, context.getDependencies(p3).size());
+    }
+
+    @Test
+    public void testContextAddSequential() {
+        AssetExecutionContext context = new AssetExecutionContext(
+                null, null, null, null, null
+        );
+
+        ProcessorDefinitions.MavenProcessor p1 = new ProcessorDefinitions.MavenProcessor("p1", "pom1.xml");
+        p1.setId("p1");
+        p1.setName("P1");
+
+        ProcessorDefinitions.MavenProcessor p2 = new ProcessorDefinitions.MavenProcessor("p2", "pom2.xml");
+        p2.setId("p2");
+        p2.setName("P2");
+
+        ProcessorDefinitions.MavenProcessor p3 = new ProcessorDefinitions.MavenProcessor("p3", "pom3.xml");
+        p3.setId("p3");
+        p3.setName("P3");
+
+        context.addSequential(p1, p2, p3);
+
+        assertEquals(3, context.getProcessors().size());
+        assertTrue(context.getDependencies(p1).isEmpty());
+        assertEquals(1, context.getDependencies(p2).size());
+        assertTrue(context.getDependencies(p2).contains(p1));
+        assertEquals(1, context.getDependencies(p3).size());
+        assertTrue(context.getDependencies(p3).contains(p2));
+        assertEquals(p3, context.getLastProcessor());
+    }
+
+    @Test
     public void testSetProcessorParameter() {
         List<ProcessorDefinitions.ProcessorParameter> params = new ArrayList<>();
         params.add(new ProcessorDefinitions.ProcessorParameter(ProcessorParameterKey.PARAM_FAIL_ON_ERROR, true, null));

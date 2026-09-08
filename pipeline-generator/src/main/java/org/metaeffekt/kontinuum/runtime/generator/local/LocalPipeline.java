@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.generator.shared.Pipeline;
 import org.metaeffekt.kontinuum.runtime.models.local.LocalConfiguration;
+import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
@@ -12,6 +13,7 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Proce
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.ProcessorParameter;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.StandaloneProcessor;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,10 +30,18 @@ public class LocalPipeline {
 
     /**
      * -- GETTER --
-     *  Convenience accessor for the resolved processor map. Useful for tests.
+     *  Convenience accessor for the resolved execution context map. Useful for tests.
      */
     @Getter
-    private final Map<Asset, List<Processor>> assetProcessorsMap;
+    private final Map<Asset, AssetExecutionContext> assetExecutionContextMap;
+
+    public Map<Asset, List<Processor>> getAssetProcessorsMap() {
+        Map<Asset, List<Processor>> map = new LinkedHashMap<>();
+        for (Map.Entry<Asset, AssetExecutionContext> entry : assetExecutionContextMap.entrySet()) {
+            map.put(entry.getKey(), entry.getValue().getProcessors());
+        }
+        return map;
+    }
 
     private final StringBuilder scriptDocument = new StringBuilder();
 
@@ -40,7 +50,7 @@ public class LocalPipeline {
     public LocalPipeline(PipelineConfiguration pipelineConfiguration, LocalConfiguration localConfiguration) {
         this.localConfiguration = localConfiguration;
         Pipeline pipeline = new Pipeline(pipelineConfiguration, localConfiguration);
-        this.assetProcessorsMap = pipeline.generatePipeline();
+        this.assetExecutionContextMap = pipeline.generatePipeline();
     }
 
     public String generatePipeline() {
@@ -58,9 +68,9 @@ public class LocalPipeline {
     }
 
     private void generateProcessorSteps() {
-        for (Map.Entry<Asset, List<Processor>> entry : assetProcessorsMap.entrySet()) {
+        for (Map.Entry<Asset, AssetExecutionContext> entry : assetExecutionContextMap.entrySet()) {
             String assetName = entry.getKey().toString();
-            for (Processor processor : entry.getValue()) {
+            for (Processor processor : entry.getValue().getProcessors()) {
                 ProcessorStep step = new ProcessorStep(processor, assetName);
 
                 scriptDocument.append("# --- ").append(step.processor.getStage().name()).append(": ")
@@ -122,7 +132,9 @@ public class LocalPipeline {
                 .append(processor.getScriptLocation());
 
         for (ProcessorParameter parameter : processor.getParameters()) {
-            script.append(" ").append(parameter.getValue());
+            if (parameter != null && StringUtils.isNotBlank(parameter.getValue())) {
+                script.append(" ").append(parameter.getValue());
+            }
         }
         return script.append(System.lineSeparator()).toString();
     }

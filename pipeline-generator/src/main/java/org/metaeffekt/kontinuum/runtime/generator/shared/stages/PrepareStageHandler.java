@@ -2,8 +2,9 @@ package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
+import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
+import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.StandaloneProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
 import java.util.Objects;
@@ -11,6 +12,11 @@ import java.util.Objects;
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.*;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 
+/**
+ * Handler for the {@link Stage#PREPARE} stage.
+ * Responsible for preparing SBOMs (CycloneDX, SPDX), synchronizing with Portfolio Manager,
+ * or copying the extracted inventory if no other prepare processors are executed.
+ */
 public class PrepareStageHandler implements StageHandler {
 
     @Override
@@ -20,25 +26,61 @@ public class PrepareStageHandler implements StageHandler {
 
     @Override
     public void process(AssetExecutionContext context) {
+        boolean enableCycloneDx = context.getConfiguration().getOptions() != null
+                && context.getConfiguration().getOptions().getGlobal() != null
+                && Boolean.TRUE.equals(context.getConfiguration().getOptions().getGlobal().getEnableCycloneDxBom());
 
-        handleInventoryCopy(context);
+        boolean enableSpdx = context.getConfiguration().getOptions() != null
+                && context.getConfiguration().getOptions().getGlobal() != null
+                && Boolean.TRUE.equals(context.getConfiguration().getOptions().getGlobal().getEnableSpdxBom());
 
-        if (context.getConfiguration().getOptions().getGlobal().getEnableCycloneDxBom()) {
-            handleInventoryToCycloneDxConversion(context);
-        }
+        boolean hasPortfolioManager = Objects.nonNull(context.getConfiguration().getPortfolioManager());
 
-        if (context.getConfiguration().getOptions().getGlobal().getEnableSpdxBom()) {
-            handleInventoryToSpdxConversion(context);
-        }
+        boolean hasOtherProcessors = enableCycloneDx || enableSpdx || hasPortfolioManager;
 
-        if (Objects.nonNull(context.getConfiguration().getPortfolioManager())) {
-            handlePortfolioUpload(context);
-            handlePortfolioDownload(context);
+        Processor extractProcessor = context.getLastProcessor(Stage.EXTRACT);
+
+        if (!hasOtherProcessors) {
+            StandaloneProcessor copyProcessor = handleInventoryCopy(context);
+            if (extractProcessor != null) {
+                context.addDependency(copyProcessor, extractProcessor);
+            }
+        } else {
+            if (enableCycloneDx) {
+                MavenProcessor cycloneDxProcessor = handleInventoryToCycloneDxConversion(context);
+                if (extractProcessor != null) {
+                    context.addDependency(cycloneDxProcessor, extractProcessor);
+                }
+            }
+
+            if (enableSpdx) {
+                MavenProcessor spdxProcessor = handleInventoryToSpdxConversion(context);
+                if (extractProcessor != null) {
+                    context.addDependency(spdxProcessor, extractProcessor);
+                }
+            }
+
+            if (hasPortfolioManager) {
+                MavenProcessor uploadProcessor = handlePortfolioUpload(context);
+                MavenProcessor downloadProcessor = handlePortfolioDownload(context);
+
+                if (extractProcessor != null) {
+                    context.addDependency(uploadProcessor, extractProcessor);
+                }
+                context.addDependency(downloadProcessor, uploadProcessor);
+            }
         }
     }
 
-    private void handleInventoryCopy(AssetExecutionContext context) {
-        ProcessorDefinitions.StandaloneProcessor standaloneProcessor = (ProcessorDefinitions.StandaloneProcessor) context.getProcessorCatalog().getProcessorById(COPY_INVENTORY);
+    /**
+     * Copies an inventory file from the extract stage into the prepare stage workspace directory.
+     *
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_copy-inventory.sh">util_copy-inventory.sh</a>
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return The configured {@link StandaloneProcessor} for copying the inventory.
+     */
+    private StandaloneProcessor handleInventoryCopy(AssetExecutionContext context) {
+        StandaloneProcessor standaloneProcessor = (StandaloneProcessor) context.getProcessorCatalog().getProcessorById(COPY_INVENTORY);
         standaloneProcessor.setStage(Stage.PREPARE);
 
         standaloneProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
@@ -47,9 +89,17 @@ public class PrepareStageHandler implements StageHandler {
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.PREPARE).toString());
         context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
         context.addProcessor(standaloneProcessor);
+        return standaloneProcessor;
     }
 
-    private void handleInventoryToCycloneDxConversion(AssetExecutionContext context) {
+    /**
+     * Creates a CycloneDX BOM from the inventory.
+     *
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/convert/convert_inventory-to-cyclonedx.md">convert_inventory-to-cyclonedx.md</a>
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return The configured {@link MavenProcessor} for CycloneDX BOM conversion.
+     */
+    private MavenProcessor handleInventoryToCycloneDxConversion(AssetExecutionContext context) {
         Asset asset = context.getAsset();
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(INVENTORY_TO_CYCLONEDX);
         processor.setStage(Stage.PREPARE);
@@ -62,9 +112,17 @@ public class PrepareStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, "FIXME");
 
         context.addProcessor(processor);
+        return processor;
     }
 
-    private void handleInventoryToSpdxConversion(AssetExecutionContext context) {
+    /**
+     * Creates an SPDX BOM from the inventory.
+     *
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/convert/convert_inventory-to-spdx.md">convert_inventory-to-spdx.md</a>
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return The configured {@link MavenProcessor} for SPDX BOM conversion.
+     */
+    private MavenProcessor handleInventoryToSpdxConversion(AssetExecutionContext context) {
         Asset asset = context.getAsset();
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(INVENTORY_TO_SPDX);
         processor.setStage(Stage.PREPARE);
@@ -77,9 +135,17 @@ public class PrepareStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, "FIXME");
 
         context.addProcessor(processor);
+        return processor;
     }
 
-    private void handlePortfolioUpload(AssetExecutionContext context) {
+    /**
+     * Uploads the inventory to a running Portfolio Manager service.
+     *
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/prepare/prepare_portfolio-upload.md">prepare_portfolio-upload.md</a>
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return The configured {@link MavenProcessor} for portfolio manager upload.
+     */
+    private MavenProcessor handlePortfolioUpload(AssetExecutionContext context) {
         Asset asset = context.getAsset();
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(PORTFOLIO_UPLOAD);
         processor.setStage(Stage.PREPARE);
@@ -101,9 +167,17 @@ public class PrepareStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_TRUSTSTORE_PASSWORD, context.getEnvironment().PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD);
 
         context.addProcessor(processor);
+        return processor;
     }
 
-    private void handlePortfolioDownload(AssetExecutionContext context) {
+    /**
+     * Downloads report artifacts from Portfolio Manager into the prepare stage reference directory.
+     *
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/aggregate/aggregate_portfolio-download.md">aggregate_portfolio-download.md</a>
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return The configured {@link MavenProcessor} for portfolio manager download.
+     */
+    private MavenProcessor handlePortfolioDownload(AssetExecutionContext context) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(PORTFOLIO_DOWNLOAD);
         processor.setStage(Stage.PREPARE);
 
@@ -134,8 +208,7 @@ public class PrepareStageHandler implements StageHandler {
         processor.setPostScript(postScript.toString());
 
         context.setPortfolioManagerReferenceInventoryDir(context.getStageDirForAsset(Stage.PREPARE).appendPortfolioManagerReferenceDir());
-        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.PREPARE).toString());
-        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
         context.addProcessor(processor);
+        return processor;
     }
 }

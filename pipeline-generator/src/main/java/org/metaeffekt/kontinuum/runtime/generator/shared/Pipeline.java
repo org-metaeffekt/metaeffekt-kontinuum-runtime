@@ -45,8 +45,8 @@ public class Pipeline {
         );
     }
 
-    public Map<Asset, List<Processor>> generatePipeline() {
-        Map<Asset, List<Processor>> assetProcessorsMap = new LinkedHashMap<>();
+    public Map<Asset, AssetExecutionContext> generatePipeline() {
+        Map<Asset, AssetExecutionContext> assetExecutionContextMap = new LinkedHashMap<>();
 
         for (Asset asset : pipelineConfiguration.getProjectProperties().getAllAssets()) {
             AssetExecutionContext context = new AssetExecutionContext(
@@ -63,10 +63,10 @@ public class Pipeline {
 
             appendPreScriptToProcessors(context);
 
-            assetProcessorsMap.put(asset, context.getProcessors());
+            assetExecutionContextMap.put(asset, context);
         }
 
-        return assetProcessorsMap;
+        return assetExecutionContextMap;
     }
 
     private void appendPreScriptToProcessors(AssetExecutionContext context) {

@@ -25,10 +25,47 @@ public class PipelineConfiguration {
     }
 
     public boolean requiresVulnerabilityEnrichment() {
+        boolean hasDashboard = dashboards != null && dashboards.stream()
+                .filter(Objects::nonNull)
+                .anyMatch(d -> d.getAssetIds() != null && !d.getAssetIds().isEmpty());
+        if (hasDashboard) {
+            return true;
+        }
         if (reports == null) {
             return false;
         }
         return reports.stream()
+                .map(Report::getTypes)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .map(ReportType::fromKey)
+                .anyMatch(ReportType::requiresVulnerabilityEnrichment);
+    }
+
+    public boolean requiresVulnerabilityEnrichment(ProjectProperties.Asset asset) {
+        if (asset == null) {
+            return false;
+        }
+        return requiresVulnerabilityEnrichment(asset.getId());
+    }
+
+    public boolean requiresVulnerabilityEnrichment(String assetId) {
+        if (assetId == null) {
+            return false;
+        }
+        boolean hasDashboard = dashboards != null && dashboards.stream()
+                .filter(Objects::nonNull)
+                .filter(d -> d.getAssetIds() != null)
+                .anyMatch(d -> d.getAssetIds().contains(assetId));
+        if (hasDashboard) {
+            return true;
+        }
+        if (reports == null) {
+            return false;
+        }
+        return reports.stream()
+                .filter(Objects::nonNull)
+                .filter(r -> r.getAssetIds() != null && r.getAssetIds().contains(assetId))
                 .map(Report::getTypes)
                 .filter(Objects::nonNull)
                 .flatMap(Collection::stream)
@@ -160,6 +197,7 @@ public class PipelineConfiguration {
             public static class ContainerResolver {
                 private String image;
                 private String tag;
+                private String repoUrl = "docker.io";
             }
 
             public String getReferenceDir(String workbenchPath) throws IllegalStateException{
@@ -230,6 +268,7 @@ public class PipelineConfiguration {
 
     @Data
     public static class Report {
+        private String id;
         private List<String> assetIds;
         private List<String> types;
         private List<String> overviewAdvisors;
@@ -239,6 +278,15 @@ public class PipelineConfiguration {
         private String controlRating;
         private List<SupportedLocale> locales;
 
+        public String getGroupId() {
+            if (StringUtils.isNotBlank(id)) {
+                return id;
+            }
+            if (assetIds != null && !assetIds.isEmpty()) {
+                return String.join("-", assetIds);
+            }
+            return "default";
+        }
     }
 
     @Data

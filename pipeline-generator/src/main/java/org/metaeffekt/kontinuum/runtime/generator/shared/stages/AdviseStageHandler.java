@@ -1,15 +1,22 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
+import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Options.EnrichmentOptions;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
+import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.ENRICH_INVENTORY;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 
+/**
+ * Handler for the {@link Stage#ADVISE} stage.
+ * Responsible for enriching the asset inventory with vulnerability information such as CVEs
+ * and other vulnerability-centric information from external databases.
+ */
 public class AdviseStageHandler implements StageHandler {
 
     @Override
@@ -19,12 +26,34 @@ public class AdviseStageHandler implements StageHandler {
 
     @Override
     public void process(AssetExecutionContext context) {
-        if (context.getConfiguration().requiresVulnerabilityEnrichment()) {
-            handleVulnerabilityEnrichment(context);
+        if (context.getConfiguration().requiresVulnerabilityEnrichment(context.getAsset())) {
+            MavenProcessor processor = handleVulnerabilityEnrichment(context);
+
+            Processor previousProcessor = context.getLastProcessor();
+            if (previousProcessor != null) {
+                context.addDependency(processor, previousProcessor);
+            }
+            Processor extractProcessor = context.getLastProcessor(Stage.EXTRACT);
+            if (extractProcessor != null) {
+                context.addDependency(processor, extractProcessor);
+            }
+            Processor preProcessor = context.getLastProcessor(Stage.PRE);
+            if (preProcessor != null) {
+                context.addDependency(processor, preProcessor);
+            }
+
+            context.addProcessor(processor);
         }
     }
 
-    public void handleVulnerabilityEnrichment(AssetExecutionContext context) {
+    /**
+     * Enriches the asset inventory with vulnerability information from external databases.
+     *
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/advise/advise_enrich-inventory.md">advise_enrich-inventory.md</a>
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return The configured {@link MavenProcessor} for enriching the inventory with vulnerability data.
+     */
+    private MavenProcessor handleVulnerabilityEnrichment(AssetExecutionContext context) {
         Asset asset = context.getAsset();
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(ENRICH_INVENTORY);
         processor.setStage(Stage.ADVISE);
@@ -35,10 +64,15 @@ public class AdviseStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_CORRELATION_DIR,
                 context.getEnvironment().getCorrelationDirNormalized());
 
-        EnrichmentOptions enrichment = context.getConfiguration().getOptions().getEnrichment();
+        EnrichmentOptions enrichment = (context.getConfiguration().getOptions() != null
+                && context.getConfiguration().getOptions().getEnrichment() != null)
+                ? context.getConfiguration().getOptions().getEnrichment()
+                : new EnrichmentOptions();
 
-        processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE,
-                enrichment.getSecurityPolicyFile(context.getEnvironment().getWorkbenchDirNormalized()));
+        if (StringUtils.isNotBlank(enrichment.getSecurityPolicyFile())) {
+            processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE,
+                    enrichment.getSecurityPolicyFile(context.getEnvironment().getWorkbenchDirNormalized()));
+        }
         processor.setProcessorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS,
                 enrichment.getSecurityPolicyActiveIds() != null
                         ? String.join(",", enrichment.getSecurityPolicyActiveIds())
@@ -73,6 +107,7 @@ public class AdviseStageHandler implements StageHandler {
 
         context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.ADVISE).appendAssetInventory());
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.ADVISE).toString());
-        context.addProcessor(processor);
+
+        return processor;
     }
 }
