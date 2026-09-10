@@ -46,22 +46,13 @@ public class ReportStageHandler implements StageHandler {
             return;
         }
 
-        Processor adviseProcessor = context.getLastProcessor(Stage.ADVISE);
-
         for (Dashboard dashboard : dashboards) {
-            if (dashboard.getAssetIds() == null) {
-                continue;
-            }
             for (String assetId : dashboard.getAssetIds()) {
                 if (!assetId.equals(asset.getId())) {
                     continue;
                 }
 
-                MavenProcessor processor = handleDashboard(context, dashboard);
-                if (adviseProcessor != null) {
-                    context.addDependency(processor, adviseProcessor);
-                }
-                context.addProcessor(processor);
+                context.addProcessor(handleDashboard(context));
             }
         }
     }
@@ -80,53 +71,41 @@ public class ReportStageHandler implements StageHandler {
             List<String> types = report.getTypes();
             List<SupportedLocale> locales = report.getLocales();
 
-            if (types == null || types.isEmpty() || locales == null || locales.isEmpty()) {
-                continue;
-            }
-
             for (String type : types) {
                 ReportType reportType = ReportType.fromKey(type);
 
                 switch (reportType) {
                     case SOFTWARE_DISTRIBUTION_ANNEX -> {
                         // run source-aggregation -> sda generation -> license aggregation -> annex archive creation
-                        MavenProcessor sourceAgg = getOrCreateSourceAggregation(context);
+                        MavenProcessor sourceAgg = handleSourceAggregation(context);
+
                         for (SupportedLocale locale : locales) {
-                            MavenProcessor sdaProc = handleReportGeneration(context, report, type, locale);
-                            context.addDependency(sdaProc, sourceAgg);
-                            context.addProcessor(sdaProc);
+                            MavenProcessor reportProcessor = handleReportGeneration(context, report, type, locale);
+                            context.addDependency(reportProcessor, sourceAgg);
 
-                            MavenProcessor licAgg = handleLicenseAggregation(context, report, reportType, locale);
-                            context.addDependency(licAgg, sdaProc);
-                            context.addProcessor(licAgg);
-
-                            MavenProcessor annexArchive = handleAnnexArchiveCreation(context, locale);
-                            context.addDependency(annexArchive, licAgg, sdaProc, sourceAgg);
-                            context.addProcessor(annexArchive);
+                            context.addSequential(handleLicenseAggregation(context, report, reportType, locale),
+                                    reportProcessor,
+                                    handleAnnexArchiveCreation(context, locale));
                         }
                     }
                     case LICENSE_DOCUMENTATION -> {
                         // run source-aggregation -> LD generation -> license aggregation
-                        MavenProcessor sourceAgg = getOrCreateSourceAggregation(context);
+                        MavenProcessor sourceAggregationProcessor = handleSourceAggregation(context);
                         for (SupportedLocale locale : locales) {
-                            MavenProcessor ldProc = handleReportGeneration(context, report, type, locale);
-                            context.addDependency(ldProc, sourceAgg);
-                            context.addProcessor(ldProc);
+                            MavenProcessor licenseAggregationProcessor = handleLicenseAggregation(context, report, reportType, locale);
+                            context.addProcessor(licenseAggregationProcessor);
 
-                            MavenProcessor licAgg = handleLicenseAggregation(context, report, reportType, locale);
-                            context.addDependency(licAgg, ldProc);
-                            context.addProcessor(licAgg);
+                            MavenProcessor reportProcessor = handleReportGeneration(context, report, type, locale);
+                            context.addDependency(reportProcessor, licenseAggregationProcessor);
+                            context.addDependency(reportProcessor, sourceAggregationProcessor);
+                            context.addProcessor(reportProcessor);
                         }
                     }
                     case INITIAL_LICENSE_DOCUMENTATION -> {
                         // run ILD generation -> license aggregation
                         for (SupportedLocale locale : locales) {
-                            MavenProcessor ildProc = handleReportGeneration(context, report, type, locale);
-                            context.addProcessor(ildProc);
-
-                            MavenProcessor licAgg = handleLicenseAggregation(context, report, reportType, locale);
-                            context.addDependency(licAgg, ildProc);
-                            context.addProcessor(licAgg);
+                            context.addSequential(handleLicenseAggregation(context, report, reportType, locale),
+                                    handleReportGeneration(context, report, type, locale));
                         }
                     }
                     default -> {
@@ -141,28 +120,14 @@ public class ReportStageHandler implements StageHandler {
         }
     }
 
-    private MavenProcessor getOrCreateSourceAggregation(AssetExecutionContext context) {
-        MavenProcessor existing = (MavenProcessor) context.getProcessors().stream()
-                .filter(p -> p.getId().equals(AGGREGATE_SOURCES))
-                .findFirst()
-                .orElse(null);
-        if (existing != null) {
-            return existing;
-        }
-        MavenProcessor sourceAgg = handleSourceAggregation(context);
-        context.addProcessor(sourceAgg);
-        return sourceAgg;
-    }
-
     /**
      * Creates a vulnerability dashboard for the asset based on the vulnerability assessment and security policy.
      *
      * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/advise/advise_create-dashboard.md">advise_create-dashboard.md</a>
      * @param context The asset execution context containing pipeline and asset information.
-     * @param dashboard The dashboard configuration.
      * @return The configured {@link MavenProcessor} for dashboard creation.
      */
-    private MavenProcessor handleDashboard(AssetExecutionContext context, Dashboard dashboard) {
+    private MavenProcessor handleDashboard(AssetExecutionContext context) {
         EnrichmentOptions enrichmentOptions = context.getConfiguration().getOptions() != null
                 ? context.getConfiguration().getOptions().getEnrichment()
                 : null;
@@ -306,8 +271,8 @@ public class ReportStageHandler implements StageHandler {
         processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().TMD_PASSWORD);
         processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().TMD_USERKEYS_FILE);
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getGroupedStage(report, reportType, locale).appendAssetInventory());
-        processor.setProcessorParameter(PARAM_REFERENCE_COMPONENT_PATH, "../components");
-        processor.setProcessorParameter(PARAM_REFERENCE_LICENSE_PATH, "../licenses");
+        processor.setProcessorParameter(PARAM_REFERENCE_COMPONENT_PATH, context.getEnvironment().getWorkbenchDirNormalized() + "components/");
+        processor.setProcessorParameter(PARAM_REFERENCE_LICENSE_PATH, context.getEnvironment().getWorkbenchDirNormalized() + "licenses/");
 
         processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, asset.getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized()));
         processor.setProcessorParameter(PARAM_TARGET_COMPONENT_DIR, context.getWorkspace().getStageDirForAsset(asset, Stage.REPORT).toString() + "components/");

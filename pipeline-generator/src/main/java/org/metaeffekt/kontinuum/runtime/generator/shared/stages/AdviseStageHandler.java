@@ -27,22 +27,7 @@ public class AdviseStageHandler implements StageHandler {
     @Override
     public void process(AssetExecutionContext context) {
         if (context.getConfiguration().requiresVulnerabilityEnrichment(context.getAsset())) {
-            MavenProcessor processor = handleVulnerabilityEnrichment(context);
-
-            Processor previousProcessor = context.getLastProcessor();
-            if (previousProcessor != null) {
-                context.addDependency(processor, previousProcessor);
-            }
-            Processor extractProcessor = context.getLastProcessor(Stage.EXTRACT);
-            if (extractProcessor != null) {
-                context.addDependency(processor, extractProcessor);
-            }
-            Processor preProcessor = context.getLastProcessor(Stage.PRE);
-            if (preProcessor != null) {
-                context.addDependency(processor, preProcessor);
-            }
-
-            context.addProcessor(processor);
+            context.addProcessor(handleVulnerabilityEnrichment(context));
         }
     }
 

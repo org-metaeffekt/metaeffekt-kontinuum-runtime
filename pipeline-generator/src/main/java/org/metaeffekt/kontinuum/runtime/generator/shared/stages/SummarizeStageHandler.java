@@ -1,6 +1,7 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
+import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
@@ -23,20 +24,15 @@ public class SummarizeStageHandler implements StageHandler {
 
     @Override
     public void process(AssetExecutionContext context) {
-        boolean enableCycloneDx = context.getConfiguration().getOptions() != null
-                && context.getConfiguration().getOptions().getGlobal() != null
-                && Boolean.TRUE.equals(context.getConfiguration().getOptions().getGlobal().getEnableCycloneDxBom());
+        PipelineConfiguration.Options.GlobalOptions globalOptions = context.getConfiguration().getOptions().getGlobal();
+        assert globalOptions != null;
 
-        boolean enableSpdx = context.getConfiguration().getOptions() != null
-                && context.getConfiguration().getOptions().getGlobal() != null
-                && Boolean.TRUE.equals(context.getConfiguration().getOptions().getGlobal().getEnableSpdxBom());
-
-        if (enableCycloneDx) {
-            handleInventoryToCycloneDxConversion(context);
+        if (globalOptions.getEnableCycloneDxBom()) {
+            context.addProcessor(handleInventoryToCycloneDxConversion(context));
         }
 
-        if (enableSpdx) {
-            handleInventoryToSpdxConversion(context);
+        if (globalOptions.getEnableSpdxBom()) {
+            context.addProcessor(handleInventoryToSpdxConversion(context));
         }
     }
 
@@ -59,7 +55,6 @@ public class SummarizeStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION, "FIXME");
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, "FIXME");
 
-        context.addProcessor(processor);
         return processor;
     }
 
@@ -82,7 +77,6 @@ public class SummarizeStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION, "FIXME");
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, "FIXME");
 
-        context.addProcessor(processor);
         return processor;
     }
 }

@@ -1,6 +1,7 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
+import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
@@ -14,8 +15,7 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
 
 /**
  * Handler for the {@link Stage#PREPARE} stage.
- * Responsible for preparing SBOMs (CycloneDX, SPDX), synchronizing with Portfolio Manager,
- * or copying the extracted inventory if no other prepare processors are executed.
+ * Responsible for preparing SBOMs (CycloneDX, SPDX) and synchronizing data with Portfolio Manager.
  */
 public class PrepareStageHandler implements StageHandler {
 
@@ -26,49 +26,35 @@ public class PrepareStageHandler implements StageHandler {
 
     @Override
     public void process(AssetExecutionContext context) {
-        boolean enableCycloneDx = context.getConfiguration().getOptions() != null
-                && context.getConfiguration().getOptions().getGlobal() != null
-                && Boolean.TRUE.equals(context.getConfiguration().getOptions().getGlobal().getEnableCycloneDxBom());
 
-        boolean enableSpdx = context.getConfiguration().getOptions() != null
-                && context.getConfiguration().getOptions().getGlobal() != null
-                && Boolean.TRUE.equals(context.getConfiguration().getOptions().getGlobal().getEnableSpdxBom());
+        PipelineConfiguration.Options.GlobalOptions globalOptions = context.getConfiguration().getOptions().getGlobal();
+        assert globalOptions != null;
+
+        boolean cycloneDxEnabled = globalOptions.getEnableCycloneDxBom();
+        boolean spdxEnabled = globalOptions.getEnableSpdxBom();
 
         boolean hasPortfolioManager = Objects.nonNull(context.getConfiguration().getPortfolioManager());
 
-        boolean hasOtherProcessors = enableCycloneDx || enableSpdx || hasPortfolioManager;
+        StandaloneProcessor inventoryCopyProcessor = handleInventoryCopy(context);
+        context.addProcessor(inventoryCopyProcessor);
 
-        Processor extractProcessor = context.getLastProcessor(Stage.EXTRACT);
+        if (cycloneDxEnabled) {
+            MavenProcessor cycloneDxProcessor = handleInventoryToCycloneDxConversion(context);
+            context.addProcessor(cycloneDxProcessor);
+            context.addDependency(cycloneDxProcessor, inventoryCopyProcessor);
+        }
 
-        if (!hasOtherProcessors) {
-            StandaloneProcessor copyProcessor = handleInventoryCopy(context);
-            if (extractProcessor != null) {
-                context.addDependency(copyProcessor, extractProcessor);
-            }
-        } else {
-            if (enableCycloneDx) {
-                MavenProcessor cycloneDxProcessor = handleInventoryToCycloneDxConversion(context);
-                if (extractProcessor != null) {
-                    context.addDependency(cycloneDxProcessor, extractProcessor);
-                }
-            }
+        if (spdxEnabled) {
+            MavenProcessor spdxProcessor = handleInventoryToSpdxConversion(context);
+            context.addProcessor(spdxProcessor);
+            context.addDependency(spdxProcessor, inventoryCopyProcessor);        }
 
-            if (enableSpdx) {
-                MavenProcessor spdxProcessor = handleInventoryToSpdxConversion(context);
-                if (extractProcessor != null) {
-                    context.addDependency(spdxProcessor, extractProcessor);
-                }
-            }
+        if (hasPortfolioManager) {
+            MavenProcessor uploadProcessor = handlePortfolioUpload(context);
+            MavenProcessor downloadProcessor = handlePortfolioDownload(context);
 
-            if (hasPortfolioManager) {
-                MavenProcessor uploadProcessor = handlePortfolioUpload(context);
-                MavenProcessor downloadProcessor = handlePortfolioDownload(context);
-
-                if (extractProcessor != null) {
-                    context.addDependency(uploadProcessor, extractProcessor);
-                }
-                context.addDependency(downloadProcessor, uploadProcessor);
-            }
+            context.addDependency(uploadProcessor, inventoryCopyProcessor);
+            context.addSequential(uploadProcessor, downloadProcessor);
         }
     }
 
@@ -88,7 +74,7 @@ public class PrepareStageHandler implements StageHandler {
 
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.PREPARE).toString());
         context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
-        context.addProcessor(standaloneProcessor);
+
         return standaloneProcessor;
     }
 
@@ -111,7 +97,6 @@ public class PrepareStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION, "FIXME");
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, "FIXME");
 
-        context.addProcessor(processor);
         return processor;
     }
 
@@ -134,7 +119,6 @@ public class PrepareStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION, "FIXME");
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, "FIXME");
 
-        context.addProcessor(processor);
         return processor;
     }
 
@@ -166,7 +150,6 @@ public class PrepareStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_KEYSTORE_PASSWORD, context.getEnvironment().PORTFOLIO_MANAGER_CLIENT_KEYSTORE_PASSWORD);
         processor.setProcessorParameter(PARAM_TRUSTSTORE_PASSWORD, context.getEnvironment().PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD);
 
-        context.addProcessor(processor);
         return processor;
     }
 
@@ -208,7 +191,6 @@ public class PrepareStageHandler implements StageHandler {
         processor.setPostScript(postScript.toString());
 
         context.setPortfolioManagerReferenceInventoryDir(context.getStageDirForAsset(Stage.PREPARE).appendPortfolioManagerReferenceDir());
-        context.addProcessor(processor);
         return processor;
     }
 }

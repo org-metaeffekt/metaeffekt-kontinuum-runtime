@@ -21,7 +21,7 @@ public class PreStageHandler implements StageHandler {
     @Override
     public void process(AssetExecutionContext context) {
         if (context.getConfiguration().requiresVulnerabilityEnrichment()) {
-            handleVulnerabilityIndexDownload(context);
+            context.addProcessor(handleVulnerabilityIndexDownload(context));
         }
     }
 
@@ -39,7 +39,6 @@ public class PreStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_MIRROR_ARCHIVE_URL, context.getEnvironment().VULNERABILITY_MIRROR_URL);
         processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR, context.getEnvironment().getMirrorDir());
 
-        context.addProcessor(processor);
         return processor;
     }
 }

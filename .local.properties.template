@@ -9,7 +9,7 @@ s-dit-007.workbench.version=HEAD-SNAPSHOT
 
 
 # TermsMetaData
-kosmos.password=
+tmd.password=
 
 # Docker Build Process
 docker.image.tag=

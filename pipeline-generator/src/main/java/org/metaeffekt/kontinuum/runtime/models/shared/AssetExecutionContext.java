@@ -74,32 +74,7 @@ public class AssetExecutionContext {
         }
     }
 
-    public void addDependency(Processor target, Collection<? extends Processor> dependsOn) {
-        if (target != null && dependsOn != null) {
-            Set<Processor> deps = this.dependencies.computeIfAbsent(target, k -> new LinkedHashSet<>());
-            for (Processor dep : dependsOn) {
-                if (dep != null && dep != target) {
-                    deps.add(dep);
-                }
-            }
-        }
-    }
-
     public void addSequential(Processor... processors) {
-        if (processors == null) return;
-        Processor prev = null;
-        for (Processor p : processors) {
-            if (p != null) {
-                addProcessor(p);
-                if (prev != null) {
-                    addDependency(p, prev);
-                }
-                prev = p;
-            }
-        }
-    }
-
-    public void addSequential(List<? extends Processor> processors) {
         if (processors == null) return;
         Processor prev = null;
         for (Processor p : processors) {
@@ -134,9 +109,6 @@ public class AssetExecutionContext {
         return workspace.getStageDirForAsset(asset, stage);
     }
 
-    public Workspace.AssetPath getGroupedStageForAsset(ReportType reportType, SupportedLocale locale) {
-        return workspace.getGroupedDirForAsset(asset, reportType, locale);
-    }
 
     public Workspace.AssetPath getGroupedStage(PipelineConfiguration.Report report, ReportType reportType, SupportedLocale locale) {
         return workspace.getGroupedDir(report, asset, reportType, locale);

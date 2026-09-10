@@ -1,6 +1,7 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
+import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
@@ -22,23 +23,11 @@ public class ResolveStageHandler implements StageHandler {
 
     @Override
     public void process(AssetExecutionContext context) {
-        boolean enableResolve = context.getConfiguration().getOptions() != null
-                && context.getConfiguration().getOptions().getGlobal() != null
-                && Boolean.TRUE.equals(context.getConfiguration().getOptions().getGlobal().getEnableResolve());
+        PipelineConfiguration.Options.GlobalOptions globalOptions = context.getConfiguration().getOptions().getGlobal();
+        assert globalOptions != null;
 
-        if (enableResolve) {
-            MavenProcessor processor = handleResolve(context);
-
-            Processor previousProcessor = context.getLastProcessor();
-            if (previousProcessor != null) {
-                context.addDependency(processor, previousProcessor);
-            }
-            Processor extractProcessor = context.getLastProcessor(Stage.EXTRACT);
-            if (extractProcessor != null) {
-                context.addDependency(processor, extractProcessor);
-            }
-
-            context.addProcessor(processor);
+        if (globalOptions.getEnableResolve()) {
+            context.addProcessor(handleResolve(context));
         }
     }
 

@@ -24,19 +24,14 @@ public class ExtractStageHandler implements StageHandler {
 
     @Override
     public void process(AssetExecutionContext context) {
-        MavenProcessor extraction = handleInventoryExtraction(context);
-        MavenProcessor metadata = handleMetadataAttachment(context);
-        MavenProcessor enrichment = handleInventoryReferenceEnrichment(context);
-
-        Processor fetchProcessor = context.getLastProcessor(Stage.FETCH);
-        if (fetchProcessor != null) {
-            context.addDependency(extraction, fetchProcessor);
-        }
+        MavenProcessor inventoryExtraction = handleInventoryExtraction(context);
+        MavenProcessor metadataAttachment = handleMetadataAttachment(context);
+        MavenProcessor inventoryReferenceEnrichment = handleInventoryReferenceEnrichment(context);
 
         context.addSequential(
-                extraction,
-                metadata,
-                enrichment
+                inventoryExtraction,
+                metadataAttachment,
+                inventoryReferenceEnrichment
         );
 
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.EXTRACT).toString());
@@ -97,7 +92,7 @@ public class ExtractStageHandler implements StageHandler {
         mavenProcessor.setStage(Stage.EXTRACT);
         mavenProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
         mavenProcessor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, asset.getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized()));
-        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
+        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
 
         return mavenProcessor;
     }

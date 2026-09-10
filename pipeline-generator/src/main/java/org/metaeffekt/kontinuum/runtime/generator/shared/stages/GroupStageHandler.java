@@ -17,7 +17,7 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  * report entry in the pipeline configuration upon which report generation is based.
  * If multiple asset IDs are listed for a single report entry, all those asset inventories
  * are copied to the consolidated grouped subdirectory.
- * For software distribution annexes (SDA), the inventory is enriched with license notices
+ * For software distribution annex (SDA), the inventory is enriched with license notices
  * and business case information via the apply business case processor.
  */
 public class GroupStageHandler implements StageHandler {
@@ -34,36 +34,19 @@ public class GroupStageHandler implements StageHandler {
             return;
         }
 
-        Processor previousProcessor = context.getLastProcessor();
-        Processor extractProcessor = context.getLastProcessor(Stage.EXTRACT);
-
         for (PipelineConfiguration.Report report : reports) {
-            if (report.getAssetIds() == null || !report.getAssetIds().contains(context.getAsset().getId())) {
-                continue;
-            }
-
             List<String> types = report.getTypes();
             List<SupportedLocale> locales = report.getLocales();
-
-            if (types == null || types.isEmpty() || locales == null || locales.isEmpty()) {
-                continue;
-            }
 
             for (SupportedLocale locale : locales) {
                 for (String type : types) {
                     ReportType reportType = ReportType.fromKey(type);
 
                     StandaloneProcessor copyProcessor = handleInventoryCopy(context, report, reportType, locale);
-                    if (previousProcessor != null) {
-                        context.addDependency(copyProcessor, previousProcessor);
-                    }
-                    if (extractProcessor != null) {
-                        context.addDependency(copyProcessor, extractProcessor);
-                    }
                     context.addProcessor(copyProcessor);
 
                     if (ReportType.requiresScan(reportType)) {
-                        MavenProcessor businessCaseProcessor = handleApplyBusinessCase(context, report, locale);
+                        MavenProcessor businessCaseProcessor = handleApplyBusinessCase(context, report, reportType, locale);
                         context.addDependency(businessCaseProcessor, copyProcessor);
                         context.addProcessor(businessCaseProcessor);
                     }
@@ -90,6 +73,8 @@ public class GroupStageHandler implements StageHandler {
         standaloneProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
                 context.getGroupedStage(report, reportType, locale).appendAssetInventory());
 
+        // Setting the output inventory as the new "current" inventory is omitted here on purpose.
+
         return standaloneProcessor;
     }
 
@@ -102,16 +87,17 @@ public class GroupStageHandler implements StageHandler {
      * @param locale The target locale for the software distribution annex.
      * @return The configured {@link MavenProcessor} for applying the business case.
      */
-    private MavenProcessor handleApplyBusinessCase(AssetExecutionContext context, PipelineConfiguration.Report report, SupportedLocale locale) {
+    private MavenProcessor handleApplyBusinessCase(AssetExecutionContext context, PipelineConfiguration.Report report, ReportType reportType, SupportedLocale locale) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(APPLY_BUSINESS_CASE);
         processor.setStage(Stage.GROUP);
 
         processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().TMD_PASSWORD);
         processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().TMD_USERKEYS_FILE);
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE,
-                context.getGroupedStage(report, ReportType.SOFTWARE_DISTRIBUTION_ANNEX, locale).appendAssetInventory());
-        processor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
-                context.getGroupedStage(report, ReportType.SOFTWARE_DISTRIBUTION_ANNEX, locale).appendAssetInventory());
+
+        // Here, the "context.getCurrent()" inventory is not utilized on purpose as it is not set by the previous processor.
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getGroupedStage(report, reportType, locale).appendAssetInventory());
+        processor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getGroupedStage(report, reportType, locale).appendAssetInventory());
+
         processor.setProcessorParameter(ENV_TMD_SOURCE, context.getEnvironment().TMD_SOURCE);
         processor.setProcessorParameter(PARAM_LANGUAGE_MODE, locale.getIdentifier());
 

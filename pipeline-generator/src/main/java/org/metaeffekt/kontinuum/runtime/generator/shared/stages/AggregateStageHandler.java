@@ -28,16 +28,6 @@ public class AggregateStageHandler implements StageHandler {
             MavenProcessor enrichment = handleInventoryReferenceEnrichment(context);
             MavenProcessor filter = handleAssetFilter(context);
 
-            Processor prepareProcessor = context.getLastProcessor(Stage.PREPARE);
-            if (prepareProcessor != null) {
-                context.addDependency(enrichment, prepareProcessor);
-            }
-
-            Processor extractProcessor = context.getLastProcessor(Stage.EXTRACT);
-            if (extractProcessor != null) {
-                context.addDependency(enrichment, extractProcessor);
-            }
-
             context.addSequential(enrichment, filter);
         }
     }

@@ -12,7 +12,6 @@ public class PostStageHandler implements StageHandler {
 
     @Override
     public void process(AssetExecutionContext context) {
-        // Post stage is currently a no-op.
         // Reserved for future post-processing logic.
     }
 }
