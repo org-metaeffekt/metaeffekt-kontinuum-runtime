@@ -52,7 +52,7 @@ public class ReportStageHandler implements StageHandler {
                     continue;
                 }
 
-                context.addProcessor(handleDashboard(context));
+                context.addProcessor(handleDashboard(context, dashboard));
             }
         }
     }
@@ -127,15 +127,12 @@ public class ReportStageHandler implements StageHandler {
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for dashboard creation.
      */
-    private MavenProcessor handleDashboard(AssetExecutionContext context) {
+    private MavenProcessor handleDashboard(AssetExecutionContext context, Dashboard dashboard) {
         EnrichmentOptions enrichmentOptions = context.getConfiguration().getOptions() != null
                 ? context.getConfiguration().getOptions().getEnrichment()
                 : null;
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_DASHBOARD);
         processor.setStage(Stage.REPORT);
-        PipelineConfiguration.ProjectProperties.Project project = context.getConfiguration()
-                .getProjectProperties()
-                .getProject();
         Asset asset = context.getAsset();
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE,
@@ -151,7 +148,7 @@ public class ReportStageHandler implements StageHandler {
                             : null);
         }
         processor.setProcessorParameter(PARAM_TENANT_ID,
-                project.getTenant());
+                dashboard.getTenant());
         processor.setProcessorParameter(PARAM_ASSET_ID,
                 asset.getAssessmentId());
         processor.setProcessorParameter(PARAM_ASSESSMENT_CONTEXT,

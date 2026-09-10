@@ -5,7 +5,6 @@ projectProperties:
     id: "metaeffekt-examples"
     name: "metaeffekt-gitlab-components"
     version: "1.0.0"
-    tenant: "metaeffekt"
   assets:
     - id: "alacritty-0.17.0"
       name: "alacritty"
@@ -46,6 +45,7 @@ reports:
 # Dashboards define which assets should have vulnerability dashboards generated.
 dashboards:
   - assetIds: ["alacritty-0.17.0", "spdx"]
+    tenant: "metaeffekt"
 
 portfolioManager:
   project: "metaeffekt-kontinuum"

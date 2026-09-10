@@ -71,15 +71,13 @@ projectProperties:
     id: "metaeffekt-workbench"
     name: "Metaeffekt Workbench"
     version: "1.0.0"
-    tenant: "metaeffekt"
 ```
 
-| Parameter | Type   | Required | Description                                                 | What It Produces / Affects                                                                         |
-|:----------|:-------|:---------|:------------------------------------------------------------|:---------------------------------------------------------------------------------------------------|
-| `id`      | String | **Yes**  | Machine-readable unique identifier for the project/product. | Used to construct the workspace and as an artifact identifier.                                     |
-| `name`    | String | **Yes**  | Human-readable project/product title.                       | Displayed on report cover pages, document headers, and dashboards.                                 |
-| `version` | String | **Yes**  | Product version string.                                     | Displayed on report covers and attached to inventory metadata.                                     |
-| `tenant`  | String | **Yes**  | Multi-tenant organization identifier.                       | Resolves tenant assessment paths (`assessments/<tenant>/...`) to dynamically load assessment data. |
+| Parameter | Type   | Required | Description                                                 | What It Produces / Affects                                         |
+|:----------|:-------|:---------|:------------------------------------------------------------|:-------------------------------------------------------------------|
+| `id`      | String | **Yes**  | Machine-readable unique identifier for the project/product. | Used to construct the workspace and as an artifact identifier.     |
+| `name`    | String | **Yes**  | Human-readable project/product title.                       | Displayed on report cover pages, document headers, and dashboards. |
+| `version` | String | **Yes**  | Product version string.                                     | Displayed on report covers and attached to inventory metadata.     |
 
 ---
 
@@ -107,7 +105,7 @@ projectProperties:
 | `name`         | String | **Yes**  | Component or asset name.                                                               | Asset name utilized throughout the pipeline run.                                                                   |
 | `version`      | String | **Yes**  | Asset version.                                                                         | Asset version utilized throughout the pipeline run.                                                                |
 | `reference`    | String | **Yes**  | Path to the reference inventory directory or file relative to the workbench directory. | Used as an information repository from which information missing in the extracted asset is pulled.                 |
-| `assessmentId` | String | Optional | Vulnerability assessment identifier.                                                   | Locates manual assessments in the workbench directory: `assessments/<tenant>/<assessmentId>/<context>/context`.    |
+| `assessmentId` | String | Optional | Vulnerability assessment identifier.                                                   | Locates manual assessments in the workbench directory: `assessments/<project-name>/<assessmentId>/<context>/context`. |
 | `context`      | String | Optional | Assessment context (e.g., `local`, `remote`).                                          | Sub-directory qualifier to dynamically resolve context information.                                                |
 | `assets`       | List   | Optional | Nested list of child assets.                                                           | Supports hierarchical asset decomposition (e.g., an asset containing multiple other assets).                       |
 
@@ -217,11 +215,13 @@ The `dashboards` section instructs the pipeline to generate vulnerability dashbo
 ```yaml
 dashboards:
   - assetIds: [ "sample-asset", "sample-asset-2" ]
+    tenant: "metaeffekt"
 ```
 
-| Parameter  | Type | Required | Description                                                 | What It Produces / Affects                                                                  |
-|:-----------|:-----|:---------|:------------------------------------------------------------|:--------------------------------------------------------------------------------------------|
-| `assetIds` | List | **Yes**  | List of asset IDs for which dashboards should be generated. | Automatically triggers vulnerability enrichment and generates a dashboard per listed asset. |
+| Parameter  | Type   | Required | Description                                                 | What It Produces / Affects                                                                  |
+|:-----------|:-------|:---------|:------------------------------------------------------------|:--------------------------------------------------------------------------------------------|
+| `assetIds` | List   | **Yes**  | List of asset IDs for which dashboards should be generated. | Automatically triggers vulnerability enrichment and generates a dashboard per listed asset. |
+| `tenant`   | String | **Yes**  | Multi-tenant organization identifier for the dashboard.     | Passed to dashboard generation (`param.tenant.id`).                                          |
 
 ---
 
@@ -328,7 +328,6 @@ projectProperties:
     id: "sample-product"
     name: "Sample Product Suite"
     version: "2.5.0"
-    tenant: "metaeffekt"
 
   assets:
     # Asset 1: Downloaded from remote URL archive
@@ -386,6 +385,7 @@ reports:
 
 dashboards:
   - assetIds: [ "backend-service", "gateway-proxy" ]
+    tenant: "metaeffekt"
 
 portfolioManager:
   project: "sample-product-suite"

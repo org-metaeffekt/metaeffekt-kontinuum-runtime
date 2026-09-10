@@ -150,7 +150,6 @@ public class PipelineConfiguration {
             private String id;
             private String name;
             private String version;
-            private String tenant;
 
             @Override
             public String toString() {
@@ -214,7 +213,7 @@ public class PipelineConfiguration {
             }
 
             public String getContextDir(ProjectProperties.Project project, String workbenchPath) {
-                if (StringUtils.isBlank(project.getTenant())) {
+                if (StringUtils.isBlank(project.getName())) {
                     throw new IllegalStateException("Tried to access tenant for project " + project + " but is not set.");
                 }
 
@@ -226,11 +225,11 @@ public class PipelineConfiguration {
                     throw new IllegalStateException("Tried to access context for asset " + this + " but is not set.");
                 }
 
-                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getTenant(), assessmentId, context, "context");
+                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getName(), assessmentId, context, "context");
             }
 
             public String getAssessmentDir(ProjectProperties.Project project, String workbenchPath) {
-                if (StringUtils.isBlank(project.getTenant())) {
+                if (StringUtils.isBlank(project.getName())) {
                     throw new IllegalStateException("Tried to access tenant for project " + project + " but is not set.");
                 }
 
@@ -238,7 +237,7 @@ public class PipelineConfiguration {
                     throw new IllegalStateException("Tried to access assessment id for asset " + this + " but is not set.");
                 }
 
-                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getTenant(), assessmentId);
+                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getName(), assessmentId);
             }
 
             public Stream<Asset> flattenStream() {
@@ -292,6 +291,7 @@ public class PipelineConfiguration {
     @Data
     public static class Dashboard {
         private List<String> assetIds;
+        private String tenant;
     }
 
     @Data

@@ -4,7 +4,6 @@ projectProperties:
   project:
     name: "example-project"
     version: "1.0.0"
-    tenant: "metaeffekt"
   assets:
     - id: "asset1"
       name: "first-asset"
@@ -49,7 +48,9 @@ reports:
 # Dashboards define which assets should have vulnerability dashboards generated.
 dashboards:
   - assetId: "asset1"
+    tenant: "metaeffekt"
   - assetId: "asset2"
+    tenant: "metaeffekt"
 
 # Additional pipeline configuration
 options:

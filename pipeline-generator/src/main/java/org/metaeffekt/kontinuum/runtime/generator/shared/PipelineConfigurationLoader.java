@@ -77,11 +77,6 @@ public class PipelineConfigurationLoader {
             log.error("Project id is missing.");
             isValid = false;
         }
-
-        if (StringUtils.isBlank(project.getTenant()) && assessmentFieldsRequired()) {
-            log.error("Project tenant is empty but required for reports or dashboards.");
-            isValid = false;
-        }
     }
 
     private void validateAssets() {
@@ -264,7 +259,7 @@ public class PipelineConfigurationLoader {
         }
 
         for (PipelineConfiguration.Dashboard dashboard : dashboards) {
-            if (dashboard.getAssetIds().isEmpty()) {
+            if (dashboard.getAssetIds() == null || dashboard.getAssetIds().isEmpty()) {
                 log.error("A dashboard is missing 'assetIds'.");
                 isValid = false;
                 continue;
@@ -272,6 +267,11 @@ public class PipelineConfigurationLoader {
 
             if (!new HashSet<>(assetIds).containsAll(dashboard.getAssetIds())) {
                 log.error("A dashboard contains invalid 'assetIds'.");
+                isValid = false;
+            }
+
+            if (StringUtils.isBlank(dashboard.getTenant())) {
+                log.error("A dashboard is missing 'tenant'.");
                 isValid = false;
             }
         }
