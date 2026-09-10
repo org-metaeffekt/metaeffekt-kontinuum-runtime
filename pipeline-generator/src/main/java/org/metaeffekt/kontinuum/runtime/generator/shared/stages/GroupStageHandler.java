@@ -64,6 +64,7 @@ public class GroupStageHandler implements StageHandler {
 
     private MavenProcessor handlePreReportInventoryFiler(AssetExecutionContext context) {
         MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(TRANSFORM_INVENTORIES);
+        mavenProcessor.setStage(Stage.GROUP);
 
         mavenProcessor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getCurrentInventoryFile());
         mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.GROUP).appendAssetInventory());
