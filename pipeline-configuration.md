@@ -176,23 +176,29 @@ reports:
     organization: "metaeffekt GmbH"
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"
+    productName: "product-name"
+    productVersion: "1.0.0"
     productWatermark: "CONFIDENTIAL"
     overviewAdvisors: [ "CERT_FR", "NVD" ]
+    preReportFilterFile: "scripts/prepare.kts"
 ```
 
-| Parameter              | Type   | Required | Description                                                                                             | What It Produces / Affects                                               |
-|:-----------------------|:-------|:---------|:--------------------------------------------------------------------------------------------------------|:-------------------------------------------------------------------------|
-| `id`                   | String | Optional | Group identifier for multi-asset reports.                                                               | Required for internal workspace management.                              |
-| `assetIds`             | List   | **Yes**  | List of asset IDs whose inventories feed into this report.                                              | Influences which assets make up a given report.                          |
-| `types`                | List   | **Yes**  | List of report type keys to generate (e.g. `VR`, `SDA`, `LD`, `ILD`, `CR`, `VSR`, `CA`).                | Dictates which document generation processors and dependency chains run. |
-| `locales`              | List   | **Yes**  | Target locales for document generation (e.g., `["en_US"]`, `["en_US", "de_DE"]`).                       | Renders documents in the specified languages.                            |
-| `organization`         | String | Optional | Organization name.                                                                                      | Rendered in document headers, footers, and title blocks.                 |
-| `classificationRating` | String | Optional | Document security classification (e.g. `RESTRICTED`, `DEFAULT`).                                        | Sets the security classification in the report.                          |
-| `controlRating`        | String | Optional | Control rating (e.g. `CONFIDENTIAL`, `OPEN`).                                                           | Sets the control rating in the report.                                   |
-| `watermark`            | String | Optional | Watermark text printed across all report pages.                                                         | Displays a customer specific watermark in the report.                    |
-| `overviewAdvisors`     | List   | Optional | List of vulnerability advisory sources to enable for vulnerability reports (e.g. `["CERT_FR", "NVD"]`). | Enables the set overview advisors for vulnerability centric reports.     |
+| Parameter              | Type   | Required | Description                                                                                             | What It Produces / Affects                                                        |
+|:-----------------------|:-------|:---------|:--------------------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------|
+| `id`                   | String | Optional | Group identifier for multi-asset reports.                                                               | Required for internal workspace management.                                       |
+| `assetIds`             | List   | **Yes**  | List of asset IDs whose inventories feed into this report.                                              | Influences which assets make up a given report.                                   |
+| `types`                | List   | **Yes**  | List of report type keys to generate (e.g. `VR`, `SDA`, `LD`, `ILD`, `CR`, `VSR`, `CA`).                | Dictates which document generation processors and dependency chains run.          |
+| `locales`              | List   | **Yes**  | Target locales for document generation (e.g., `["en_US"]`, `["en_US", "de_DE"]`).                       | Renders documents in the specified languages.                                     |
+| `organization`         | String | Optional | Organization name.                                                                                      | Rendered in document headers, footers, and title blocks.                          |
+| `classificationRating` | String | Optional | Document security classification (e.g. `RESTRICTED`, `DEFAULT`).                                        | Sets the security classification in the report.                                   |
+| `controlRating`        | String | Optional | Control rating (e.g. `CONFIDENTIAL`, `OPEN`).                                                           | Sets the control rating in the report.                                            |
+| `productName`          | String | Optional | Encomapssing product name listed in the report.                                                         | Encomapssing product name listed in the report.                                   |
+| `productVersion`       | String | Optional | Encomapssing product version listed in the report.                                                      | Encomapssing product version listed in the report.                                |
+| `productWatermark`     | String | Optional | Watermark text printed across all report pages.                                                         | Displays a customer specific watermark in the report.                             |
+| `overviewAdvisors`     | List   | Optional | List of vulnerability advisory sources to enable for vulnerability reports (e.g. `["CERT_FR", "NVD"]`). | Enables the set overview advisors for vulnerability centric reports.              |
+| `preReportFilterFile`  | String | Optional | A path to a kotlin script file filtering the inventory used to generate the report.                     | Enables customer specific filtering and adjustment of the report-input inventory. |
 
----
+---the set overview advisors for vulnerability centric reports.
 
 ### 3.1 Supported Report Types
 

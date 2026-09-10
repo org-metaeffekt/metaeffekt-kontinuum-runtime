@@ -26,6 +26,24 @@ readonly DOCKER_USERNAME="$(strip_quotes "$6")"
 readonly DOCKER_ACCESS_TOKEN="$(strip_quotes "$7")"
 readonly DOCKER_REGISTRY="$(strip_quotes "$8")"
 
+AE_UNIVERSE_VERSION_INPUT="$(strip_quotes "$9")"
+AE_KOSMOS_VERSION_INPUT="$(strip_quotes "${10}")"
+
+if [[ -z "$AE_UNIVERSE_VERSION_INPUT" || -z "$AE_KOSMOS_VERSION_INPUT" ]]; then
+    local_props="$(cd "$SELF_DIR/../.." && pwd)/.local.properties"
+    if [[ -f "$local_props" ]]; then
+        if [[ -z "$AE_UNIVERSE_VERSION_INPUT" ]]; then
+            AE_UNIVERSE_VERSION_INPUT="$(grep -E '^[[:space:]]*ae\.universe\.version[[:space:]]*=' "$local_props" | tail -n 1 | cut -d'=' -f2- | tr -d ' "\r\n' || true)"
+        fi
+        if [[ -z "$AE_KOSMOS_VERSION_INPUT" ]]; then
+            AE_KOSMOS_VERSION_INPUT="$(grep -E '^[[:space:]]*ae\.kosmos\.version[[:space:]]*=' "$local_props" | tail -n 1 | cut -d'=' -f2- | tr -d ' "\r\n' || true)"
+        fi
+    fi
+fi
+
+readonly AE_UNIVERSE_VERSION="$AE_UNIVERSE_VERSION_INPUT"
+readonly AE_KOSMOS_VERSION="$AE_KOSMOS_VERSION_INPUT"
+
 # Function to check all required input argument variables
 check_args() {
     local missing=0
@@ -43,29 +61,37 @@ check_args() {
         missing=1
     fi
     if [[ -z "$AE_KONTINUUM_BRANCH" ]]; then
-        echo "Error: AE_KONTINUUM_BRANCH (argument 8) is missing or empty." >&2
+        echo "Error: AE_KONTINUUM_BRANCH (argument 4) is missing or empty." >&2
         missing=1
     fi
     if [[ -z "$DOCKER_TAG" ]]; then
-        echo "Error: DOCKER_TAG (argument 4) is missing or empty." >&2
+        echo "Error: DOCKER_TAG (argument 5) is missing or empty." >&2
         missing=1
     fi
     if [[ -z "$DOCKER_USERNAME" ]]; then
-        echo "Error: DOCKER_USERNAME (argument 5) is missing or empty." >&2
+        echo "Error: DOCKER_USERNAME (argument 6) is missing or empty." >&2
         missing=1
     fi
     if [[ -z "$DOCKER_ACCESS_TOKEN" ]]; then
-        echo "Error: DOCKER_ACCESS_TOKEN (argument 6) is missing or empty." >&2
+        echo "Error: DOCKER_ACCESS_TOKEN (argument 7) is missing or empty." >&2
         missing=1
     fi
     if [[ -z "$DOCKER_REGISTRY" ]]; then
-        echo "Error: DOCKER_REGISTRY (argument 7) is missing or empty." >&2
+        echo "Error: DOCKER_REGISTRY (argument 8) is missing or empty." >&2
+        missing=1
+    fi
+    if [[ -z "$AE_UNIVERSE_VERSION" ]]; then
+        echo "Error: AE_UNIVERSE_VERSION (argument 9) is missing or empty." >&2
+        missing=1
+    fi
+    if [[ -z "$AE_KOSMOS_VERSION" ]]; then
+        echo "Error: AE_KOSMOS_VERSION (argument 10) is missing or empty." >&2
         missing=1
     fi
 
     if [[ $missing -ne 0 ]]; then
         echo "" >&2
-        echo "Usage: $0 <AE_CORE_VERSION> <AE_ARTIFACT_ANALYSIS_VERSION> <AE_PORTFOLIO_MANAGER_VERSION> <AE_KONTINUUM_BRANCH> <DOCKER_TAG> <DOCKER_USERNAME> <DOCKER_ACCESS_TOKEN> <DOCKER_REGISTRY>" >&2
+        echo "Usage: $0 <AE_CORE_VERSION> <AE_ARTIFACT_ANALYSIS_VERSION> <AE_PORTFOLIO_MANAGER_VERSION> <AE_KONTINUUM_BRANCH> <DOCKER_TAG> <DOCKER_USERNAME> <DOCKER_ACCESS_TOKEN> <DOCKER_REGISTRY> <AE_UNIVERSE_VERSION> <AE_KOSMOS_VERSION>" >&2
         exit 1
     fi
 }
@@ -227,6 +253,54 @@ build_kontinuum() {
       done
 }
 
+build_tmd() {
+    echo "Resolving TMD dependency com.metaeffekt.universe:ae-metaeffekt-universe:$AE_UNIVERSE_VERSION"
+
+    mvn dependency:get \
+        -DgroupId="com.metaeffekt.universe" \
+        -DartifactId="ae-metaeffekt-universe" \
+        -Dversion="$AE_UNIVERSE_VERSION" \
+        -Dpackaging=pom \
+        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
+        echo "Failed to resolve TMD universe pom: com.metaeffekt.universe:ae-metaeffekt-universe:$AE_UNIVERSE_VERSION" >&2
+        exit 1
+    }
+
+    mvn dependency:get \
+        -DgroupId="com.metaeffekt.universe" \
+        -DartifactId="ae-metaeffekt-universe" \
+        -Dversion="$AE_UNIVERSE_VERSION" \
+        -Dpackaging=zip \
+        -Dclassifier=package \
+        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
+        echo "Failed to resolve TMD universe package: com.metaeffekt.universe:ae-metaeffekt-universe:$AE_UNIVERSE_VERSION" >&2
+        exit 1
+    }
+
+    echo "Resolving TMD dependency com.metaeffekt.kosmos:ae-metaeffekt-kosmos:$AE_KOSMOS_VERSION"
+
+    mvn dependency:get \
+        -DgroupId="com.metaeffekt.kosmos" \
+        -DartifactId="ae-metaeffekt-kosmos" \
+        -Dversion="$AE_KOSMOS_VERSION" \
+        -Dpackaging=pom \
+        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
+        echo "Failed to resolve TMD kosmos pom: com.metaeffekt.kosmos:ae-metaeffekt-kosmos:$AE_KOSMOS_VERSION" >&2
+        exit 1
+    }
+
+    mvn dependency:get \
+        -DgroupId="com.metaeffekt.kosmos" \
+        -DartifactId="ae-metaeffekt-kosmos" \
+        -Dversion="$AE_KOSMOS_VERSION" \
+        -Dpackaging=zip \
+        -Dclassifier=package \
+        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
+        echo "Failed to resolve TMD kosmos package: com.metaeffekt.kosmos:ae-metaeffekt-kosmos:$AE_KOSMOS_VERSION" >&2
+        exit 1
+    }
+}
+
 main() {
   check_args
 
@@ -234,6 +308,7 @@ main() {
   build_artifact_analysis
   build_portfolio_manager
   build_kontinuum
+  build_tmd
 
   build_docker
 }

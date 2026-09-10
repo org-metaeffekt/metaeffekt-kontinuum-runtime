@@ -51,6 +51,8 @@
                                         <argument>${docker.username}</argument>
                                         <argument>${docker.access.token}</argument>
                                         <argument>${docker.registry}</argument>
+                                        <argument>${ae.universe.version}</argument>
+                                        <argument>${ae.kosmos.version}</argument>
                                     </arguments>
                                 </configuration>
                             </execution>
