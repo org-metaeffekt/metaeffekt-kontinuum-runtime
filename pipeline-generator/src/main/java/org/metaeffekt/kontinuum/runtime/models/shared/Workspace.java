@@ -1,13 +1,5 @@
 package org.metaeffekt.kontinuum.runtime.models.shared;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.stream.Collectors;
-
-import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
-
-import javax.swing.*;
-
 public class Workspace {
 
     public final String WORKSPACE_DIR;
@@ -32,25 +24,25 @@ public class Workspace {
         return new AssetPath(WORKSPACE_DIR + Stage.GROUP.getStageDirectory() + "/" + groupName + "/" + reportType.getWorkspaceFolder() + "/" + localeStr + "/", asset);
     }
 
-    public record AssetPath(String dir, PipelineConfiguration.ProjectProperties.Asset assetName) {
+    public record AssetPath(String dir, PipelineConfiguration.ProjectProperties.Asset asset) {
 
         public String appendAssetInventory() {
-            return dir + assetName + ".xlsx";
+            return dir + asset + ".xlsx";
         }
 
         public String appendDashboardFile() {
-            return dir + assetName + ".html";
+            return dir + asset + ".html";
         }
 
-        public String appendReportFile(ReportType reportType, SupportedLocale locale) { return dir + assetName + "-" + reportType.getKey() + "-" + locale.getIdentifier() + ".pdf"; }
+        public String appendReportFile(ReportType reportType, SupportedLocale locale) { return dir + asset + "-" + reportType.getKey() + "-" + locale.getIdentifier() + ".pdf"; }
 
-        public String appendAnnexArchiveFile(SupportedLocale locale) { return dir + assetName + "-" + locale + "-annex-archive.zip"; }
+        public String appendAnnexArchiveFile(SupportedLocale locale) { return dir + asset + "-" + locale + "-annex-archive.zip"; }
 
         public String appendSpdxFile(String format) {
             if (format.equals("XML")) {
-                return dir + assetName + "-spdx" + ".xml";
+                return dir + asset + "-spdx" + ".xml";
             }
-            return dir + assetName + "-spdx" + ".json";
+            return dir + asset + "-spdx" + ".json";
         }
 
         public String appendPortfolioManagerReferenceDir() {
@@ -58,7 +50,7 @@ public class Workspace {
         }
 
         public String appendPortfolioManagerReferenceInventory() {
-            return appendPortfolioManagerReferenceDir() + assetName + "-pm-reference.xlsx";
+            return appendPortfolioManagerReferenceDir() + asset + "-pm-reference.xlsx";
         }
 
         public String appendLicenseAnalysisDir() throws IllegalAccessException {
@@ -79,9 +71,9 @@ public class Workspace {
 
         public String appendCycloneDxFile(String format) {
             if (format.equals("XML")) {
-                return dir + assetName + "-cyclonedx" + ".xml";
+                return dir + asset + "-cyclonedx" + ".xml";
             }
-            return dir + assetName + "-cyclonedx" + ".json";
+            return dir + asset + "-cyclonedx" + ".json";
         }
 
         @Override

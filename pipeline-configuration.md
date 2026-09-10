@@ -176,7 +176,7 @@ reports:
     organization: "metaeffekt GmbH"
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"
-    watermark: "CONFIDENTIAL"
+    productWatermark: "CONFIDENTIAL"
     overviewAdvisors: [ "CERT_FR", "NVD" ]
 ```
 
@@ -372,7 +372,7 @@ reports:
     organization: "My Organization Inc."
     classificationRating: "INTERNAL"
     controlRating: "DEFAULT"
-    watermark: "CONFIDENTIAL"
+    productWatermark: "CONFIDENTIAL"
     overviewAdvisors: [ "CERT_FR", "NVD" ]
 
   # Software Distribution Annex with full source aggregation

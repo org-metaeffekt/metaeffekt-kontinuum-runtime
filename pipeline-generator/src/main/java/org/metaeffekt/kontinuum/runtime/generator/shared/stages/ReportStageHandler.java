@@ -6,7 +6,6 @@ import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Opti
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Report;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
 import java.util.List;
@@ -204,11 +203,9 @@ public class ReportStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_ASSET_NAME, asset.getName());
         processor.setProcessorParameter(PARAM_ASSET_VERSION, asset.getVersion());
 
-        processor.setProcessorParameter(PARAM_PRODUCT_NAME,
-                context.getConfiguration().getProjectProperties().getProject().getName());
-        processor.setProcessorParameter(PARAM_PRODUCT_VERSION,
-                context.getConfiguration().getProjectProperties().getProject().getVersion());
-        processor.setProcessorParameter(PARAM_PRODUCT_WATERMARK, report.getWatermark());
+        processor.setProcessorParameter(PARAM_PRODUCT_NAME, report.getProductName());
+        processor.setProcessorParameter(PARAM_PRODUCT_VERSION, report.getProductVersion());
+        processor.setProcessorParameter(PARAM_PRODUCT_WATERMARK, report.getProductWatermark());
         processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_ORGANIZATION, report.getOrganization());
         processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_CLASSIFICATION, report.getClassificationRating());
         processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_CONTROL, report.getControlRating());

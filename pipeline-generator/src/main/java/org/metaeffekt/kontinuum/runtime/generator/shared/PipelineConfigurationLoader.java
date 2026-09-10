@@ -243,6 +243,16 @@ public class PipelineConfigurationLoader {
                     isValid = false;
                 }
             }
+
+            if (StringUtils.isBlank(report.getProductName())) {
+                log.error("A report with 'assetIds': {} is missing a 'productName'.", report.getAssetIds());
+                isValid = false;
+            }
+
+            if (StringUtils.isBlank(report.getProductVersion())) {
+                log.error("A report with 'assetIds': {} is missing a 'productVersion'.", report.getAssetIds());
+                isValid = false;
+            }
         }
     }
 

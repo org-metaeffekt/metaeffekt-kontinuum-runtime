@@ -250,17 +250,7 @@ public class PipelineConfiguration {
 
             @Override
             public String toString() {
-                StringBuilder sb = new StringBuilder();
-                if (StringUtils.isNotBlank(getName())) {
-                    sb.append(getName());
-                } else {
-                    sb.append("unnamed-asset");
-                }
-
-                if (StringUtils.isNotBlank(getVersion())) {
-                    sb.append("-").append(getVersion());
-                }
-                return sb.toString();
+                return id;
             }
         }
     }
@@ -271,11 +261,14 @@ public class PipelineConfiguration {
         private List<String> assetIds;
         private List<String> types;
         private List<String> overviewAdvisors;
-        private String watermark;
+        private String productName;
+        private String productVersion;
+        private String productWatermark;
         private String organization;
         private String classificationRating;
         private String controlRating;
         private List<SupportedLocale> locales;
+        private String preReportFilterFile;
 
         public String getGroupId() {
             if (StringUtils.isNotBlank(id)) {

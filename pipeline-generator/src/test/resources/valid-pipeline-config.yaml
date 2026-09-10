@@ -32,14 +32,18 @@ reports:
     organization: "metaeffekt"
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"
-    watermark: "Sample"
+    productName: "alacritty"
+    productVersion: "0.17.0"
+    productWatermark: "Sample"
     locales: ["en_US"]
   - assetIds: ["spdx"]
     types: ["CR"]
     organization: "metaeffekt"
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"
-    watermark: "Sample"
+    productName: "spdx"
+    productVersion: "2.0.1"
+    productWatermark: "Sample"
     locales: ["de_DE"]
 
 # Dashboards define which assets should have vulnerability dashboards generated.

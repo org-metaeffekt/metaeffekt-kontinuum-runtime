@@ -1,14 +1,14 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
+import ch.qos.logback.core.util.StringCollectionUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.models.shared.*;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.StandaloneProcessor;
 
 import java.util.List;
 
-import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.APPLY_BUSINESS_CASE;
-import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.COPY_INVENTORY;
+import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.*;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 
 /**
@@ -38,11 +38,18 @@ public class GroupStageHandler implements StageHandler {
             List<String> types = report.getTypes();
             List<SupportedLocale> locales = report.getLocales();
 
+            MavenProcessor preReportFilter = null;
+            if (StringUtils.isNotBlank(report.getPreReportFilterFile())) {
+                preReportFilter = handlePreReportInventoryFiler(context);
+                context.addProcessor(preReportFilter);
+            }
+
             for (SupportedLocale locale : locales) {
                 for (String type : types) {
                     ReportType reportType = ReportType.fromKey(type);
 
                     StandaloneProcessor copyProcessor = handleInventoryCopy(context, report, reportType, locale);
+                    if (preReportFilter != null) { context.addDependency(copyProcessor, preReportFilter); }
                     context.addProcessor(copyProcessor);
 
                     if (ReportType.requiresScan(reportType)) {
@@ -53,6 +60,19 @@ public class GroupStageHandler implements StageHandler {
                 }
             }
         }
+    }
+
+    private MavenProcessor handlePreReportInventoryFiler(AssetExecutionContext context) {
+        MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(TRANSFORM_INVENTORIES);
+
+        mavenProcessor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getCurrentInventoryFile());
+        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.GROUP).appendAssetInventory());
+        mavenProcessor.setProcessorParameter(PARAM_KOTLIN_SCRIPT_FILE, context.getEnvironment().getScriptsDirNormalized() + "prepare.kts");
+
+        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.GROUP).appendAssetInventory());
+        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.GROUP).toString());
+
+        return mavenProcessor;
     }
 
     /**

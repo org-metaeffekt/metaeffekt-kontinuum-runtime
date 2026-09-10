@@ -34,7 +34,7 @@ reports:
     organization: "metaeffekt"
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"
-    watermark: "Sample"
+    productWatermark: "Sample"
   - assetId: "asset2"
     types:
       - "CR"
@@ -43,7 +43,7 @@ reports:
     organization: "metaeffekt"
     classificationRating: "DEFAULT"
     controlRating: "DEFAULT"
-    watermark: "Sample"
+    productWatermark: "Sample"
 
 # Dashboards define which assets should have vulnerability dashboards generated.
 dashboards:
