@@ -76,11 +76,12 @@ public class ReportStageHandler implements StageHandler {
                 switch (reportType) {
                     case SOFTWARE_DISTRIBUTION_ANNEX -> {
                         // run source-aggregation -> sda generation -> license aggregation -> annex archive creation
-                        MavenProcessor sourceAgg = handleSourceAggregation(context);
+                        MavenProcessor sourceAggregationProcessor = handleSourceAggregation(context);
+                        context.addProcessor(sourceAggregationProcessor);
 
                         for (SupportedLocale locale : locales) {
                             MavenProcessor reportProcessor = handleReportGeneration(context, report, type, locale);
-                            context.addDependency(reportProcessor, sourceAgg);
+                            context.addDependency(reportProcessor, sourceAggregationProcessor);
 
                             context.addSequential(handleLicenseAggregation(context, report, reportType, locale),
                                     reportProcessor,
@@ -90,6 +91,7 @@ public class ReportStageHandler implements StageHandler {
                     case LICENSE_DOCUMENTATION -> {
                         // run source-aggregation -> LD generation -> license aggregation
                         MavenProcessor sourceAggregationProcessor = handleSourceAggregation(context);
+                        context.addProcessor(sourceAggregationProcessor);
                         for (SupportedLocale locale : locales) {
                             MavenProcessor licenseAggregationProcessor = handleLicenseAggregation(context, report, reportType, locale);
                             context.addProcessor(licenseAggregationProcessor);
@@ -243,6 +245,7 @@ public class ReportStageHandler implements StageHandler {
                         : context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
         processor.setProcessorParameter(OUTPUT_TARGET_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/");
         processor.setProcessorParameter(PARAM_CONFIG_FILE, context.getEnvironment().getConfigDirNormalized() + "source-aggregation/config.yaml");
+        processor.setProcessorParameter(PARAM_PROTOCOL_FILE, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/protocol.log");
 
         return processor;
     }
