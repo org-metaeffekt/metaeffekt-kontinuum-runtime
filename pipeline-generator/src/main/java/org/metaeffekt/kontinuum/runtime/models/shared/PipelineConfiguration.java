@@ -17,6 +17,7 @@ public class PipelineConfiguration {
     private ProjectProperties projectProperties;
     private List<Report> reports;
     private List<Dashboard> dashboards;
+    private List<Overview> overviews;
     private PortfolioManager portfolioManager;
     private Options options;
 
@@ -285,6 +286,11 @@ public class PipelineConfiguration {
     public static class Dashboard {
         private List<String> assetIds;
         private String tenant;
+    }
+
+    @Data
+    public static class Overview {
+        private List<String> assetIds;
     }
 
     @Data

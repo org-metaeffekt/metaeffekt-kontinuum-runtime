@@ -4,10 +4,10 @@ import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
+import org.metaeffekt.kontinuum.runtime.models.shared.ReportType;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
-import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.INVENTORY_TO_CYCLONEDX;
-import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.INVENTORY_TO_SPDX;
+import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.*;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 
 /**
@@ -33,6 +33,10 @@ public class SummarizeStageHandler implements StageHandler {
 
         if (globalOptions.getEnableSpdxBom()) {
             context.addProcessor(handleInventoryToSpdxConversion(context));
+        }
+
+        if (context.getConfiguration().getOverviews() != null && !context.getConfiguration().getOverviews().isEmpty()) {
+            context.addSequential(handleOverviewResources(context), handleOverviewCreation(context));
         }
     }
 
@@ -79,4 +83,41 @@ public class SummarizeStageHandler implements StageHandler {
 
         return processor;
     }
+
+    private MavenProcessor handleOverviewResources(AssetExecutionContext context) {
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(COPY_RESOURCES);
+        processor.setStage(Stage.SUMMARIZE);
+
+        processor.setProcessorParameter(INPUT_ADVISOR_INVENTORIES_DIR, context.getCurrentInventoryDir());
+        processor.setProcessorParameter(INPUT_DASHBOARDS_DIR, context.getStageDirForAsset(Stage.REPORT).appendDashboardFile());
+        processor.setProcessorParameter(INPUT_INVENTORIES_DIR, context.getStageDirForAsset(Stage.PREPARE).toString());
+        processor.setProcessorParameter(INPUT_REPORTS_DIR, context.getStageDirForAsset(Stage.REPORT).toString());
+        processor.setProcessorParameter(OUTPUT_RESOURCES_DIR, context.getStageDirForAsset(Stage.SUMMARIZE).toString() + "resources/");
+
+        return processor;
+    }
+
+    /**
+     * Creates an overview report from the resources gathered during previous stages.
+     *
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/portfolio/portfolio_create-overview.md">portfolio_create-overview.md</a>
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return The configured {@link MavenProcessor} for overview creation.
+     */
+    private MavenProcessor handleOverviewCreation(AssetExecutionContext context) {
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_OVERVIEW);
+        processor.setStage(Stage.SUMMARIZE);
+
+        processor.setProcessorParameter(INPUT_ADVISOR_INVENTORIES_DIR, "advisor-inventories");
+        processor.setProcessorParameter(INPUT_DASHBOARDS_DIR, context.getStageDirForAsset(Stage.REPORT).appendDashboardDir());
+        processor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.SUMMARIZE).toString() + "resources/");
+        processor.setProcessorParameter(INPUT_INVENTORY_PATH, "source-inventories");
+        processor.setProcessorParameter(INPUT_REPORTS_DIR, "vulnerability-reports");
+        processor.setProcessorParameter(OUTPUT_OVERVIEW_FILE, context.getStageDirForAsset(Stage.SUMMARIZE).appendOverviewFile());
+        processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE, context.getConfiguration().getOptions().getEnrichment().getSecurityPolicyFile());
+        processor.setProcessorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, context.getConfiguration().getOptions().getEnrichment().getSecurityPolicyActiveIds().toString());
+        return processor;
+    }
+
+
 }

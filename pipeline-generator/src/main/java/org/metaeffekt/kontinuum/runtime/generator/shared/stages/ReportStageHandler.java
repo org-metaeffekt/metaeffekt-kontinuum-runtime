@@ -77,43 +77,41 @@ public class ReportStageHandler implements StageHandler {
                     case SOFTWARE_DISTRIBUTION_ANNEX -> {
                         // run source-aggregation -> sda generation -> license aggregation -> annex archive creation
                         MavenProcessor sourceAggregationProcessor = handleSourceAggregation(context);
-                        context.addProcessor(sourceAggregationProcessor);
+                        MavenProcessor licenseAggregationProcessor = handleLicenseAggregation(context);
+                        context.addSequential(sourceAggregationProcessor, licenseAggregationProcessor);
 
                         for (SupportedLocale locale : locales) {
-                            MavenProcessor reportProcessor = handleReportGeneration(context, report, type, locale);
-                            context.addDependency(reportProcessor, sourceAggregationProcessor);
-
-                            context.addSequential(handleLicenseAggregation(context, report, reportType, locale),
-                                    reportProcessor,
-                                    handleAnnexArchiveCreation(context, locale));
+                            MavenProcessor reportGenerationProcessor = handleReportGeneration(context, report, type, locale);
+                            context.addDependency(reportGenerationProcessor, licenseAggregationProcessor);
+                            context.addSequential(reportGenerationProcessor, handleAnnexArchiveCreation(context, locale));
                         }
                     }
                     case LICENSE_DOCUMENTATION -> {
                         // run source-aggregation -> LD generation -> license aggregation
                         MavenProcessor sourceAggregationProcessor = handleSourceAggregation(context);
-                        context.addProcessor(sourceAggregationProcessor);
-                        for (SupportedLocale locale : locales) {
-                            MavenProcessor licenseAggregationProcessor = handleLicenseAggregation(context, report, reportType, locale);
-                            context.addProcessor(licenseAggregationProcessor);
+                        MavenProcessor licenseAggregationProcessor = handleLicenseAggregation(context);
+                        context.addSequential(sourceAggregationProcessor, licenseAggregationProcessor);
 
-                            MavenProcessor reportProcessor = handleReportGeneration(context, report, type, locale);
-                            context.addDependency(reportProcessor, licenseAggregationProcessor);
-                            context.addDependency(reportProcessor, sourceAggregationProcessor);
-                            context.addProcessor(reportProcessor);
+                        for (SupportedLocale locale : locales) {
+                            MavenProcessor reportGenerationProcessor = handleReportGeneration(context, report, type, locale);
+                            context.addDependency(reportGenerationProcessor, licenseAggregationProcessor);
+                            context.addProcessor(reportGenerationProcessor);
                         }
                     }
                     case INITIAL_LICENSE_DOCUMENTATION -> {
                         // run ILD generation -> license aggregation
+                        MavenProcessor licenseAggregationProcessor = handleLicenseAggregation(context);
+                        context.addProcessor(licenseAggregationProcessor);
+
                         for (SupportedLocale locale : locales) {
-                            context.addSequential(handleLicenseAggregation(context, report, reportType, locale),
-                                    handleReportGeneration(context, report, type, locale));
+                            MavenProcessor reportGenerationProcessor = handleReportGeneration(context, report, type, locale);
+                            context.addDependency(reportGenerationProcessor, licenseAggregationProcessor);
+                            context.addProcessor(reportGenerationProcessor);
                         }
                     }
                     default -> {
-                        // For all other types only run report generation
                         for (SupportedLocale locale : locales) {
-                            MavenProcessor reportProc = handleReportGeneration(context, report, type, locale);
-                            context.addProcessor(reportProc);
+                            context.addProcessor(handleReportGeneration(context, report, type, locale));
                         }
                     }
                 }
@@ -239,42 +237,36 @@ public class ReportStageHandler implements StageHandler {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(AGGREGATE_SOURCES);
         processor.setStage(Stage.REPORT);
 
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE,
-                context.getCurrentInventoryFile() != null
-                        ? context.getCurrentInventoryFile()
-                        : context.getStageDirForAsset(Stage.AGGREGATE).appendAssetInventory());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(OUTPUT_TARGET_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/");
         processor.setProcessorParameter(PARAM_CONFIG_FILE, context.getEnvironment().getConfigDirNormalized() + "source-aggregation/config.yaml");
         processor.setProcessorParameter(PARAM_PROTOCOL_FILE, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/protocol.log");
+        processor.setProcessorParameter(PARAM_FAIL_ON_MISSING_SOURCES, "false");
 
         return processor;
     }
 
     /**
-     * Aggregates licenses and component terms metadata from the database for the given grouped inventory.
+     * Aggregates licenses and component terms metadata from the database for the given inventory.
      *
      * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_aggregate-licenses.md">util_aggregate-licenses.md</a>
      * @param context The asset execution context containing pipeline and asset information.
-     * @param report The report configuration.
-     * @param reportType The report type being aggregated.
-     * @param locale The target locale for the grouped inventory.
      * @return The configured {@link MavenProcessor} for license aggregation.
      */
-    private MavenProcessor handleLicenseAggregation(AssetExecutionContext context, Report report, ReportType reportType, SupportedLocale locale) {
+    private MavenProcessor handleLicenseAggregation(AssetExecutionContext context) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(AGGREGATE_LICENSES);
         processor.setStage(Stage.REPORT);
         Asset asset = context.getAsset();
 
         processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().TMD_PASSWORD);
         processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().TMD_USERKEYS_FILE);
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getGroupedStage(report, reportType, locale).appendAssetInventory());
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(PARAM_REFERENCE_COMPONENTS_DIR, context.getEnvironment().getWorkbenchDirNormalized() + "components/");
         processor.setProcessorParameter(PARAM_REFERENCE_LICENSES_DIR, context.getEnvironment().getWorkbenchDirNormalized() + "licenses/");
 
         processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, asset.getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized()));
         processor.setProcessorParameter(PARAM_TARGET_COMPONENTS_DIR, context.getWorkspace().getStageDirForAsset(asset, Stage.REPORT).toString() + "components/");
         processor.setProcessorParameter(PARAM_TARGET_LICENSES_DIR, context.getWorkspace().getStageDirForAsset(asset, Stage.REPORT).toString() + "licenses/");
-        processor.setProcessorParameter(PARAM_FAIL_ON_MISSING_SOURCES, "false");
 
         return processor;
     }

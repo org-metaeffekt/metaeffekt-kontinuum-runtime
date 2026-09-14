@@ -30,8 +30,16 @@ public class Workspace {
             return dir + asset + ".xlsx";
         }
 
+        public String appendDashboardDir() {
+            return dir + "dashboards/";
+        }
+
         public String appendDashboardFile() {
-            return dir + asset + ".html";
+            return appendDashboardDir() + asset + ".html";
+        }
+
+        public String appendOverviewFile() {
+            return dir + asset + "-overview.html";
         }
 
         public String appendReportFile(ReportType reportType, SupportedLocale locale) { return dir + asset + "-" + reportType.getKey() + "-" + locale.getIdentifier() + ".pdf"; }

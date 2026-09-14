@@ -57,6 +57,7 @@ public class PipelineConfigurationLoader {
         validateAssets();
         validateReports();
         validateDashboards();
+        validateOverviews();
         validatePortfolioManager();
         validateOptions();
 
@@ -287,6 +288,33 @@ public class PipelineConfigurationLoader {
         }
     }
 
+    private void validateOverviews() {
+        List<String> assetIds = getAllAssets()
+                .stream()
+                .map(Asset::getId)
+                .toList();
+
+        List<PipelineConfiguration.Overview> overviews = getOverviews();
+
+        if (overviews == null || overviews.isEmpty()) {
+            return;
+        }
+
+        for (PipelineConfiguration.Overview overview : overviews) {
+            if (overview.getAssetIds() == null || overview.getAssetIds().isEmpty()) {
+                log.error("An overview is missing 'assetIds'.");
+                isValid = false;
+                continue;
+            }
+
+            if (!new HashSet<>(assetIds).containsAll(overview.getAssetIds())) {
+                log.error("An overview contains invalid 'assetIds'.");
+                isValid = false;
+            }
+        }
+
+    }
+
     private void validatePortfolioManager() {
         PipelineConfiguration.PortfolioManager portfolioManager = pipelineConfiguration.getPortfolioManager();
 
@@ -413,6 +441,13 @@ public class PipelineConfigurationLoader {
             return Collections.emptyList();
         }
         return pipelineConfiguration.getDashboards();
+    }
+
+    private List<PipelineConfiguration.Overview> getOverviews() {
+        if (pipelineConfiguration.getOverviews() == null) {
+            return Collections.emptyList();
+        }
+        return pipelineConfiguration.getOverviews();
     }
 
 }

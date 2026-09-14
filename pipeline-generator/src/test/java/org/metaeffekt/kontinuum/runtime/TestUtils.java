@@ -2,8 +2,7 @@ package org.metaeffekt.kontinuum.runtime;
 
 import org.metaeffekt.kontinuum.runtime.models.gitlab.GitlabConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.local.LocalConfiguration;
-import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey;
+import org.metaeffekt.kontinuum.runtime.models.shared.*;
 
 import java.util.List;
 
@@ -63,6 +62,18 @@ public class TestUtils {
                 .build();
 
         return localConfiguration;
+    }
+
+    public static AssetExecutionContext buildMinimalAssetExecutionContext() {
+        PipelineConfiguration pipelineConfiguration = buildMinimalPipelineConfiguration();
+        EnvironmentConfiguration environmentConfiguration = buildMinimalLocalConfiguration();
+
+        return new AssetExecutionContext(
+                pipelineConfiguration.getProjectProperties().getAssets().get(0),
+                pipelineConfiguration,
+                environmentConfiguration,
+                new Workspace(pipelineConfiguration,environmentConfiguration),
+                new DefaultProcessorCatalog());
     }
 
     public static boolean scriptContainsParameterValue(String script, ProcessorParameterKey key, String expectedValue) {
