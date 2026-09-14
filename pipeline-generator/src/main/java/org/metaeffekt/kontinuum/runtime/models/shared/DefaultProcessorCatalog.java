@@ -167,15 +167,15 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
             processorParameter(ENV_TMD_PASSWORD, true),
             processorParameter(ENV_TMD_USERKEYS_FILE, true),
             processorParameter(INPUT_INVENTORY_FILE, true),
+            processorParameter(PARAM_REFERENCE_COMPONENTS_DIR, true),
+            processorParameter(PARAM_REFERENCE_LICENSES_DIR, true),
             processorParameter(ENV_TMD_SOURCE, false),
             processorParameter(PARAM_FAIL_ON_MISSING_COMPONENT_FILES, false),
             processorParameter(PARAM_FAIL_ON_MISSING_LICENSE_FILE, false),
-            processorParameter(PARAM_REFERENCE_COMPONENT_PATH, false),
             processorParameter(PARAM_REFERENCE_INVENTORY_DIR, false),
             processorParameter(PARAM_REFERENCE_INVENTORY_INCLUDES, false),
-            processorParameter(PARAM_REFERENCE_LICENSE_PATH, false),
-            processorParameter(PARAM_TARGET_COMPONENT_DIR, false),
-            processorParameter(PARAM_TARGET_LICENSE_DIR, false)
+            processorParameter(PARAM_TARGET_COMPONENTS_DIR, false),
+            processorParameter(PARAM_TARGET_LICENSES_DIR, false)
         );
     }
     private static ProcessorDefinitions.MavenProcessor aggregateReferenceLicenses() {
@@ -183,11 +183,11 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
             processorParameter(INPUT_INVENTORY_FILE, true),
             processorParameter(PARAM_REFERENCE_INVENTORY_DIR, true),
             processorParameter(PARAM_FAIL_ON_MISSING_LICENSE_FILE, false),
-            processorParameter(PARAM_REFERENCE_COMPONENT_PATH, false),
+            processorParameter(PARAM_REFERENCE_COMPONENTS_DIR, false),
             processorParameter(PARAM_REFERENCE_INVENTORY_INCLUDES, false),
-            processorParameter(PARAM_REFERENCE_LICENSE_PATH, false),
-            processorParameter(PARAM_TARGET_COMPONENT_DIR, false),
-            processorParameter(PARAM_TARGET_LICENSE_DIR, false)
+            processorParameter(PARAM_REFERENCE_LICENSES_DIR, false),
+            processorParameter(PARAM_TARGET_COMPONENTS_DIR, false),
+            processorParameter(PARAM_TARGET_LICENSES_DIR, false)
         );
     }
     private static ProcessorDefinitions.MavenProcessor aggregateSources() {
@@ -195,7 +195,8 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
             processorParameter(INPUT_INVENTORY_FILE, true),
             processorParameter(OUTPUT_TARGET_DIR, true),
             processorParameter(PARAM_CONFIG_FILE, true),
-            processorParameter(PARAM_PROTOCOL_FILE, false)
+            processorParameter(PARAM_PROTOCOL_FILE, false),
+            processorParameter(PARAM_FAIL_ON_MISSING_SOURCES, false)
         );
     }
     private static ProcessorDefinitions.MavenProcessor applyBusinessCase() {
@@ -323,9 +324,9 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
             processorParameter(PARAM_OVERVIEW_ADVISORS, false),
             processorParameter(PARAM_PROPERTY_SELECTOR_CLASSIFICATION, false),
             processorParameter(PARAM_PROPERTY_SELECTOR_CONTROL, false),
-            processorParameter(PARAM_REFERENCE_COMPONENT_DIR, false),
+            processorParameter(PARAM_REFERENCE_COMPONENTS_DIR, false),
             processorParameter(PARAM_REFERENCE_INVENTORY_DIR, false),
-            processorParameter(PARAM_REFERENCE_LICENSE_DIR, false),
+            processorParameter(PARAM_REFERENCE_LICENSES_DIR, false),
             processorParameter(PARAM_SECURITY_POLICY_FILE, false),
             processorParameter(PARAM_TEMPLATE_DIR, false)
         );
@@ -393,7 +394,9 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
             processorParameter(PARAM_ARTIFACT_ID, true),
             processorParameter(PARAM_GROUP_ID, true),
             processorParameter(PARAM_VERSION, true),
-            processorParameter(PARAM_REPO_URL, false)
+            processorParameter(PARAM_CLASSIFIER, false),
+            processorParameter(PARAM_REPO_URL, false),
+            processorParameter(PARAM_TYPE, false)
         );
     }
     private static ProcessorDefinitions.MavenProcessor enrichAdvisors() {

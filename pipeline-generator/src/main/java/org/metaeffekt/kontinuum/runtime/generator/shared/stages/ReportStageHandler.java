@@ -214,8 +214,8 @@ public class ReportStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_ASSET_DESCRIPTOR_FILE, KontinuumUtils.normalizeDir(context.getEnvironment().getDescriptorsDirNormalized(), reportType.getAssetDescriptorFile()));
         processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR,
                 asset.getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized()));
-        processor.setProcessorParameter(PARAM_REFERENCE_LICENSE_DIR, null);
-        processor.setProcessorParameter(PARAM_REFERENCE_COMPONENT_DIR, null);
+        processor.setProcessorParameter(PARAM_REFERENCE_LICENSES_DIR, context.getEnvironment().getWorkbenchDirNormalized() + "licenses/");
+        processor.setProcessorParameter(PARAM_REFERENCE_COMPONENTS_DIR, context.getEnvironment().getWorkbenchDirNormalized() + "components/");
         processor.setProcessorParameter(ENV_KONTINUUM_DIR,
                 context.getEnvironment().getKontinuumDirNormalized());
         processor.setProcessorParameter(ENV_KONTINUUM_PROCESSORS_DIR,
@@ -268,12 +268,13 @@ public class ReportStageHandler implements StageHandler {
         processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().TMD_PASSWORD);
         processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().TMD_USERKEYS_FILE);
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getGroupedStage(report, reportType, locale).appendAssetInventory());
-        processor.setProcessorParameter(PARAM_REFERENCE_COMPONENT_PATH, context.getEnvironment().getWorkbenchDirNormalized() + "components/");
-        processor.setProcessorParameter(PARAM_REFERENCE_LICENSE_PATH, context.getEnvironment().getWorkbenchDirNormalized() + "licenses/");
+        processor.setProcessorParameter(PARAM_REFERENCE_COMPONENTS_DIR, context.getEnvironment().getWorkbenchDirNormalized() + "components/");
+        processor.setProcessorParameter(PARAM_REFERENCE_LICENSES_DIR, context.getEnvironment().getWorkbenchDirNormalized() + "licenses/");
 
         processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, asset.getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized()));
-        processor.setProcessorParameter(PARAM_TARGET_COMPONENT_DIR, context.getWorkspace().getStageDirForAsset(asset, Stage.REPORT).toString() + "components/");
-        processor.setProcessorParameter(PARAM_TARGET_LICENSE_DIR, context.getWorkspace().getStageDirForAsset(asset, Stage.REPORT).toString() + "licenses/");
+        processor.setProcessorParameter(PARAM_TARGET_COMPONENTS_DIR, context.getWorkspace().getStageDirForAsset(asset, Stage.REPORT).toString() + "components/");
+        processor.setProcessorParameter(PARAM_TARGET_LICENSES_DIR, context.getWorkspace().getStageDirForAsset(asset, Stage.REPORT).toString() + "licenses/");
+        processor.setProcessorParameter(PARAM_FAIL_ON_MISSING_SOURCES, "false");
 
         return processor;
     }
