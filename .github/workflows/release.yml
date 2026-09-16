@@ -1,0 +1,64 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version. Must be valid semantic versioning.'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Create release branch
+        shell: bash
+        run: |
+          git config --local user.email "github-actions[bot]@metaeffekt.com"
+          git config --local user.name "github-actions[bot]"
+          git checkout -B release/${{ inputs.version }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: '17'
+
+      - name: Set release version
+        run: |
+          mvn --batch-mode versions:set \
+            -DnewVersion="${{ inputs.version }}" \
+            -DgenerateBackupPoms=false \
+            -DprocessAllModules=true
+
+      - name: Build runtime modules
+        run: mvn --batch-mode clean package -DskipTests
+
+      - name: Commit changes
+        run: |
+          git add pom.xml '*/pom.xml'
+          git commit -m "Release ${{ inputs.version }}" || echo "No changes to commit"
+
+      # We need to use --force here as a previous failed pipeline might have pushed to the branch already.
+      - name: Push changes
+        run: git push --set-upstream origin "release/${{ inputs.version }}" --force
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          target_commitish: "release/${{ inputs.version }}"
+          name: ${{ inputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            pipeline-generator/target/*.jar
+            execution/target/*.jar

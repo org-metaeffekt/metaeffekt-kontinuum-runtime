@@ -5,12 +5,18 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY target/metaeffekt-kontinuum /usr/src/metaeffekt-kontinuum
+COPY target/metaeffekt-kontinuum-runtime /usr/src/metaeffekt-kontinuum-runtime
 
 COPY target/.m2/repository/org/metaeffekt /root/.m2/repository/org/metaeffekt
 COPY target/.m2/repository/com/metaeffekt /root/.m2/repository/com/metaeffekt
 COPY target/.m2/repository/org/jetbrains/kotlin /root/.m2/repository/org/jetbrains/kotlin
 
 COPY target/.m2/repository/com/github/luben/zstd-jni /root/.m2/repository/com/github/luben/zstd-jni
+COPY target/.m2/repository/ch/qos/logback /root/.m2/repository/ch/qos/logback
+COPY target/.m2/repository/com/fasterxml /root/.m2/repository/com/fasterxml
+COPY target/.m2/repository/org/slf4j /root/.m2/repository/org/slf4j
+COPY target/.m2/repository/org/yaml /root/.m2/repository/org/yaml
+COPY target/.m2/repository/org/projectlombok/lombok /root/.m2/repository/org/projectlombok/lombok
 COPY target/.m2/repository/com/google/api/grpc/proto-google-common-protos /root/.m2/repository/com/google/api/grpc/proto-google-common-protos
 COPY target/.m2/repository/com/google/guava/guava /root/.m2/repository/com/google/guava/guava
 COPY target/.m2/repository/com/ibm/icu/icu4j /root/.m2/repository/com/ibm/icu/icu4j

@@ -323,6 +323,36 @@ build_tmd() {
     }
 }
 
+build_kontinuum_runtime() {
+    local runtime_source
+    runtime_source="$(cd "$SELF_DIR/.." && pwd)"
+    local runtime_dest="$TARGET_DIR/metaeffekt-kontinuum-runtime"
+
+    echo "Installing metaeffekt-kontinuum-runtime artifacts into the container Maven repository"
+    (
+        cd "$runtime_source" || exit 1
+        mvn install -DskipTests -Dmaven.repo.local="$TEMP_MAVEN_REPO" \
+            -pl execution,pipeline-generator -am || exit 1
+    ) || {
+        echo "Failed to install metaeffekt-kontinuum-runtime artifacts" >&2
+        exit 1
+    }
+
+    echo "Staging metaeffekt-kontinuum-runtime sources for the container image"
+    rm -rf "$runtime_dest"
+    mkdir -p "$runtime_dest"
+    tar -C "$runtime_source" \
+        --exclude='target' \
+        --exclude='.git' \
+        --exclude='.local.properties' \
+        --exclude='.local-properties' \
+        -cf - . \
+        | tar -C "$runtime_dest" -xf - || {
+        echo "Failed to stage metaeffekt-kontinuum-runtime sources" >&2
+        exit 1
+    }
+}
+
 main() {
   check_args
 
@@ -331,6 +361,7 @@ main() {
   build_portfolio_manager
   build_kontinuum
   build_tmd
+  build_kontinuum_runtime
 
   build_docker
 }

@@ -208,6 +208,8 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
             processorParameter(ENV_TMD_SOURCE, false),
             processorParameter(PARAM_LANGUAGE_MODE, false),
             processorParameter(PARAM_NOTICE_MODE_OVERWRITE, false),
+            processorParameter(PARAM_REFERENCE_INVENTORY_DIR, false),
+            processorParameter(PARAM_REFERENCE_INVENTORY_INCLUDES, false),
             processorParameter(PARAM_SOURCE_MODE, false)
         );
     }
