@@ -277,6 +277,17 @@ build_tmd() {
         exit 1
     }
 
+    mvn dependency:get \
+        -DgroupId="com.metaeffekt.universe" \
+        -DartifactId="ae-metaeffekt-universe" \
+        -Dversion="$AE_UNIVERSE_VERSION" \
+        -Dpackaging=zip \
+        -Dclassifier=licenses \
+        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
+        echo "Failed to resolve TMD universe licenses: com.metaeffekt.universe:ae-metaeffekt-universe:$AE_UNIVERSE_VERSION" >&2
+        exit 1
+    }
+
     echo "Resolving TMD dependency com.metaeffekt.kosmos:ae-metaeffekt-kosmos:$AE_KOSMOS_VERSION"
 
     mvn dependency:get \
@@ -297,6 +308,17 @@ build_tmd() {
         -Dclassifier=package \
         -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
         echo "Failed to resolve TMD kosmos package: com.metaeffekt.kosmos:ae-metaeffekt-kosmos:$AE_KOSMOS_VERSION" >&2
+        exit 1
+    }
+
+    mvn dependency:get \
+        -DgroupId="com.metaeffekt.kosmos" \
+        -DartifactId="ae-metaeffekt-kosmos" \
+        -Dversion="$AE_KOSMOS_VERSION" \
+        -Dpackaging=zip \
+        -Dclassifier=licenses \
+        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
+        echo "Failed to resolve TMD kosmos licenses: com.metaeffekt.kosmos:ae-metaeffekt-kosmos:$AE_KOSMOS_VERSION" >&2
         exit 1
     }
 }
