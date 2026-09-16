@@ -26,5 +26,5 @@ COPY target/.m2/repository/org/apache/ /root/.m2/repository/org/apache
 COPY target/.m2/repository/org/bouncycastle/bcprov-jdk18on /root/.m2/repository/org/bouncycastle/bcprov-jdk18on
 COPY target/.m2/repository/org/scala-lang/scala-library /root/.m2/repository/org/scala-lang/scala-library
 COPY target/.m2/repository/org/spdx/ /root/.m2/repository/org/spdx/
+COPY target/.m2/repository/org/cyclonedx/ /root/.m2/repository/org/cyclonedx/
 COPY target/.m2/repository/org/xerial/sqlite-jdbc /root/.m2/repository/org/xerial/sqlite-jdbc
-COPY target/.m2/repository/xalan/xalan /root/.m2/repository/xalan/xalan

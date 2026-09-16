@@ -121,6 +121,7 @@ public class GroupStageHandler implements StageHandler {
 
         processor.setProcessorParameter(ENV_TMD_SOURCE, context.getEnvironment().TMD_SOURCE);
         processor.setProcessorParameter(PARAM_LANGUAGE_MODE, locale.getIdentifier());
+        processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, context.getAsset().getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized()));
 
         return processor;
     }
