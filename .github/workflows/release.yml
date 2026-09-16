@@ -19,19 +19,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-
-      - name: Create release branch
-        shell: bash
-        run: |
-          git config --local user.email "github-actions[bot]@metaeffekt.com"
-          git config --local user.name "github-actions[bot]"
-          git checkout -B release/${{ inputs.version }}
+        with:
+          ref: main
 
       - uses: actions/setup-java@v4
         with:
           distribution: zulu
           java-version: '17'
 
+      # The version only names the release tag; the POM bump is not committed, so main stays on HEAD-SNAPSHOT.
       - name: Set release version
         run: |
           mvn --batch-mode versions:set \
@@ -42,20 +38,11 @@ jobs:
       - name: Build runtime modules
         run: mvn --batch-mode clean package -DskipTests
 
-      - name: Commit changes
-        run: |
-          git add pom.xml '*/pom.xml'
-          git commit -m "Release ${{ inputs.version }}" || echo "No changes to commit"
-
-      # We need to use --force here as a previous failed pipeline might have pushed to the branch already.
-      - name: Push changes
-        run: git push --set-upstream origin "release/${{ inputs.version }}" --force
-
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.version }}
-          target_commitish: "release/${{ inputs.version }}"
+          target_commitish: "main"
           name: ${{ inputs.version }}
           draft: false
           prerelease: false
