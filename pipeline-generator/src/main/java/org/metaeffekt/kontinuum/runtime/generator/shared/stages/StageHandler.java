@@ -1,12 +1,13 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
-import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
 /**
- * Interface for stage-specific pipeline processor generation.
- * Each implementation handles a single pipeline stage and appends
- * the appropriate processors to the execution context.
+ * Base type for stage-specific pipeline processor generation.
+ * <p>
+ * Implementations must additionally implement one of {@link PipelineStageHandler},
+ * {@link AssetStageHandler} or {@link ReportStageHandler}, which fixes the
+ * {@link StageScope} and the context type their process method receives.
  */
 public interface StageHandler {
 
@@ -16,9 +17,7 @@ public interface StageHandler {
     Stage getStage();
 
     /**
-     * Inspects the execution context and appends processors for this stage.
-     * Implementations should update the context's current artifact paths
-     * when they produce output artifacts consumed by downstream stages.
+     * Returns the granularity at which this handler is invoked.
      */
-    void process(AssetExecutionContext context);
+    StageScope getScope();
 }

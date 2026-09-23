@@ -17,7 +17,7 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  * Responsible for enriching the asset inventory with vulnerability information such as CVEs
  * and other vulnerability-centric information from external databases.
  */
-public class AdviseStageHandler implements StageHandler {
+public class AdviseStageHandler implements AssetStageHandler {
 
     @Override
     public Stage getStage() {

@@ -1,6 +1,6 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
-import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
+import org.metaeffekt.kontinuum.runtime.models.shared.PipelineExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
@@ -11,7 +11,7 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  * Handler for the {@link Stage#PRE} stage.
  * Responsible for preliminary setup tasks such as updating and downloading the vulnerability index.
  */
-public class PreStageHandler implements StageHandler {
+public class PreStageHandler implements PipelineStageHandler {
 
     @Override
     public Stage getStage() {
@@ -19,7 +19,7 @@ public class PreStageHandler implements StageHandler {
     }
 
     @Override
-    public void process(AssetExecutionContext context) {
+    public void process(PipelineExecutionContext context) {
         if (context.getConfiguration().requiresVulnerabilityEnrichment()) {
             context.addProcessor(handleVulnerabilityIndexDownload(context));
         }
@@ -29,10 +29,10 @@ public class PreStageHandler implements StageHandler {
      * Downloads the vulnerability index if the mirror is not currently up to date.
      *
      * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/mirror/mirror_download-index.md">mirror_download-index.md</a>
-     * @param context The asset execution context containing pipeline and asset information.
+     * @param context The pipeline execution context containing pipeline information.
      * @return The configured {@link MavenProcessor} for downloading the index.
      */
-    private MavenProcessor handleVulnerabilityIndexDownload(AssetExecutionContext context) {
+    private MavenProcessor handleVulnerabilityIndexDownload(PipelineExecutionContext context) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(DOWNLOAD_INDEX);
         processor.setStage(Stage.PRE);
 

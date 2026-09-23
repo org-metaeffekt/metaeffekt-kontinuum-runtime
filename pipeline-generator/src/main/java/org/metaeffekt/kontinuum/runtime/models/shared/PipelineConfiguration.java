@@ -5,6 +5,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -240,6 +242,51 @@ public class PipelineConfiguration {
                 }
 
                 return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getName(), assessmentId);
+            }
+
+            /**
+             * Whether this asset is fetched from a local file URL that already points to an extracted
+             * inventory (an {@code .xls} or {@code .xlsx} file). Such assets do not require the
+             * extract stage, since the fetched file already is an inventory.
+             *
+             * @return true if the url resolver references a local {@code .xls}/{@code .xlsx} file
+             */
+            public boolean isPreExtractedInventory() {
+                if (urlResolver == null || StringUtils.isBlank(urlResolver.getUrl())) {
+                    return false;
+                }
+                String url = urlResolver.getUrl();
+                if (!StringUtils.startsWithIgnoreCase(url, "file:")) {
+                    return false;
+                }
+                String lowerCaseUrl = url.toLowerCase(Locale.ROOT);
+                return lowerCaseUrl.endsWith(".xls") || lowerCaseUrl.endsWith(".xlsx");
+            }
+
+            /**
+             * Derives the file name the url resolver asset is downloaded as, mirroring the naming
+             * convention of the Ant {@code <get>} task used by the fetch processor.
+             *
+             * @return the file name of the resolved url or null if no url is configured
+             */
+            public String getUrlResolverFileName() {
+                if (urlResolver == null || StringUtils.isBlank(urlResolver.getUrl())) {
+                    return null;
+                }
+                String path = urlResolver.getUrl();
+                try {
+                    path = new URL(path).getPath();
+                } catch (MalformedURLException e) {
+                    // fall back to the raw url, which is still parsed below
+                }
+                if (path.endsWith("/")) {
+                    path = path.substring(0, path.length() - 1);
+                }
+                int slash = path.lastIndexOf('/');
+                if (slash > -1) {
+                    path = path.substring(slash + 1);
+                }
+                return path;
             }
 
             public Stream<Asset> flattenStream() {

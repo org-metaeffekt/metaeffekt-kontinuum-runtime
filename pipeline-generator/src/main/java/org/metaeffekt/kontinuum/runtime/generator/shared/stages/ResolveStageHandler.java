@@ -14,7 +14,7 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  * Responsible for resolving dependencies and downloading additional artifact metadata
  * when resolve is explicitly enabled.
  */
-public class ResolveStageHandler implements StageHandler {
+public class ResolveStageHandler implements AssetStageHandler {
 
     @Override
     public Stage getStage() {

@@ -3,25 +3,19 @@ package org.metaeffekt.kontinuum.runtime.models.shared;
 import lombok.Getter;
 import lombok.Setter;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
-
-import java.util.*;
 
 /**
  * Execution context that utilized by stage handlers during pipeline generation.
  * Tracks the current asset, configuration and passes information such as output paths from previous stages.
  */
 @Getter
-public class AssetExecutionContext {
+public class AssetExecutionContext extends AbstractExecutionContext {
 
     private final Asset asset;
     private final PipelineConfiguration configuration;
     private final EnvironmentConfiguration environment;
     private final Workspace workspace;
     private final ProcessorCatalog processorCatalog;
-
-    private final List<Processor> processors = new ArrayList<>();
-    private final Map<Processor, Set<Processor>> dependencies = new IdentityHashMap<>();
 
     /**
      * Tracks the path to the artifact file produced by the most recent stage.
@@ -56,63 +50,18 @@ public class AssetExecutionContext {
         this.processorCatalog = processorCatalog;
     }
 
+    @Override
+    public String getName() {
+        return asset != null ? asset.toString() : "asset";
+    }
+
     public void removeProcessorsWithId(DefaultProcessorCatalog.ProcessorIds processorId) {
-        processors.removeIf(processor -> processor.getId().equals(processorId.getValue()));
-    }
-
-    public <T extends Processor> T addProcessor(T processor) {
-        if (processor != null) {
-            this.processors.add(processor);
-        }
-        return processor;
-    }
-
-    public void addDependency(Processor target, Processor... dependsOn) {
-        if (target != null && dependsOn != null) {
-            Set<Processor> deps = this.dependencies.computeIfAbsent(target, k -> new LinkedHashSet<>());
-            for (Processor dep : dependsOn) {
-                if (dep != null && dep != target) {
-                    deps.add(dep);
-                }
-            }
-        }
-    }
-
-    public void addSequential(Processor... processors) {
-        if (processors == null) return;
-        Processor prev = null;
-        for (Processor p : processors) {
-            if (p != null) {
-                addProcessor(p);
-                if (prev != null) {
-                    addDependency(p, prev);
-                }
-                prev = p;
-            }
-        }
-    }
-
-    public Set<Processor> getDependencies(Processor processor) {
-        return this.dependencies.getOrDefault(processor, Collections.emptySet());
-    }
-
-    public Processor getLastProcessor() {
-        return processors.isEmpty() ? null : processors.get(processors.size() - 1);
-    }
-
-    public Processor getLastProcessor(Stage stage) {
-        for (int i = processors.size() - 1; i >= 0; i--) {
-            if (processors.get(i).getStage() == stage) {
-                return processors.get(i);
-            }
-        }
-        return null;
+        getProcessors().removeIf(processor -> processor.getId().equals(processorId.getValue()));
     }
 
     public Workspace.AssetPath getStageDirForAsset(Stage stage) {
         return workspace.getStageDirForAsset(asset, stage);
     }
-
 
     public Workspace.AssetPath getGroupedStage(PipelineConfiguration.Report report, ReportType reportType, SupportedLocale locale) {
         return workspace.getGroupedDir(report, asset, reportType, locale);

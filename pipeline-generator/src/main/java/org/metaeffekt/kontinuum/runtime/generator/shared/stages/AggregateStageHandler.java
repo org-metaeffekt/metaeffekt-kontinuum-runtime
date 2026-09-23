@@ -15,7 +15,7 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  * Responsible for enriching the asset inventory with reference data downloaded from Portfolio Manager
  * and filtering duplicate asset entries when Portfolio Manager is configured.
  */
-public class AggregateStageHandler implements StageHandler {
+public class AggregateStageHandler implements AssetStageHandler {
 
     @Override
     public Stage getStage() {

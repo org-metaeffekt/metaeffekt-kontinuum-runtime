@@ -14,7 +14,7 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  * Responsible for scanning licenses and copyright information
  * when license scanning is explicitly enabled.
  */
-public class ScanStageHandler implements StageHandler {
+public class ScanStageHandler implements AssetStageHandler {
 
     @Override
     public Stage getStage() {

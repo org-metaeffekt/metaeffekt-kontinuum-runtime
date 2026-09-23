@@ -4,8 +4,6 @@ import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.StandaloneProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
 import java.util.Objects;
@@ -17,7 +15,7 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  * Handler for the {@link Stage#PREPARE} stage.
  * Responsible for preparing SBOMs (CycloneDX, SPDX) and synchronizing data with Portfolio Manager.
  */
-public class PrepareStageHandler implements StageHandler {
+public class PrepareStageHandler implements AssetStageHandler {
 
     @Override
     public Stage getStage() {
@@ -35,47 +33,50 @@ public class PrepareStageHandler implements StageHandler {
 
         boolean hasPortfolioManager = Objects.nonNull(context.getConfiguration().getPortfolioManager());
 
-        StandaloneProcessor inventoryCopyProcessor = handleInventoryCopy(context);
-        context.addProcessor(inventoryCopyProcessor);
+        MavenProcessor inventoryReferenceEnrichment = handleInventoryReferenceEnrichment(context);
+        context.addProcessor(inventoryReferenceEnrichment);
 
         if (cycloneDxEnabled) {
             MavenProcessor cycloneDxProcessor = handleInventoryToCycloneDxConversion(context);
             context.addProcessor(cycloneDxProcessor);
-            context.addDependency(cycloneDxProcessor, inventoryCopyProcessor);
+            context.addDependency(cycloneDxProcessor, inventoryReferenceEnrichment);
         }
 
         if (spdxEnabled) {
             MavenProcessor spdxProcessor = handleInventoryToSpdxConversion(context);
             context.addProcessor(spdxProcessor);
-            context.addDependency(spdxProcessor, inventoryCopyProcessor);        }
+            context.addDependency(spdxProcessor, inventoryReferenceEnrichment);        }
 
         if (hasPortfolioManager) {
             MavenProcessor uploadProcessor = handlePortfolioUpload(context);
             MavenProcessor downloadProcessor = handlePortfolioDownload(context);
 
-            context.addDependency(uploadProcessor, inventoryCopyProcessor);
+            context.addDependency(uploadProcessor, inventoryReferenceEnrichment);
             context.addSequential(uploadProcessor, downloadProcessor);
         }
     }
 
     /**
-     * Copies an inventory file from the extract stage into the prepare stage workspace directory.
+     * Enriches the current inventory using the configured reference inventory for the asset and
+     * writes it into the prepare stage workspace directory.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_copy-inventory.sh">util_copy-inventory.sh</a>
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_enrich-with-reference.md">util_enrich-with-reference.md</a>
      * @param context The asset execution context containing pipeline and asset information.
-     * @return The configured {@link StandaloneProcessor} for copying the inventory.
+     * @return The configured {@link MavenProcessor} for reference inventory enrichment.
      */
-    private StandaloneProcessor handleInventoryCopy(AssetExecutionContext context) {
-        StandaloneProcessor standaloneProcessor = (StandaloneProcessor) context.getProcessorCatalog().getProcessorById(COPY_INVENTORY);
-        standaloneProcessor.setStage(Stage.PREPARE);
+    private MavenProcessor handleInventoryReferenceEnrichment(AssetExecutionContext context) {
+        Asset asset = context.getAsset();
 
-        standaloneProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
-        standaloneProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
+        MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(ENRICH_WITH_REFERENCE);
+        mavenProcessor.setStage(Stage.PREPARE);
+        mavenProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
+        mavenProcessor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, asset.getReferenceDir(context.getEnvironment().getWorkbenchDirNormalized()));
+        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
 
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.PREPARE).toString());
         context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
 
-        return standaloneProcessor;
+        return mavenProcessor;
     }
 
     /**

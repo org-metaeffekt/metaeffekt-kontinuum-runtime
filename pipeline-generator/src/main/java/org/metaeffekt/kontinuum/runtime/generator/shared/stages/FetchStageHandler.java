@@ -14,7 +14,7 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  * Responsible for retrieving the target asset via URL, Maven parameters, or container image resolver.
  * Exactly one resolver is executed per asset, as enforced by pipeline configuration validation {@link org.metaeffekt.kontinuum.runtime.generator.shared.PipelineConfigurationLoader}.
  */
-public class FetchStageHandler implements StageHandler {
+public class FetchStageHandler implements AssetStageHandler {
 
     @Override
     public Stage getStage() {
@@ -36,6 +36,12 @@ public class FetchStageHandler implements StageHandler {
             throw new IllegalStateException(String.format("Asset %s has no resolver configured but passed the pipeline configuration validation.", asset.getId()));
         }
         context.addProcessor(fetchProcessor);
+
+        if (asset.isPreExtractedInventory()) {
+            // The fetched file already is an inventory, so it becomes the current inventory and the extract stage is skipped.
+            context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.FETCH).toString());
+            context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.FETCH) + asset.getUrlResolverFileName());
+        }
     }
 
     /**
@@ -50,6 +56,7 @@ public class FetchStageHandler implements StageHandler {
         Asset.UrlResolver urlResolver = asset.getUrlResolver();
         MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(DOWNLOAD_ASSET);
         mavenProcessor.setStage(Stage.FETCH);
+
         mavenProcessor.setProcessorParameter(PARAM_ASSET_URL, urlResolver.getUrl());
         mavenProcessor.setProcessorParameter(OUTPUT_ASSET_DIR, context.getStageDirForAsset(Stage.FETCH).toString());
         mavenProcessor.setProcessorParameter(PARAM_USERNAME, urlResolver.getUsername());

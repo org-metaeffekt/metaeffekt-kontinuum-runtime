@@ -4,8 +4,9 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.generator.shared.Pipeline;
+import org.metaeffekt.kontinuum.runtime.generator.shared.PipelineExecution;
 import org.metaeffekt.kontinuum.runtime.models.local.LocalConfiguration;
-import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
+import org.metaeffekt.kontinuum.runtime.models.shared.ExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
@@ -13,16 +14,19 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Proce
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.ProcessorParameter;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.StandaloneProcessor;
 
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Generates a local-execution shell script from the configured pipeline.
  *
- * <p>The output is a sequence of chained {@code mvn -f <processor-pom> <goal>} invocations,
- * one per processor, ordered by stage. The script is intended to be executed on the
- * developer's machine (macOS, Linux). Windows compatibility is left open via the
+ * <p>The output is a sequence of chained {@code mvn -f <processor-pom> <goal>} invocations, one per
+ * processor, ordered by stage. Processors are flattened across all execution contexts (pipeline,
+ * assets and report groups) so that group-scoped report jobs always run after the asset-scoped
+ * group copies they depend on. The script is intended to be executed on the developer's machine
+ * (macOS, Linux). Windows compatibility is left open via the
  * {@link LocalConfiguration.ExecutionEnvironment} enum for future implementation.
  */
 @Slf4j
@@ -30,17 +34,13 @@ public class LocalPipeline {
 
     /**
      * -- GETTER --
-     *  Convenience accessor for the resolved execution context map. Useful for tests.
+     *  Convenience accessor for the resolved execution. Useful for tests.
      */
     @Getter
-    private final Map<Asset, AssetExecutionContext> assetExecutionContextMap;
+    private final PipelineExecution execution;
 
     public Map<Asset, List<Processor>> getAssetProcessorsMap() {
-        Map<Asset, List<Processor>> map = new LinkedHashMap<>();
-        for (Map.Entry<Asset, AssetExecutionContext> entry : assetExecutionContextMap.entrySet()) {
-            map.put(entry.getKey(), entry.getValue().getProcessors());
-        }
-        return map;
+        return execution.getAssetProcessorsMap();
     }
 
     private final StringBuilder scriptDocument = new StringBuilder();
@@ -49,8 +49,7 @@ public class LocalPipeline {
 
     public LocalPipeline(PipelineConfiguration pipelineConfiguration, LocalConfiguration localConfiguration) {
         this.localConfiguration = localConfiguration;
-        Pipeline pipeline = new Pipeline(pipelineConfiguration, localConfiguration);
-        this.assetExecutionContextMap = pipeline.generatePipeline();
+        this.execution = new Pipeline(pipelineConfiguration, localConfiguration).generatePipeline();
     }
 
     public String generatePipeline() {
@@ -68,20 +67,24 @@ public class LocalPipeline {
     }
 
     private void generateProcessorSteps() {
-        for (Map.Entry<Asset, AssetExecutionContext> entry : assetExecutionContextMap.entrySet()) {
-            String assetName = entry.getKey().toString();
-            for (Processor processor : entry.getValue().getProcessors()) {
-                ProcessorStep step = new ProcessorStep(processor, assetName);
+        List<ContextProcessor> steps = new ArrayList<>();
+        for (ExecutionContext context : execution.getContexts()) {
+            for (Processor processor : context.getProcessors()) {
+                steps.add(new ContextProcessor(context, processor));
+            }
+        }
+        // Stable sort: processors within a stage keep their context and insertion order.
+        steps.sort(Comparator.comparingInt(step -> step.processor.getStage().ordinal()));
 
-                scriptDocument.append("# --- ").append(step.processor.getStage().name()).append(": ")
-                        .append(step.processor.getId()).append(" (").append(step.assetName).append(") ----")
-                        .append(System.lineSeparator());
+        for (ContextProcessor step : steps) {
+            scriptDocument.append("# --- ").append(step.processor.getStage().name()).append(": ")
+                    .append(step.processor.getId()).append(" (").append(step.context.getName()).append(") ----")
+                    .append(System.lineSeparator());
 
-                if (step.processor instanceof MavenProcessor mavenProcessor) {
-                    scriptDocument.append(generateMavenScriptBlock(mavenProcessor));
-                } else if (step.processor instanceof StandaloneProcessor standaloneProcessor) {
-                    scriptDocument.append(generateStandaloneScriptBlock(standaloneProcessor));
-                }
+            if (step.processor instanceof MavenProcessor mavenProcessor) {
+                scriptDocument.append(generateMavenScriptBlock(mavenProcessor));
+            } else if (step.processor instanceof StandaloneProcessor standaloneProcessor) {
+                scriptDocument.append(generateStandaloneScriptBlock(standaloneProcessor));
             }
         }
     }
@@ -139,6 +142,6 @@ public class LocalPipeline {
         return script.append(System.lineSeparator()).toString();
     }
 
-    private record ProcessorStep(Processor processor, String assetName) {}
+    private record ContextProcessor(ExecutionContext context, Processor processor) {}
 
 }

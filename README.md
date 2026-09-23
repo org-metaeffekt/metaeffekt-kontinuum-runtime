@@ -26,6 +26,16 @@ mvn clean install
 
 The pipeline generation architecture separates static processor catalog models from dynamic execution graph orchestration, enabling Directed Acyclic Graph (DAG) generation and parallel job execution.
 
+### Scoped Execution Contexts
+
+Stage handlers declare the scope at which they run, and [`Pipeline`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/generator/shared/Pipeline.java) dispatches them accordingly:
+
+- `PIPELINE` (`PipelineStageHandler`): once per pipeline, e.g. downloading the vulnerability index.
+- `ASSET` (`AssetStageHandler`): once per asset, e.g. fetch, extract, prepare, resolve, scan, advise and the per-asset group copies.
+- `REPORT_GROUP` (`ReportGroupStageHandler`): once per report group (a report entry combined with one report type). This guarantees exactly one document per type and locale, reading the grouped inventories produced by the asset-scoped group stage.
+
+All contexts implement `ExecutionContext` and share their processor/dependency bookkeeping through `AbstractExecutionContext`.
+
 ### Execution Graph in `AssetExecutionContext`
 
 Rather than embedding mutable dependency references within static processor definitions, DAG dependencies are tracked within [`AssetExecutionContext`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/models/shared/AssetExecutionContext.java).
@@ -37,19 +47,20 @@ Rather than embedding mutable dependency references within static processor defi
 ```java
 // Example: Sequential chain in ExtractStageHandler
 context.addSequential(
-    createInventoryExtraction(context),
-    createMetadataAttachment(context),
-    createInventoryReferenceEnrichment(context)
+    handleInventoryExtraction(context),
+    handleMetadataAttachment(context)
 );
 
 // Example: Parallel fan-out in PrepareStageHandler
-Processor copy = context.addProcessor(createInventoryCopy(context));
-Processor spdx = context.addProcessor(createSpdxConversion(context));
-Processor cdx  = context.addProcessor(createCycloneDxConversion(context));
+Processor enrichment = context.addProcessor(handleInventoryReferenceEnrichment(context));
+Processor spdx = context.addProcessor(handleInventoryToSpdxConversion(context));
+Processor cdx  = context.addProcessor(handleInventoryToCycloneDxConversion(context));
 
-context.addDependency(spdx, copy);
-context.addDependency(cdx, copy);
+context.addDependency(spdx, enrichment);
+context.addDependency(cdx, enrichment);
 ```
+
+Cross-context dependencies are supported: the asset-scoped group stage registers each asset's inventory contribution as a prerequisite of the matching `ReportGroupExecutionContext`, so generated jobs emit `needs:` edges across contexts.
 
 ### Context Map Pipeline Generation
 

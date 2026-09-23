@@ -1,12 +1,11 @@
 package org.metaeffekt.kontinuum.runtime.generator.gitlab;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.*;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.generator.shared.Pipeline;
+import org.metaeffekt.kontinuum.runtime.generator.shared.PipelineExecution;
 import org.metaeffekt.kontinuum.runtime.models.gitlab.GitlabConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.*;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
@@ -22,7 +21,7 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Stand
 @Slf4j
 public class GitlabPipeline {
 
-    Map<Asset, AssetExecutionContext> assetExecutionContextMap;
+    PipelineExecution execution;
 
     StringBuilder gitlabPipelineDocument = new StringBuilder();
 
@@ -31,15 +30,11 @@ public class GitlabPipeline {
     public GitlabPipeline(PipelineConfiguration pipelineConfiguration, GitlabConfiguration gitlabConfiguration) {
         this.gitlabConfiguration = gitlabConfiguration;
         Pipeline pipeline = new Pipeline(pipelineConfiguration, gitlabConfiguration);
-        assetExecutionContextMap = pipeline.generatePipeline();
+        execution = pipeline.generatePipeline();
     }
 
     public Map<Asset, List<Processor>> getAssetProcessorsMap() {
-        Map<Asset, List<Processor>> map = new LinkedHashMap<>();
-        for (Map.Entry<Asset, AssetExecutionContext> entry : assetExecutionContextMap.entrySet()) {
-            map.put(entry.getKey(), entry.getValue().getProcessors());
-        }
-        return map;
+        return execution.getAssetProcessorsMap();
     }
 
     public String generatePipeline() {
@@ -55,7 +50,7 @@ public class GitlabPipeline {
         stagesSection.append("stages:").append(System.lineSeparator());
         Set<String> requiredStages = new HashSet<>();
 
-        assetExecutionContextMap.values().stream()
+        execution.getContexts().stream()
             .flatMap(ctx -> ctx.getProcessors().stream())
             .forEach(p -> requiredStages.add(p.getStage().name()));
 
@@ -103,9 +98,7 @@ public class GitlabPipeline {
     public void generateJobsSection() {
         Map<Processor, String> jobNames = assignJobNames();
 
-        for (Map.Entry<Asset, AssetExecutionContext> entry : assetExecutionContextMap.entrySet()) {
-            AssetExecutionContext context = entry.getValue();
-            Processor lastProcessor = null;
+        for (ExecutionContext context : execution.getContexts()) {
             for (Processor processor : context.getProcessors()) {
                 String jobName = jobNames.get(processor);
 
@@ -145,7 +138,6 @@ public class GitlabPipeline {
                 }
 
                 gitlabPipelineDocument.append(job).append(System.lineSeparator());
-                lastProcessor = processor;
             }
         }
     }
@@ -198,10 +190,10 @@ public class GitlabPipeline {
         Map<Processor, String> jobNameMap = new IdentityHashMap<>();
         Map<String, Integer> nameCounts = new HashMap<>();
 
-        for (Map.Entry<Asset, AssetExecutionContext> entry : assetExecutionContextMap.entrySet()) {
-            String assetName = entry.getKey().toString();
-            for (Processor processor : entry.getValue().getProcessors()) {
-                String baseName = buildBaseJobName(processor, assetName);
+        for (ExecutionContext context : execution.getContexts()) {
+            String contextName = context.getName();
+            for (Processor processor : context.getProcessors()) {
+                String baseName = buildBaseJobName(processor, contextName);
                 int count = nameCounts.getOrDefault(baseName, 0) + 1;
                 nameCounts.put(baseName, count);
 
@@ -212,9 +204,9 @@ public class GitlabPipeline {
         return jobNameMap;
     }
 
-    private String buildBaseJobName(Processor processor, String assetName) {
+    private String buildBaseJobName(Processor processor, String contextName) {
         StringBuilder name = new StringBuilder()
-                .append(assetName)
+                .append(contextName)
                 .append("-")
                 .append(processor.getId())
                 .append("-")

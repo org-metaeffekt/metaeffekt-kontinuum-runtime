@@ -7,6 +7,8 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Maven
 import org.metaeffekt.kontinuum.runtime.models.shared.ReportType;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
+import java.util.List;
+
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.*;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 
@@ -15,7 +17,7 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  * Responsible for creating CycloneDX and SPDX documents in the summarize stage
  * if enabled in the pipeline configuration.
  */
-public class SummarizeStageHandler implements StageHandler {
+public class SummarizeStageHandler implements AssetStageHandler {
 
     @Override
     public Stage getStage() {
@@ -89,12 +91,32 @@ public class SummarizeStageHandler implements StageHandler {
         processor.setStage(Stage.SUMMARIZE);
 
         processor.setProcessorParameter(INPUT_ADVISOR_INVENTORIES_DIR, context.getCurrentInventoryDir());
-        processor.setProcessorParameter(INPUT_DASHBOARDS_DIR, context.getStageDirForAsset(Stage.REPORT).appendDashboardFile());
+        processor.setProcessorParameter(INPUT_DASHBOARDS_DIR, context.getStageDirForAsset(Stage.REPORT).appendDashboardDir());
         processor.setProcessorParameter(INPUT_INVENTORIES_DIR, context.getStageDirForAsset(Stage.PREPARE).toString());
-        processor.setProcessorParameter(INPUT_REPORTS_DIR, context.getStageDirForAsset(Stage.REPORT).toString());
+        processor.setProcessorParameter(INPUT_REPORTS_DIR, resolveReportsDir(context));
         processor.setProcessorParameter(OUTPUT_RESOURCES_DIR, context.getStageDirForAsset(Stage.SUMMARIZE).toString() + "resources/");
 
         return processor;
+    }
+
+    /**
+     * Reports are written into group-keyed directories ({@code 08_reported/<groupId>/}). If exactly
+     * one report entry contains the asset, its group directory is used; otherwise the report root
+     * is used, since the asset's reports may be spread across several groups.
+     */
+    private String resolveReportsDir(AssetExecutionContext context) {
+        List<PipelineConfiguration.Report> reports = context.getConfiguration().getReports();
+        if (reports != null) {
+            List<PipelineConfiguration.Report> reportsForAsset = reports.stream()
+                    .filter(report -> report != null
+                            && report.getAssetIds() != null
+                            && report.getAssetIds().contains(context.getAsset().getId()))
+                    .toList();
+            if (reportsForAsset.size() == 1) {
+                return context.getWorkspace().getReportDir(reportsForAsset.get(0)).toString();
+            }
+        }
+        return context.getWorkspace().getReportRootDir();
     }
 
     /**

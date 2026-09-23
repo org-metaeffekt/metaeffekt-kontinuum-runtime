@@ -1,26 +1,37 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
-import ch.qos.logback.core.util.StringCollectionUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.models.shared.*;
+import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
+import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.StandaloneProcessor;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.*;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 
 /**
  * Handler for the {@link Stage#GROUP} stage.
- * Consolidates asset inventories into relevant group stage subdirectories for each
- * report entry in the pipeline configuration upon which report generation is based.
- * If multiple asset IDs are listed for a single report entry, all those asset inventories
- * are copied to the consolidated grouped subdirectory.
+ * Consolidates asset inventories into the group subdirectories of every report entry the asset
+ * belongs to. A report entry defines a collection of assets, so only assets whose id is listed in
+ * {@link PipelineConfiguration.Report#getAssetIds()} contribute to a group. If a report defines a
+ * pre-report filter, it is applied to each member asset's inventory before it is copied.
  * For software distribution annex (SDA), the inventory is enriched with license notices
  * and business case information via the apply business case processor.
+ * <p>
+ * The copied and enriched inventories are registered as prerequisites of the corresponding
+ * {@link ReportGroupExecutionContext} so that report generation waits for all members.
  */
-public class GroupStageHandler implements StageHandler {
+public class GroupStageHandler implements AssetStageHandler {
+
+    private final Map<ReportGroupKey, ReportGroupExecutionContext> reportGroupContexts;
+
+    public GroupStageHandler(Map<ReportGroupKey, ReportGroupExecutionContext> reportGroupContexts) {
+        this.reportGroupContexts = reportGroupContexts;
+    }
 
     @Override
     public Stage getStage() {
@@ -34,44 +45,69 @@ public class GroupStageHandler implements StageHandler {
             return;
         }
 
-        for (PipelineConfiguration.Report report : reports) {
-            List<String> types = report.getTypes();
-            List<SupportedLocale> locales = report.getLocales();
+        String assetId = context.getAsset().getId();
+
+        for (int reportIndex = 0; reportIndex < reports.size(); reportIndex++) {
+            PipelineConfiguration.Report report = reports.get(reportIndex);
+            if (report == null || report.getAssetIds() == null || !report.getAssetIds().contains(assetId)) {
+                continue;
+            }
+
+            String inventoryFile = context.getCurrentInventoryFile();
 
             MavenProcessor preReportFilter = null;
             if (StringUtils.isNotBlank(report.getPreReportFilterFile())) {
-                preReportFilter = handlePreReportInventoryFiler(context);
+                preReportFilter = handlePreReportInventoryFiler(context, report);
                 context.addProcessor(preReportFilter);
+                inventoryFile = context.getWorkspace().getGroupedPreparedDir(report, context.getAsset()).appendAssetInventory();
             }
 
-            for (SupportedLocale locale : locales) {
-                for (String type : types) {
+            for (SupportedLocale locale : report.getLocales()) {
+                for (String type : report.getTypes()) {
                     ReportType reportType = ReportType.fromKey(type);
 
-                    StandaloneProcessor copyProcessor = handleInventoryCopy(context, report, reportType, locale);
-                    if (preReportFilter != null) { context.addDependency(copyProcessor, preReportFilter); }
+                    StandaloneProcessor copyProcessor = handleInventoryCopy(context, report, reportType, locale, inventoryFile);
+                    if (preReportFilter != null) {
+                        context.addDependency(copyProcessor, preReportFilter);
+                    }
                     context.addProcessor(copyProcessor);
+                    registerGroupPrerequisite(reportIndex, reportType, copyProcessor);
 
                     if (ReportType.requiresScan(reportType)) {
                         MavenProcessor businessCaseProcessor = handleApplyBusinessCase(context, report, reportType, locale);
                         context.addDependency(businessCaseProcessor, copyProcessor);
                         context.addProcessor(businessCaseProcessor);
+                        registerGroupPrerequisite(reportIndex, reportType, businessCaseProcessor);
                     }
                 }
             }
         }
     }
 
-    private MavenProcessor handlePreReportInventoryFiler(AssetExecutionContext context) {
+    private void registerGroupPrerequisite(int reportIndex, ReportType reportType, Processor processor) {
+        ReportGroupExecutionContext groupContext = reportGroupContexts.get(new ReportGroupKey(reportIndex, reportType));
+        if (groupContext != null) {
+            groupContext.addPrerequisite(processor);
+        }
+    }
+
+    /**
+     * Filters the asset's inventory for a single report entry using the report's configured kotlin
+     * script. The filtered inventory is written into the report group's prepared directory and
+     * becomes the input of all subsequent inventory copies for that report.
+     *
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_transform-inventories.md">util_transform-inventories.md</a>
+     */
+    private MavenProcessor handlePreReportInventoryFiler(AssetExecutionContext context, PipelineConfiguration.Report report) {
+        Asset asset = context.getAsset();
         MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(TRANSFORM_INVENTORIES);
         mavenProcessor.setStage(Stage.GROUP);
 
+        Workspace.AssetPath preparedDir = context.getWorkspace().getGroupedPreparedDir(report, asset);
         mavenProcessor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getCurrentInventoryFile());
-        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.GROUP).appendAssetInventory());
+        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_DIR, preparedDir.appendAssetInventory());
         mavenProcessor.setProcessorParameter(PARAM_KOTLIN_SCRIPT_FILE, context.getEnvironment().getScriptsDirNormalized() + "prepare.kts");
-
-        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.GROUP).appendAssetInventory());
-        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.GROUP).toString());
+        mavenProcessor.setProcessorParameter(PARAM_ASSET_NAME, asset.getName());
 
         return mavenProcessor;
     }
@@ -84,13 +120,14 @@ public class GroupStageHandler implements StageHandler {
      * @param report The report configuration defining the grouped target.
      * @param reportType The report type being grouped.
      * @param locale The target locale for the grouped report.
+     * @param inputInventoryFile The inventory to copy (the filtered inventory if a pre-report filter is active).
      * @return The configured {@link StandaloneProcessor} for copying the inventory.
      */
-    private StandaloneProcessor handleInventoryCopy(AssetExecutionContext context, PipelineConfiguration.Report report, ReportType reportType, SupportedLocale locale) {
+    private StandaloneProcessor handleInventoryCopy(AssetExecutionContext context, PipelineConfiguration.Report report, ReportType reportType, SupportedLocale locale, String inputInventoryFile) {
         StandaloneProcessor standaloneProcessor = (StandaloneProcessor) context.getProcessorCatalog().getProcessorById(COPY_INVENTORY);
         standaloneProcessor.setStage(Stage.GROUP);
 
-        standaloneProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
+        standaloneProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, inputInventoryFile);
         standaloneProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
                 context.getGroupedStage(report, reportType, locale).appendAssetInventory());
 
@@ -105,6 +142,7 @@ public class GroupStageHandler implements StageHandler {
      * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_apply-business-case.md">util_apply-business-case.md</a>
      * @param context The asset execution context containing pipeline and asset information.
      * @param report The report configuration defining the grouped target.
+     * @param reportType The report type being grouped.
      * @param locale The target locale for the software distribution annex.
      * @return The configured {@link MavenProcessor} for applying the business case.
      */

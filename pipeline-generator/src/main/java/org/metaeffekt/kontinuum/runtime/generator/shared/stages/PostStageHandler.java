@@ -3,7 +3,7 @@ package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
-public class PostStageHandler implements StageHandler {
+public class PostStageHandler implements AssetStageHandler {
 
     @Override
     public Stage getStage() {
