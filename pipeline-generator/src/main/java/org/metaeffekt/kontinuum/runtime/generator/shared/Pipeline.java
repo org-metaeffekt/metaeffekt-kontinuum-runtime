@@ -87,4 +87,9 @@ public class Pipeline {
         }
     }
 
+    private void omitRedundantProcessors(Map<Asset, AssetExecutionContext> assetExecutionContextMap) {
+        assetExecutionContextMap.values().stream()
+                .skip(1)
+                .forEach(context -> context.removeProcessorsWithId(DefaultProcessorCatalog.ProcessorIds.DOWNLOAD_INDEX));
+    }
 }

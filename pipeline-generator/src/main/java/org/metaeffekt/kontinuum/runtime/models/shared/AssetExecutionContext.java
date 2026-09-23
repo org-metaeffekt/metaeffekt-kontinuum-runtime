@@ -56,6 +56,10 @@ public class AssetExecutionContext {
         this.processorCatalog = processorCatalog;
     }
 
+    public void removeProcessorsWithId(DefaultProcessorCatalog.ProcessorIds processorId) {
+        processors.removeIf(processor -> processor.getId().equals(processorId.getValue()));
+    }
+
     public <T extends Processor> T addProcessor(T processor) {
         if (processor != null) {
             this.processors.add(processor);

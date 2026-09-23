@@ -163,6 +163,7 @@ public class PipelineConfiguration {
             private String id;
             private String name;
             private String version;
+            private String build;
 
             private List<Asset> assets;
 
@@ -310,6 +311,7 @@ public class PipelineConfiguration {
             private Boolean enableScan = false;
             private Boolean enableSpdxBom = false;
             private Boolean enableCycloneDxBom = false;
+            private String debugParam;
         }
 
         @Data

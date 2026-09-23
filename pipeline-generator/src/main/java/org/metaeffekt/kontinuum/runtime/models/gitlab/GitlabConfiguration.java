@@ -13,7 +13,7 @@ public class GitlabConfiguration extends EnvironmentConfiguration {
     public final int GIT_DEPTH = 1;
     
     @Builder.Default
-    public final String GIT_STRATEGY = "CLONE";
+    public final String GIT_STRATEGY = "clone";
 
     public final String RUNNER_TAG;
 

@@ -200,6 +200,7 @@ public class ReportStageHandler implements StageHandler {
         processor.setProcessorParameter(PARAM_DOCUMENT_LANGUAGE, locale.getLanguage());
 
         processor.setProcessorParameter(PARAM_ASSET_ID, asset.getId());
+        processor.setProcessorParameter(PARAM_ASSET_BUILD, asset.getBuild());
         processor.setProcessorParameter(PARAM_ASSET_NAME, asset.getName());
         processor.setProcessorParameter(PARAM_ASSET_VERSION, asset.getVersion());
 
@@ -238,9 +239,9 @@ public class ReportStageHandler implements StageHandler {
         processor.setStage(Stage.REPORT);
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
-        processor.setProcessorParameter(OUTPUT_TARGET_DIR, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/");
+        processor.setProcessorParameter(OUTPUT_TARGET_DIR, context.getStageDirForAsset(Stage.REPORT).toString());
         processor.setProcessorParameter(PARAM_CONFIG_FILE, context.getEnvironment().getConfigDirNormalized() + "source-aggregation/config.yaml");
-        processor.setProcessorParameter(PARAM_PROTOCOL_FILE, context.getStageDirForAsset(Stage.REPORT).toString() + "sources/protocol.log");
+        processor.setProcessorParameter(PARAM_PROTOCOL_FILE, context.getStageDirForAsset(Stage.REPORT).toString() + "source-aggregation.log");
         processor.setProcessorParameter(PARAM_FAIL_ON_MISSING_SOURCES, "false");
 
         return processor;
@@ -258,6 +259,7 @@ public class ReportStageHandler implements StageHandler {
         processor.setStage(Stage.REPORT);
         Asset asset = context.getAsset();
 
+        processor.setProcessorParameter(ENV_TMD_SOURCE, context.getEnvironment().TMD_SOURCE);
         processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().TMD_PASSWORD);
         processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().TMD_USERKEYS_FILE);
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
