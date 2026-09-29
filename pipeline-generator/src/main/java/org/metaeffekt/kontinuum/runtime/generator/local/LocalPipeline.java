@@ -14,19 +14,14 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Proce
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.ProcessorParameter;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.StandaloneProcessor;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Generates a local-execution shell script from the configured pipeline.
  *
- * <p>The output is a sequence of chained {@code mvn -f <processor-pom> <goal>} invocations, one per
- * processor, ordered by stage. Processors are flattened across all execution contexts (pipeline,
- * assets and report groups) so that group-scoped report jobs always run after the asset-scoped
- * group copies they depend on. The script is intended to be executed on the developer's machine
- * (macOS, Linux). Windows compatibility is left open via the
+ * <p>The output is a serial sequence of chained {@code mvn -f <processor-pom> <goal>} invocations,
+ * ordered by processor dependencies, then stage, then registration order. The script is intended to
+ * be executed on the developer's machine (macOS, Linux). Windows compatibility is left open via the
  * {@link LocalConfiguration.ExecutionEnvironment} enum for future implementation.
  */
 @Slf4j
@@ -44,8 +39,12 @@ public class LocalPipeline {
     private final LocalConfiguration localConfiguration;
 
     public LocalPipeline(PipelineConfiguration pipelineConfiguration, LocalConfiguration localConfiguration) {
+        this(new Pipeline(pipelineConfiguration, localConfiguration).generatePipeline(), localConfiguration);
+    }
+
+    LocalPipeline(PipelineExecution execution, LocalConfiguration localConfiguration) {
         this.localConfiguration = localConfiguration;
-        this.execution = new Pipeline(pipelineConfiguration, localConfiguration).generatePipeline();
+        this.execution = execution;
     }
 
     public String generatePipeline() {
@@ -63,23 +62,15 @@ public class LocalPipeline {
     }
 
     private void generateProcessorSteps() {
-        List<ContextProcessor> steps = new ArrayList<>();
-        for (ExecutionContext context : execution.getContexts()) {
-            for (Processor processor : context.getProcessors()) {
-                steps.add(new ContextProcessor(context, processor));
-            }
-        }
-        // Stable sort: processors within a stage keep their context and insertion order.
-        steps.sort(Comparator.comparingInt(step -> step.processor.getStage().ordinal()));
-
-        for (ContextProcessor step : steps) {
-            scriptDocument.append("# --- ").append(step.processor.getStage().name()).append(": ")
-                    .append(step.processor.getId()).append(" (").append(step.context.getName()).append(") ----")
+        for (Processor processor : execution.getOrderedProcessors()) {
+            ExecutionContext context = execution.getContext(processor);
+            scriptDocument.append("# --- ").append(processor.getStage().name()).append(": ")
+                    .append(processor.getId()).append(" (").append(context.getName()).append(") ----")
                     .append(System.lineSeparator());
 
-            if (step.processor instanceof MavenProcessor mavenProcessor) {
+            if (processor instanceof MavenProcessor mavenProcessor) {
                 scriptDocument.append(generateMavenScriptBlock(mavenProcessor));
-            } else if (step.processor instanceof StandaloneProcessor standaloneProcessor) {
+            } else if (processor instanceof StandaloneProcessor standaloneProcessor) {
                 scriptDocument.append(generateStandaloneScriptBlock(standaloneProcessor));
             }
         }
@@ -137,7 +128,4 @@ public class LocalPipeline {
         }
         return script.append(System.lineSeparator()).toString();
     }
-
-    private record ContextProcessor(ExecutionContext context, Processor processor) {}
-
 }

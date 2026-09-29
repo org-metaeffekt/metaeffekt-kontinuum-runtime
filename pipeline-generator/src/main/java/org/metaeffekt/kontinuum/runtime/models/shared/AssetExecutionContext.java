@@ -43,6 +43,16 @@ public class AssetExecutionContext extends AbstractExecutionContext {
                                  EnvironmentConfiguration environment,
                                  Workspace workspace,
                                  ProcessorCatalog processorCatalog) {
+        this(new ProcessorExecutionPlan(), asset, configuration, environment, workspace, processorCatalog);
+    }
+
+    public AssetExecutionContext(ProcessorExecutionPlan executionPlan,
+                                 Asset asset,
+                                 PipelineConfiguration configuration,
+                                 EnvironmentConfiguration environment,
+                                 Workspace workspace,
+                                 ProcessorCatalog processorCatalog) {
+        super(executionPlan);
         this.asset = asset;
         this.configuration = configuration;
         this.environment = environment;

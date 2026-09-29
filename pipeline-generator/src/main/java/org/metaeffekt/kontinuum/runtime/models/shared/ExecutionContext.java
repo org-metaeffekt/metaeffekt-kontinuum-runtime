@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * A named unit of pipeline execution that accumulates processors and their dependency graph.
+ * A named grouping of processors in one pipeline execution.
  * <p>
  * Handlers are invoked at different scopes: a pipeline-wide context runs once, an
  * {@link AssetExecutionContext} once per asset, and a {@link ReportGroupExecutionContext}
@@ -20,7 +20,7 @@ public interface ExecutionContext {
     String getName();
 
     /**
-     * The processors accumulated by the handlers in insertion order.
+     * The processors registered by handlers for this context, in insertion order.
      */
     List<Processor> getProcessors();
 
@@ -30,7 +30,7 @@ public interface ExecutionContext {
     Set<Processor> getDependencies(Processor processor);
 
     /**
-     * Registers a processor with this context.
+     * Registers a processor in the shared execution plan and associates it with this context.
      */
     <T extends Processor> T addProcessor(T processor);
 

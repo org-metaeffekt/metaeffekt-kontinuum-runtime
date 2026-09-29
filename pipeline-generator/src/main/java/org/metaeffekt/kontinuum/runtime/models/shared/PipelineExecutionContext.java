@@ -16,6 +16,14 @@ public class PipelineExecutionContext extends AbstractExecutionContext {
     public PipelineExecutionContext(PipelineConfiguration configuration,
                                     EnvironmentConfiguration environment,
                                     ProcessorCatalog processorCatalog) {
+        this(new ProcessorExecutionPlan(), configuration, environment, processorCatalog);
+    }
+
+    public PipelineExecutionContext(ProcessorExecutionPlan executionPlan,
+                                    PipelineConfiguration configuration,
+                                    EnvironmentConfiguration environment,
+                                    ProcessorCatalog processorCatalog) {
+        super(executionPlan);
         this.configuration = configuration;
         this.environment = environment;
         this.processorCatalog = processorCatalog;

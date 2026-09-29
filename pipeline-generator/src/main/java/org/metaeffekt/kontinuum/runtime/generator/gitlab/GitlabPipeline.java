@@ -34,6 +34,7 @@ public class GitlabPipeline {
     }
 
     public String generatePipeline() {
+        execution.validate();
         generateStagesSection();
         generateVariablesSection();
         generateDefaultSection();
@@ -103,7 +104,7 @@ public class GitlabPipeline {
                 job.append("  ").append("stage: ").append(processor.getStage().name()).append(System.lineSeparator());
                 job.append("  ").append("image: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(System.lineSeparator());
 
-                Set<Processor> dependencies = context.getDependencies(processor);
+                Set<Processor> dependencies = execution.getDependencies(processor);
                 if (dependencies != null && !dependencies.isEmpty()) {
                     List<String> needJobNames = dependencies.stream()
                             .map(jobNames::get)

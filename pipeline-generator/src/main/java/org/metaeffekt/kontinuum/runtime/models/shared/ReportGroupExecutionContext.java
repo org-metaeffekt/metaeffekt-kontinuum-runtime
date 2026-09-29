@@ -4,7 +4,6 @@ import lombok.Getter;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -24,12 +23,6 @@ public class ReportGroupExecutionContext extends AbstractExecutionContext {
     private final Workspace workspace;
     private final ProcessorCatalog processorCatalog;
 
-    /**
-     * Processors contributed by the asset-scoped group stage (per-asset inventory copies and
-     * business case enrichment). Report generation depends on all of them.
-     */
-    private final List<Processor> prerequisites = new ArrayList<>();
-
     public ReportGroupExecutionContext(int reportIndex,
                                        PipelineConfiguration.Report report,
                                        ReportType reportType,
@@ -38,6 +31,20 @@ public class ReportGroupExecutionContext extends AbstractExecutionContext {
                                        EnvironmentConfiguration environment,
                                        Workspace workspace,
                                        ProcessorCatalog processorCatalog) {
+        this(new ProcessorExecutionPlan(), reportIndex, report, reportType, assets, configuration,
+                environment, workspace, processorCatalog);
+    }
+
+    public ReportGroupExecutionContext(ProcessorExecutionPlan executionPlan,
+                                       int reportIndex,
+                                       PipelineConfiguration.Report report,
+                                       ReportType reportType,
+                                       List<Asset> assets,
+                                       PipelineConfiguration configuration,
+                                       EnvironmentConfiguration environment,
+                                       Workspace workspace,
+                                       ProcessorCatalog processorCatalog) {
+        super(executionPlan);
         this.reportIndex = reportIndex;
         this.report = report;
         this.reportType = reportType;
@@ -58,9 +65,11 @@ public class ReportGroupExecutionContext extends AbstractExecutionContext {
     }
 
     public void addPrerequisite(Processor prerequisite) {
-        if (prerequisite != null) {
-            prerequisites.add(prerequisite);
-        }
+        getExecutionPlan().addPrerequisite(this, prerequisite);
+    }
+
+    public List<Processor> getPrerequisites() {
+        return getExecutionPlan().getPrerequisites(this);
     }
 
     /**

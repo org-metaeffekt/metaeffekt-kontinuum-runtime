@@ -2,39 +2,39 @@ package org.metaeffekt.kontinuum.runtime.models.shared;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 /**
- * Shared implementation of the processor and dependency bookkeeping for all execution contexts.
+ * Shared context view over the pipeline-wide processor execution plan.
  */
 public abstract class AbstractExecutionContext implements ExecutionContext {
 
-    private final List<Processor> processors = new ArrayList<>();
-    private final Map<Processor, Set<Processor>> dependencies = new IdentityHashMap<>();
+    private final ProcessorExecutionPlan executionPlan;
+
+    protected AbstractExecutionContext() {
+        this(new ProcessorExecutionPlan());
+    }
+
+    protected AbstractExecutionContext(ProcessorExecutionPlan executionPlan) {
+        this.executionPlan = Objects.requireNonNull(executionPlan, "Execution plan must not be null.");
+        this.executionPlan.registerContext(this);
+    }
 
     @Override
     public List<Processor> getProcessors() {
-        return processors;
+        return executionPlan.getProcessors(this);
     }
 
     @Override
     public <T extends Processor> T addProcessor(T processor) {
-        if (processor != null) {
-            this.processors.add(processor);
-        }
-        return processor;
+        return executionPlan.addProcessor(this, processor);
     }
 
     @Override
     public void addDependency(Processor target, Processor... dependsOn) {
-        if (target != null && dependsOn != null) {
-            Set<Processor> deps = this.dependencies.computeIfAbsent(target, k -> new LinkedHashSet<>());
-            for (Processor dep : dependsOn) {
-                if (dep != null && dep != target) {
-                    deps.add(dep);
-                }
-            }
-        }
+        executionPlan.addDependency(target, dependsOn);
     }
 
     @Override
@@ -54,21 +54,27 @@ public abstract class AbstractExecutionContext implements ExecutionContext {
 
     @Override
     public Set<Processor> getDependencies(Processor processor) {
-        return this.dependencies.getOrDefault(processor, Collections.emptySet());
+        return executionPlan.getDependencies(processor);
     }
 
     @Override
     public Processor getLastProcessor() {
+        List<Processor> processors = getProcessors();
         return processors.isEmpty() ? null : processors.get(processors.size() - 1);
     }
 
     @Override
     public Processor getLastProcessor(Stage stage) {
+        List<Processor> processors = getProcessors();
         for (int i = processors.size() - 1; i >= 0; i--) {
             if (processors.get(i).getStage() == stage) {
                 return processors.get(i);
             }
         }
         return null;
+    }
+
+    protected ProcessorExecutionPlan getExecutionPlan() {
+        return executionPlan;
     }
 }

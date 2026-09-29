@@ -30,12 +30,6 @@ public class Pipeline {
     private final EnvironmentConfiguration environmentConfiguration;
     private final ProcessorCatalog processorCatalog = new DefaultProcessorCatalog();
 
-    private final List<PipelineStageHandler> pipelineStageHandlers;
-    private final List<AssetStageHandler> assetStageHandlers;
-    private final List<ReportGroupStageHandler> reportGroupStageHandlers;
-
-    private final Map<ReportGroupKey, ReportGroupExecutionContext> reportGroupContexts;
-
     public Pipeline(PipelineConfiguration pipelineConfiguration,
                     EnvironmentConfiguration environmentConfiguration) {
 
@@ -44,12 +38,16 @@ public class Pipeline {
         this.environmentConfiguration = environmentConfiguration;
         this.pipelineConfiguration = pipelineConfiguration;
         this.workspace = new Workspace(pipelineConfiguration, environmentConfiguration);
-        this.reportGroupContexts = createReportGroupContexts();
+    }
 
-        this.pipelineStageHandlers = List.of(
-                new PreStageHandler()
-        );
-        this.assetStageHandlers = List.of(
+    public PipelineExecution generatePipeline() {
+        PipelineExecution execution = new PipelineExecution();
+        PipelineExecutionContext pipelineContext = new PipelineExecutionContext(
+                execution, pipelineConfiguration, environmentConfiguration, processorCatalog);
+        Map<ReportGroupKey, ReportGroupExecutionContext> reportGroupContexts = createReportGroupContexts(execution);
+
+        List<PipelineStageHandler> pipelineStageHandlers = List.of(new PreStageHandler());
+        List<AssetStageHandler> assetStageHandlers = List.of(
                 new FetchStageHandler(),
                 new ExtractStageHandler(),
                 new PrepareStageHandler(),
@@ -62,14 +60,8 @@ public class Pipeline {
                 new SummarizeStageHandler(),
                 new PostStageHandler()
         );
-        this.reportGroupStageHandlers = List.of(
-                new ReportStageHandler()
-        );
-    }
+        List<ReportGroupStageHandler> reportGroupStageHandlers = List.of(new ReportStageHandler());
 
-    public PipelineExecution generatePipeline() {
-        PipelineExecutionContext pipelineContext = new PipelineExecutionContext(
-                pipelineConfiguration, environmentConfiguration, processorCatalog);
         for (PipelineStageHandler handler : pipelineStageHandlers) {
             handler.process(pipelineContext);
         }
@@ -77,6 +69,7 @@ public class Pipeline {
         Map<Asset, AssetExecutionContext> assetExecutionContextMap = new LinkedHashMap<>();
         for (Asset asset : pipelineConfiguration.getProjectProperties().getAllAssets()) {
             AssetExecutionContext context = new AssetExecutionContext(
+                    execution,
                     asset,
                     pipelineConfiguration,
                     environmentConfiguration,
@@ -98,12 +91,13 @@ public class Pipeline {
             }
         }
 
-        PipelineExecution execution = new PipelineExecution(pipelineContext, assetExecutionContextMap, groupContexts);
-        appendPreScriptToProcessors(execution.getContexts());
+        execution.setExecutionContexts(pipelineContext, assetExecutionContextMap, groupContexts);
+        execution.validate();
+        appendPreScriptToProcessors(execution.getAllProcessors());
         return execution;
     }
 
-    private Map<ReportGroupKey, ReportGroupExecutionContext> createReportGroupContexts() {
+    private Map<ReportGroupKey, ReportGroupExecutionContext> createReportGroupContexts(PipelineExecution execution) {
         Map<ReportGroupKey, ReportGroupExecutionContext> groups = new LinkedHashMap<>();
         List<PipelineConfiguration.Report> reports = pipelineConfiguration.getReports();
         if (reports == null) {
@@ -120,6 +114,7 @@ public class Pipeline {
                 ReportType reportType = ReportType.fromKey(typeKey);
                 ReportGroupKey key = new ReportGroupKey(reportIndex, reportType);
                 groups.put(key, new ReportGroupExecutionContext(
+                        execution,
                         reportIndex, report, reportType, memberAssets,
                         pipelineConfiguration, environmentConfiguration, workspace, processorCatalog));
             }
@@ -140,22 +135,20 @@ public class Pipeline {
         return members;
     }
 
-    private void appendPreScriptToProcessors(List<ExecutionContext> contexts) {
+    private void appendPreScriptToProcessors(List<Processor> processors) {
         if (StringUtils.isBlank(environmentConfiguration.SETUP_COMMAND)) {
             return;
         }
 
-        for (ExecutionContext context : contexts) {
-            for (Processor processor : context.getProcessors()) {
-                String preScript = processor.getPreScript();
+        for (Processor processor : processors) {
+            String preScript = processor.getPreScript();
 
-                if (StringUtils.isBlank(preScript)) {
-                    processor.setPreScript(environmentConfiguration.SETUP_COMMAND);
-                } else {
-                    StringBuilder stringBuilder = new StringBuilder();
-                    stringBuilder.append(environmentConfiguration.SETUP_COMMAND).append(System.lineSeparator()).append(preScript);
-                    processor.setPreScript(stringBuilder.toString());
-                }
+            if (StringUtils.isBlank(preScript)) {
+                processor.setPreScript(environmentConfiguration.SETUP_COMMAND);
+            } else {
+                StringBuilder stringBuilder = new StringBuilder();
+                stringBuilder.append(environmentConfiguration.SETUP_COMMAND).append(System.lineSeparator()).append(preScript);
+                processor.setPreScript(stringBuilder.toString());
             }
         }
     }
