@@ -55,9 +55,6 @@ public class AssetExecutionContext extends AbstractExecutionContext {
         return asset != null ? asset.toString() : "asset";
     }
 
-    public void removeProcessorsWithId(DefaultProcessorCatalog.ProcessorIds processorId) {
-        getProcessors().removeIf(processor -> processor.getId().equals(processorId.getValue()));
-    }
 
     public Workspace.AssetPath getStageDirForAsset(Stage stage) {
         return workspace.getStageDirForAsset(asset, stage);

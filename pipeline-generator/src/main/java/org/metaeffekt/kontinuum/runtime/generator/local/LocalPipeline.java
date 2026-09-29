@@ -39,10 +39,6 @@ public class LocalPipeline {
     @Getter
     private final PipelineExecution execution;
 
-    public Map<Asset, List<Processor>> getAssetProcessorsMap() {
-        return execution.getAssetProcessorsMap();
-    }
-
     private final StringBuilder scriptDocument = new StringBuilder();
 
     private final LocalConfiguration localConfiguration;

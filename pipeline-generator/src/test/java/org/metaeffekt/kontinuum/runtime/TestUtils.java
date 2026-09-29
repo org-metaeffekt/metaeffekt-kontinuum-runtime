@@ -41,19 +41,6 @@ public class TestUtils {
         return pipelineConfiguration;
     }
 
-    public static GitlabConfiguration buildMinimalGitlabConfiguration() {
-        GitlabConfiguration gitlabConfiguration = GitlabConfiguration.builder()
-                .KONTINUUM_DIR("~/Projects/metaeffekt/metaeffekt-kontinuum")
-                .SCAN_PROPERTIES_FILE("config/scan/scan-control.properties")
-                .WORKBENCH_DIR("workbench/")
-                .WORKSPACE_DIR("./workspace")
-                .RUNNER_TAG("local")
-                .CONTAINER_IMAGE("metaeffekt/metaeffekt-kontinuum-runtime:2.1.0")
-                .build();
-
-        return gitlabConfiguration;
-    }
-
     public static LocalConfiguration buildMinimalLocalConfiguration() {
         LocalConfiguration localConfiguration = LocalConfiguration.builder()
                 .KONTINUUM_DIR("~/Projects/metaeffekt/metaeffekt-kontinuum")
@@ -75,9 +62,5 @@ public class TestUtils {
                 environmentConfiguration,
                 new Workspace(pipelineConfiguration,environmentConfiguration),
                 new DefaultProcessorCatalog());
-    }
-
-    public static boolean scriptContainsParameterValue(String script, ProcessorParameterKey key, String expectedValue) {
-        return script.contains("-D" + key + "=" + expectedValue);
     }
 }

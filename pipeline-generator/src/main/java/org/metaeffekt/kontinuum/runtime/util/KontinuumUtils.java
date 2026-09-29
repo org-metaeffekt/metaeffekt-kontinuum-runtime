@@ -10,32 +10,6 @@ import java.util.Properties;
 @Slf4j
 public class KontinuumUtils {
 
-    public static Properties getLocalProperties() {
-        File localPropertiesFile = new File(".local.properties");
-        if (!localPropertiesFile.exists()) {
-            localPropertiesFile = new File("../.local.properties");
-        }
-        if (!localPropertiesFile.exists()) {
-            localPropertiesFile = new File("../../.local.properties");
-        }
-        if (!localPropertiesFile.exists()) {
-            localPropertiesFile = new File("../../../.local.properties");
-        }
-        if (!localPropertiesFile.exists()) {
-            throw new IllegalStateException("Provide .local.properties file.");
-        }
-
-        Properties properties = new Properties();
-        if (localPropertiesFile.exists()) {
-            try (FileInputStream in = new FileInputStream(localPropertiesFile)) {
-                properties.load(in);
-            } catch (IOException e) {
-                log.error("Cannot load '{}'.", localPropertiesFile, e);
-            }
-        }
-        return properties;
-    }
-
     public static String normalizeDir(String... path) {
         String result = joinPath(path);
         if (!result.endsWith("/")) {

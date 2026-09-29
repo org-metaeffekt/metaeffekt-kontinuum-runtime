@@ -117,7 +117,8 @@ public class Workspace {
 
     /**
      * Paths for group-scoped report artifacts. Unlike {@link AssetPath} these are not bound to a
-     * single asset; the report identity is the group name (report id or joined asset ids).
+     * single asset; the report identity is the group name (the report id, or a position-derived
+     * {@code group-N} for entries without an id).
      */
     public record GroupPath(String dir, String groupName) {
 

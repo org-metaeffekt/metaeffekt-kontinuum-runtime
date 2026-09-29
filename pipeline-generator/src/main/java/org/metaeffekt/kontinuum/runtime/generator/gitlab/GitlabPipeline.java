@@ -33,10 +33,6 @@ public class GitlabPipeline {
         execution = pipeline.generatePipeline();
     }
 
-    public Map<Asset, List<Processor>> getAssetProcessorsMap() {
-        return execution.getAssetProcessorsMap();
-    }
-
     public String generatePipeline() {
         generateStagesSection();
         generateVariablesSection();

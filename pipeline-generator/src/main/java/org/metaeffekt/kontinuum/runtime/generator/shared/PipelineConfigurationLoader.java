@@ -55,6 +55,7 @@ public class PipelineConfigurationLoader {
 
         validateProject();
         validateAssets();
+        resolveReportGroupIds();
         validateReports();
         validateDashboards();
         validateOverviews();
@@ -197,6 +198,26 @@ public class PipelineConfigurationLoader {
         if (StringUtils.isBlank(containerResolver.getTag())) {
             log.error("Asset {} requires 'containerResolver.tag' to be set.", asset);
             isValid = false;
+        }
+    }
+
+    /**
+     * Assigns a short, position-derived group name to every report entry that does not declare an
+     * explicit id. The group id is the report entry's output folder and report file prefix; joining
+     * all asset ids (the former fallback) grew unbounded for entries with many assets, so unnamed
+     * entries are numbered {@code group-1}, {@code group-2}, ... in configuration order.
+     */
+    private void resolveReportGroupIds() {
+        List<Report> reports = pipelineConfiguration.getReports();
+        if (reports == null || reports.isEmpty()) {
+            return;
+        }
+
+        for (int reportIndex = 0; reportIndex < reports.size(); reportIndex++) {
+            Report report = reports.get(reportIndex);
+            if (report != null && StringUtils.isBlank(report.getId())) {
+                report.setResolvedGroupId("group-" + (reportIndex + 1));
+            }
         }
     }
 

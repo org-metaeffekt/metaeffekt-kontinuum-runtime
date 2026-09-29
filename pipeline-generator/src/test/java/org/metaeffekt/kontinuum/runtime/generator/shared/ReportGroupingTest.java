@@ -129,6 +129,40 @@ public class ReportGroupingTest {
     }
 
     @Test
+    public void unnamedReportEntriesUseShortPositionalGroupIds() {
+        PipelineConfiguration.Report first = report(null, List.of("A", "B", "C"), List.of("SDA", "VR"), List.of(SupportedLocale.EN_US));
+        PipelineConfiguration.Report second = report(null, List.of("A", "B", "C"), List.of("VR"), List.of(SupportedLocale.EN_US));
+
+        PipelineExecution execution = generate(List.of(first, second));
+
+        ReportGroupExecutionContext firstGroup = execution.getReportGroupContexts().get(0);
+        assertEquals("./workspace/project-id/08_reported/group-1/", firstGroup.getReportDir().toString());
+
+        Processor document = firstGroup.getProcessors().stream()
+                .filter(p -> "create-document".equals(p.getId()))
+                .findFirst()
+                .orElseThrow();
+        assertEquals("./workspace/project-id/08_reported/group-1/group-1-SDA-en_US.pdf",
+                parameter(document, ProcessorParameterKey.OUTPUT_DOCUMENT_FILE));
+        assertEquals("group-1", parameter(document, ProcessorParameterKey.PARAM_ASSET_ID));
+
+        ReportGroupExecutionContext secondGroup = execution.getReportGroupContexts().stream()
+                .filter(group -> group.getReport() == second)
+                .findFirst()
+                .orElseThrow();
+        assertEquals("./workspace/project-id/08_reported/group-2/", secondGroup.getReportDir().toString());
+    }
+
+    @Test
+    public void explicitReportIdOverridesPositionalGroupId() {
+        PipelineExecution execution = generate(List.of(
+                report("release-2026", List.of("A", "B", "C"), List.of("VR"), List.of(SupportedLocale.EN_US))));
+
+        ReportGroupExecutionContext group = execution.getReportGroupContexts().get(0);
+        assertEquals("./workspace/project-id/08_reported/release-2026/", group.getReportDir().toString());
+    }
+
+    @Test
     public void reportGenerationDependsOnAllMemberAssetContributions() {
         PipelineExecution execution = generate(List.of(
                 report("r1", List.of("A", "B"), List.of("VR"), List.of(SupportedLocale.EN_US))));

@@ -1,5 +1,6 @@
 package org.metaeffekt.kontinuum.runtime.models.shared;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
@@ -22,10 +23,6 @@ public class PipelineConfiguration {
     private List<Overview> overviews;
     private PortfolioManager portfolioManager;
     private Options options;
-
-    public boolean requiresResolve() {
-        return options != null && options.getGlobal() != null && Boolean.TRUE.equals(options.getGlobal().getEnableResolve());
-    }
 
     public boolean requiresVulnerabilityEnrichment() {
         boolean hasDashboard = dashboards != null && dashboards.stream()
@@ -74,37 +71,6 @@ public class PipelineConfiguration {
                 .flatMap(Collection::stream)
                 .map(ReportType::fromKey)
                 .anyMatch(ReportType::requiresVulnerabilityEnrichment);
-    }
-
-    /**
-     * Evaluates whether the pipeline requires a dedicated scan stage in a predefined order.
-     * <ol>
-     *     <li>enableScan in the global options is set to true</li>
-     *     <li>portfolio manager is not set</li>
-     *     <li>reports are non-empty</li>
-     *     <li>a specified report requires licensing information</li>
-     * </ol>
-     * @return true if the pipeline requires a dedicated license scan stage
-     */
-    public boolean requiresLicenseScan() {
-        if (options != null && options.getGlobal() != null && Boolean.TRUE.equals(options.getGlobal().getEnableScan())) {
-            return true;
-        }
-
-        if (Objects.nonNull(portfolioManager)) {
-            return false;
-        }
-
-        if (reports == null) {
-            return false;
-        }
-
-        return reports.stream()
-                .map(Report::getTypes)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .map(ReportType::fromKey)
-                .anyMatch(ReportType::requiresScan);
     }
 
     @Data
@@ -320,9 +286,25 @@ public class PipelineConfiguration {
         private List<SupportedLocale> locales;
         private String preReportFilterFile;
 
+        /**
+         * Short, position-derived group name ({@code group-1}, {@code group-2}, ...) resolved by
+         * {@link org.metaeffekt.kontinuum.runtime.generator.shared.PipelineConfigurationLoader} for
+         * report entries that do not declare an explicit {@link #id}. Kept out of the YAML schema.
+         */
+        @JsonIgnore
+        private String resolvedGroupId;
+
+        /**
+         * The name identifying this report entry's output folder and report files. Prefers the
+         * configured {@link #id}; otherwise the loader-assigned {@link #resolvedGroupId}. Falls back
+         * to joined asset ids only when the entry was never processed by the loader.
+         */
         public String getGroupId() {
             if (StringUtils.isNotBlank(id)) {
                 return id;
+            }
+            if (StringUtils.isNotBlank(resolvedGroupId)) {
+                return resolvedGroupId;
             }
             if (assetIds != null && !assetIds.isEmpty()) {
                 return String.join("-", assetIds);
