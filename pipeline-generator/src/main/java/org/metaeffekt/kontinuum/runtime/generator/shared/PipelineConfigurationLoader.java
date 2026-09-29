@@ -5,12 +5,12 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
-import org.metaeffekt.kontinuum.runtime.models.shared.ReportType;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Dashboard;
-import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Report;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
-import org.metaeffekt.kontinuum.runtime.models.shared.SupportedLocale;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Project;
+import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Report;
+import org.metaeffekt.kontinuum.runtime.models.shared.ReportType;
+import org.metaeffekt.kontinuum.runtime.models.shared.SupportedLocale;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,6 +18,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
+/**
+ * Loads and validates a pipeline configuration from a YAML file.
+ */
 @Slf4j
 public class PipelineConfigurationLoader {
 
@@ -27,6 +30,12 @@ public class PipelineConfigurationLoader {
     private boolean isValid = true;
     private PipelineConfiguration pipelineConfiguration;
 
+    /**
+     * Reads and validates the pipeline configuration from the given file.
+     *
+     * @param pipelineConfigFile the YAML pipeline configuration file
+     * @return the validated pipeline configuration
+     */
     public PipelineConfiguration readConfig(File pipelineConfigFile) {
         ObjectMapper objectMapper = new ObjectMapper(new YAMLFactory());
         try {
@@ -36,8 +45,13 @@ public class PipelineConfigurationLoader {
             throw new RuntimeException("Failed to read pipeline configuration file.", e);
         }
     }
-    
 
+
+    /**
+     * Validates the given pipeline configuration.
+     *
+     * @param pipelineConfiguration the pipeline configuration to validate
+     */
     public void validatePipelineConfigFile(PipelineConfiguration pipelineConfiguration) {
         this.pipelineConfiguration = pipelineConfiguration;
 
@@ -107,12 +121,14 @@ public class PipelineConfigurationLoader {
             }
 
             if (StringUtils.isBlank(asset.getAssessmentId()) && assessmentFieldsRequiredForAsset(asset)) {
-                log.error("Asset {} requires 'assessmentId' to be set because either reports or dashboards require it.", asset);
+                log.error("Asset {} requires 'assessmentId' to be set because either reports or dashboards require it.",
+                          asset);
                 isValid = false;
             }
 
             if (StringUtils.isBlank(asset.getContext()) && assessmentFieldsRequiredForAsset(asset)) {
-                log.error("Asset {} requires 'context' to be set because either reports or dashboards require it.", asset);
+                log.error("Asset {} requires 'context' to be set because either reports or dashboards require it.",
+                          asset);
                 isValid = false;
             }
 
@@ -120,8 +136,9 @@ public class PipelineConfigurationLoader {
                 log.error("Asset {} requires 'reference' to be set.", asset);
                 isValid = false;
             }
-            
-            if (asset.getMavenResolver() == null && asset.getUrlResolver() == null && asset.getContainerResolver() == null) {
+
+            if (asset.getMavenResolver() == null && asset.getUrlResolver() == null &&
+                asset.getContainerResolver() == null) {
                 log.error("Asset {} requires a resolver to bet set.", asset);
                 isValid = false;
             }
@@ -149,7 +166,7 @@ public class PipelineConfigurationLoader {
             isValid = false;
         }
     }
-    
+
     private void validateUrlResolver(Asset asset) {
         Asset.UrlResolver urlResolver = asset.getUrlResolver();
         if (urlResolver == null) {
@@ -166,9 +183,10 @@ public class PipelineConfigurationLoader {
         } else if (StringUtils.isNotBlank(urlResolver.getUrlPattern())) {
             String urlPattern = urlResolver.getUrlPattern();
             if ((urlPattern.contains("${name}") && StringUtils.isBlank(asset.getName()))
-                    || (urlPattern.contains("${version}") && StringUtils.isBlank(asset.getVersion()))) {
+                || (urlPattern.contains("${version}") && StringUtils.isBlank(asset.getVersion()))) {
                 isValid = false;
-                log.error("Asset {} requires 'urlResolver.urlPattern' to only contain placeholders which are set.", asset);
+                log.error("Asset {} requires 'urlResolver.urlPattern' to only contain placeholders which are set.",
+                          asset);
             } else {
                 if (urlPattern.contains("${name}")) {
                     urlPattern = urlPattern.replace("${name}", asset.getName());
@@ -223,9 +241,9 @@ public class PipelineConfigurationLoader {
 
     private void validateReports() {
         List<String> assetIds = getAllAssets()
-            .stream()
-            .map(Asset::getId)
-            .toList();
+                .stream()
+                .map(Asset::getId)
+                .toList();
 
         List<Report> reports = getReports();
 
@@ -253,20 +271,23 @@ public class PipelineConfigurationLoader {
 
             for (String type : report.getTypes()) {
                 if (!ReportType.allKeys().contains(type)) {
-                    log.error("A report with 'assetIds': {} contains an invalid type in 'types': {}.", report.getAssetIds(), type);
+                    log.error("A report with 'assetIds': {} contains an invalid type in 'types': {}.",
+                              report.getAssetIds(), type);
                     isValid = false;
                 }
             }
 
             if (report.getLocales() == null || report.getLocales().isEmpty()) {
-                log.error("A report with 'assetIds': {} is missing or contains an empty 'locales' list.", report.getAssetIds());
+                log.error("A report with 'assetIds': {} is missing or contains an empty 'locales' list.",
+                          report.getAssetIds());
                 isValid = false;
                 continue;
             }
 
             for (SupportedLocale locale : report.getLocales()) {
                 if (locale == null) {
-                    log.error("A report with 'assetIds': {} contains a null locale in 'locales'.", report.getAssetIds());
+                    log.error("A report with 'assetIds': {} contains a null locale in 'locales'.",
+                              report.getAssetIds());
                     isValid = false;
                 }
             }
@@ -285,9 +306,9 @@ public class PipelineConfigurationLoader {
 
     private void validateDashboards() {
         List<String> assetIds = getAllAssets()
-            .stream()
-            .map(Asset::getId)
-            .toList();
+                .stream()
+                .map(Asset::getId)
+                .toList();
 
         List<Dashboard> dashboards = getDashboards();
 
@@ -352,7 +373,9 @@ public class PipelineConfigurationLoader {
     private void validateOptions() {
         if (pipelineConfiguration.getOptions() == null) {
             if (assessmentFieldsRequired()) {
-                log.error("Pipeline configuration requires 'options' and 'enrichment' to be set because either reports or dashboards require it.");
+                log.error(
+                        "Pipeline configuration requires 'options' and 'enrichment' to be set because either reports " +
+                        "or dashboards require it.");
                 isValid = false;
                 return;
             }
@@ -381,13 +404,16 @@ public class PipelineConfigurationLoader {
 
     private void validateEnrichmentOptions() {
         assert pipelineConfiguration.getOptions() != null;
-        PipelineConfiguration.Options.EnrichmentOptions enrichmentOptions = pipelineConfiguration.getOptions().getEnrichment();
+        PipelineConfiguration.Options.EnrichmentOptions enrichmentOptions =
+                pipelineConfiguration.getOptions().getEnrichment();
         if (enrichmentOptions == null) {
             return;
         }
 
         if (StringUtils.isBlank(enrichmentOptions.getSecurityPolicyFile()) && assessmentFieldsRequired()) {
-            log.error("Enrichment Options requires 'securityPolicyFile' to be set because either reports or dashboards require it.");
+            log.error(
+                    "Enrichment Options requires 'securityPolicyFile' to be set because either reports or dashboards " +
+                    "require it.");
             isValid = false;
         }
     }
@@ -395,7 +421,7 @@ public class PipelineConfigurationLoader {
     private boolean assessmentFieldsRequired() {
         for (Asset asset : getAllAssets()) {
             if (assessmentFieldsRequiredForAsset(asset)) {
-                 return true;
+                return true;
             }
         }
         return false;
@@ -408,22 +434,22 @@ public class PipelineConfigurationLoader {
 
         if (asset == null) {
             reportsRequiringAssessmentFields = getReports()
-                .stream()
-                .filter(r -> hasAssessmentType(r, null))
-                .toList();
+                    .stream()
+                    .filter(r -> hasAssessmentType(r, null))
+                    .toList();
             dashboardsRequiringAssessmentFields.addAll(getDashboards());
         } else {
             reportsRequiringAssessmentFields = getReports()
-                .stream()
-                .filter(r -> r.getAssetIds().contains(asset.getId()))
-                .filter(r -> hasAssessmentType(r, asset.getId()))
-                .toList();
+                    .stream()
+                    .filter(r -> r.getAssetIds().contains(asset.getId()))
+                    .filter(r -> hasAssessmentType(r, asset.getId()))
+                    .toList();
             dashboardsRequiringAssessmentFields.addAll(getDashboards()
-                .stream()
-                .filter(d -> d.getAssetIds().contains(asset.getId()))
-                .toList());
+                                                               .stream()
+                                                               .filter(d -> d.getAssetIds().contains(asset.getId()))
+                                                               .toList());
         }
-        
+
         return !reportsRequiringAssessmentFields.isEmpty() || !dashboardsRequiringAssessmentFields.isEmpty();
     }
 

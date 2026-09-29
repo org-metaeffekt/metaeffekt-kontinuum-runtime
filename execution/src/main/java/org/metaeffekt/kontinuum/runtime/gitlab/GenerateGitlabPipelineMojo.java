@@ -15,6 +15,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+/**
+ * Maven Mojo that generates a GitLab CI pipeline from the configured pipeline definition.
+ */
 @Mojo(name = "generate-gitlab-pipeline", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 @Setter
 public class GenerateGitlabPipelineMojo extends AbstractGeneratePipelineMojo {
@@ -32,12 +35,15 @@ public class GenerateGitlabPipelineMojo extends AbstractGeneratePipelineMojo {
         File pipelineConfigFile = new File(pipelineConfigPath);
 
         if (!pipelineConfigFile.exists()) {
-            throw new MojoExecutionException("The pipeline configuration file " + pipelineConfigFile.getAbsolutePath() + " does not exist.");
+            throw new MojoExecutionException(
+                    "The pipeline configuration file " + pipelineConfigFile.getAbsolutePath() + " does not exist.");
         }
 
-       GitlabConfiguration.GitlabConfigurationBuilder gitlabConfiguration = GitlabConfiguration.builder()
-                .ARTIFACT_RESOLVER_CONFIG_FILE(artifactResolverConfigFile)
-                .ARTIFACT_RESOLVER_PROXY_FILE(artifactResolverProxyFile)
+        GitlabConfiguration.GitlabConfigurationBuilder gitlabConfiguration = GitlabConfiguration.builder()
+                .ARTIFACT_RESOLVER_CONFIG_FILE(
+                        artifactResolverConfigFile)
+                .ARTIFACT_RESOLVER_PROXY_FILE(
+                        artifactResolverProxyFile)
                 .RUNNER_TAG(runnerTag);
 
 

@@ -5,8 +5,6 @@ import org.apache.maven.api.plugin.testing.MojoTest;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-
 @MojoTest
 public class GenerateGitlabPipelineMojoTest {
 

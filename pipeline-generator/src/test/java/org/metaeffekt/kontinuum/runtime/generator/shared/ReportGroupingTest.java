@@ -3,18 +3,14 @@ package org.metaeffekt.kontinuum.runtime.generator.shared;
 import org.junit.jupiter.api.Test;
 import org.metaeffekt.kontinuum.runtime.TestUtils;
 import org.metaeffekt.kontinuum.runtime.models.local.LocalConfiguration;
-import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
-import org.metaeffekt.kontinuum.runtime.models.shared.ExecutionContext;
-import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
+import org.metaeffekt.kontinuum.runtime.models.shared.*;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.ProcessorParameter;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey;
-import org.metaeffekt.kontinuum.runtime.models.shared.ReportGroupExecutionContext;
-import org.metaeffekt.kontinuum.runtime.models.shared.SupportedLocale;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ReportGroupingTest {
 
@@ -26,13 +22,15 @@ public class ReportGroupingTest {
         asset.setAssessmentId(id);
         asset.setContext("local");
         asset.setReference("inventories/reference");
-        PipelineConfiguration.ProjectProperties.Asset.UrlResolver resolver = new PipelineConfiguration.ProjectProperties.Asset.UrlResolver();
+        PipelineConfiguration.ProjectProperties.Asset.UrlResolver resolver =
+                new PipelineConfiguration.ProjectProperties.Asset.UrlResolver();
         resolver.setUrl("https://example.com/" + id + ".zip");
         asset.setUrlResolver(resolver);
         return asset;
     }
 
-    private static PipelineConfiguration.Report report(String id, List<String> assetIds, List<String> types, List<SupportedLocale> locales) {
+    private static PipelineConfiguration.Report report(String id, List<String> assetIds, List<String> types,
+                                                       List<SupportedLocale> locales) {
         PipelineConfiguration.Report report = new PipelineConfiguration.Report();
         report.setId(id);
         report.setAssetIds(assetIds);
@@ -53,7 +51,8 @@ public class ReportGroupingTest {
         configuration.setReports(reports);
 
         PipelineConfiguration.Options options = new PipelineConfiguration.Options();
-        PipelineConfiguration.Options.EnrichmentOptions enrichment = new PipelineConfiguration.Options.EnrichmentOptions();
+        PipelineConfiguration.Options.EnrichmentOptions enrichment =
+                new PipelineConfiguration.Options.EnrichmentOptions();
         enrichment.setSecurityPolicyFile("policies/security-policy.json");
         options.setEnrichment(enrichment);
         configuration.setOptions(options);
@@ -80,7 +79,8 @@ public class ReportGroupingTest {
     @Test
     public void generatesOneDocumentPerTypeAndLocaleNotPerAsset() {
         PipelineExecution execution = generate(List.of(
-                report("r1", List.of("A", "B", "C"), List.of("SDA", "CR", "VR"), List.of(SupportedLocale.EN_US, SupportedLocale.DE_DE))));
+                report("r1", List.of("A", "B", "C"), List.of("SDA", "CR", "VR"),
+                       List.of(SupportedLocale.EN_US, SupportedLocale.DE_DE))));
 
         long documents = execution.getContexts().stream().mapToLong(ctx -> count(ctx, "create-document")).sum();
 
@@ -122,7 +122,7 @@ public class ReportGroupingTest {
                 .findFirst()
                 .orElseThrow();
         assertEquals("./workspace/project-id/08_reported/r1/r1-VR-en_US.pdf",
-                parameter(document, ProcessorParameterKey.OUTPUT_DOCUMENT_FILE));
+                     parameter(document, ProcessorParameterKey.OUTPUT_DOCUMENT_FILE));
         assertEquals("r1", parameter(document, ProcessorParameterKey.PARAM_ASSET_ID));
         assertEquals("product", parameter(document, ProcessorParameterKey.PARAM_ASSET_NAME));
         assertEquals("1.0.0", parameter(document, ProcessorParameterKey.PARAM_ASSET_VERSION));
@@ -130,8 +130,10 @@ public class ReportGroupingTest {
 
     @Test
     public void unnamedReportEntriesUseShortPositionalGroupIds() {
-        PipelineConfiguration.Report first = report(null, List.of("A", "B", "C"), List.of("SDA", "VR"), List.of(SupportedLocale.EN_US));
-        PipelineConfiguration.Report second = report(null, List.of("A", "B", "C"), List.of("VR"), List.of(SupportedLocale.EN_US));
+        PipelineConfiguration.Report first = report(null, List.of("A", "B", "C"), List.of("SDA", "VR"),
+                                                    List.of(SupportedLocale.EN_US));
+        PipelineConfiguration.Report second = report(null, List.of("A", "B", "C"), List.of("VR"),
+                                                     List.of(SupportedLocale.EN_US));
 
         PipelineExecution execution = generate(List.of(first, second));
 
@@ -143,7 +145,7 @@ public class ReportGroupingTest {
                 .findFirst()
                 .orElseThrow();
         assertEquals("./workspace/project-id/08_reported/group-1/group-1-SDA-en_US.pdf",
-                parameter(document, ProcessorParameterKey.OUTPUT_DOCUMENT_FILE));
+                     parameter(document, ProcessorParameterKey.OUTPUT_DOCUMENT_FILE));
         assertEquals("group-1", parameter(document, ProcessorParameterKey.PARAM_ASSET_ID));
 
         ReportGroupExecutionContext secondGroup = execution.getReportGroupContexts().stream()
@@ -179,7 +181,8 @@ public class ReportGroupingTest {
 
     @Test
     public void preReportFilterRunsOnEachMemberAssetInventory() {
-        PipelineConfiguration.Report report = report("r1", List.of("A", "B"), List.of("VR"), List.of(SupportedLocale.EN_US));
+        PipelineConfiguration.Report report = report("r1", List.of("A", "B"), List.of("VR"),
+                                                     List.of(SupportedLocale.EN_US));
         report.setPreReportFilterFile("scripts/prepare.kts");
 
         PipelineExecution execution = generate(List.of(report));
@@ -200,7 +203,7 @@ public class ReportGroupingTest {
                     .findFirst()
                     .orElseThrow();
             assertTrue(parameter(copy, ProcessorParameterKey.INPUT_INVENTORY_FILE).contains("/prepared/"),
-                    "copy must read the pre-report-filtered inventory");
+                       "copy must read the pre-report-filtered inventory");
         }
     }
 

@@ -4,9 +4,13 @@ import lombok.Builder;
 import lombok.experimental.SuperBuilder;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
+/**
+ * Base configuration for a Kontinuum environment, exposing directories, credentials and processor
+ * settings resolved from the harness properties.
+ */
 @SuperBuilder
 public abstract class EnvironmentConfiguration {
-    
+
     @Builder.Default
     public final String WORKBENCH_DIR = "./workbench/";
 
@@ -57,12 +61,18 @@ public abstract class EnvironmentConfiguration {
         return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "correlations/");
     }
 
-    public String getDescriptorsDirNormalized() { return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "descriptors/"); }
+    public String getDescriptorsDirNormalized() {
+        return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "descriptors/");
+    }
 
 
-    public String getScriptsDirNormalized() { return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "scripts/"); }
+    public String getScriptsDirNormalized() {
+        return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "scripts/");
+    }
 
-    public String getConfigDirNormalized() { return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "config/"); }
+    public String getConfigDirNormalized() {
+        return KontinuumUtils.normalizeDir(WORKBENCH_DIR, "config/");
+    }
 
     public String getWorkbenchDirNormalized() {
         return KontinuumUtils.normalizeDir(WORKBENCH_DIR);
@@ -76,6 +86,11 @@ public abstract class EnvironmentConfiguration {
         return KontinuumUtils.normalizeDir(KONTINUUM_DIR, "processors");
     }
 
+    /**
+     * Returns the normalized workspace directory.
+     *
+     * @return the normalized workspace directory
+     */
     public abstract String getWorkspaceDirNormalized();
 }
 

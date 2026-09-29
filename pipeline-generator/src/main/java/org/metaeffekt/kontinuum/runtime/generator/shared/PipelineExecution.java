@@ -1,13 +1,9 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared;
 
 import lombok.Getter;
-import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
-import org.metaeffekt.kontinuum.runtime.models.shared.ExecutionContext;
+import org.metaeffekt.kontinuum.runtime.models.shared.*;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
-import org.metaeffekt.kontinuum.runtime.models.shared.PipelineExecutionContext;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorExecutionPlan;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
-import org.metaeffekt.kontinuum.runtime.models.shared.ReportGroupExecutionContext;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -25,9 +21,19 @@ public class PipelineExecution extends ProcessorExecutionPlan {
     private Map<Asset, AssetExecutionContext> assetContexts = new LinkedHashMap<>();
     private List<ReportGroupExecutionContext> reportGroupContexts = new ArrayList<>();
 
+    /**
+     * Creates an empty pipeline execution.
+     */
     public PipelineExecution() {
     }
 
+    /**
+     * Creates a pipeline execution from the given contexts.
+     *
+     * @param pipelineContext     the pipeline-wide execution context
+     * @param assetContexts       the per-asset execution contexts
+     * @param reportGroupContexts the per-report-group execution contexts
+     */
     public PipelineExecution(PipelineExecutionContext pipelineContext,
                              Map<Asset, AssetExecutionContext> assetContexts,
                              List<ReportGroupExecutionContext> reportGroupContexts) {
@@ -47,6 +53,8 @@ public class PipelineExecution extends ProcessorExecutionPlan {
 
     /**
      * All execution contexts in generation order.
+     *
+     * @return the execution contexts in generation order
      */
     public List<ExecutionContext> getContexts() {
         List<ExecutionContext> contexts = new ArrayList<>();
@@ -60,6 +68,8 @@ public class PipelineExecution extends ProcessorExecutionPlan {
 
     /**
      * Convenience accessor for the per-asset processors. Useful for tests.
+     *
+     * @return a map from each asset to its processors
      */
     public Map<Asset, List<Processor>> getAssetProcessorsMap() {
         Map<Asset, List<Processor>> map = new LinkedHashMap<>();

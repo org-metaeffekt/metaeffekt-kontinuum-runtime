@@ -61,7 +61,7 @@ options:
     enableResolve: false
   enrichment:
     securityPolicyFile: "policies/security-policy.json"
-    securityPolicyActiveIds: ["base_configuration"]
+    securityPolicyActiveIds: [ "base_configuration" ]
     activateMsrc: true
     activateNvd: true
     activateCertFr: true

@@ -15,6 +15,8 @@ public interface ReportGroupStageHandler extends StageHandler {
 
     /**
      * Inspects the report group context and appends processors for this stage.
+     *
+     * @param context the report group execution context to inspect
      */
     void process(ReportGroupExecutionContext context);
 }

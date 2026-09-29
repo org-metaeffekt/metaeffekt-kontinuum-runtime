@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Getter;
 
+/**
+ * Enumerates the locales supported for report generation.
+ */
 @Getter
 public enum SupportedLocale {
     EN_US("en_US", "en", "EN"),
@@ -37,12 +40,13 @@ public enum SupportedLocale {
         String trimmed = value.trim();
         for (SupportedLocale supportedLocale : values()) {
             if (supportedLocale.name().equalsIgnoreCase(trimmed)
-                    || supportedLocale.identifier.equalsIgnoreCase(trimmed)
-                    || supportedLocale.language.equalsIgnoreCase(trimmed)
-                    || supportedLocale.locale.equalsIgnoreCase(trimmed)) {
+                || supportedLocale.identifier.equalsIgnoreCase(trimmed)
+                || supportedLocale.language.equalsIgnoreCase(trimmed)
+                || supportedLocale.locale.equalsIgnoreCase(trimmed)) {
                 return supportedLocale;
             }
         }
-        throw new IllegalArgumentException("Unknown locale: '" + value + "'. Supported values include [en_US, de_DE, en, de, EN_US, DE_DE].");
+        throw new IllegalArgumentException(
+                "Unknown locale: '" + value + "'. Supported values include [en_US, de_DE, en, de, EN_US, DE_DE].");
     }
 }

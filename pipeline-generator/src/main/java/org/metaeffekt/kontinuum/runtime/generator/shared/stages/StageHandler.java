@@ -13,11 +13,15 @@ public interface StageHandler {
 
     /**
      * Returns the stage this handler is responsible for.
+     *
+     * @return the stage this handler is responsible for
      */
     Stage getStage();
 
     /**
      * Returns the granularity at which this handler is invoked.
+     *
+     * @return the scope at which this handler is invoked
      */
     StageScope getScope();
 }

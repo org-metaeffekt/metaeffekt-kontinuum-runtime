@@ -4,7 +4,6 @@ import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
-import org.metaeffekt.kontinuum.runtime.models.shared.ReportType;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
 import java.util.List;
@@ -45,17 +44,19 @@ public class SummarizeStageHandler implements AssetStageHandler {
     /**
      * Creates a CycloneDX BOM from the inventory in the summarize stage.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/convert/convert_inventory-to-cyclonedx.md">convert_inventory-to-cyclonedx.md</a>
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for CycloneDX BOM conversion.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/convert/convert_inventory-to-cyclonedx.md">convert_inventory-to-cyclonedx.md</a>
      */
     private MavenProcessor handleInventoryToCycloneDxConversion(AssetExecutionContext context) {
         Asset asset = context.getAsset();
-        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(INVENTORY_TO_CYCLONEDX);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(
+                INVENTORY_TO_CYCLONEDX);
         processor.setStage(Stage.SUMMARIZE);
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
-        processor.setProcessorParameter(OUTPUT_BOM_FILE, context.getStageDirForAsset(Stage.SUMMARIZE).appendCycloneDxFile("JSON"));
+        processor.setProcessorParameter(OUTPUT_BOM_FILE,
+                                        context.getStageDirForAsset(Stage.SUMMARIZE).appendCycloneDxFile("JSON"));
         processor.setProcessorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, "JSON");
         processor.setProcessorParameter(PARAM_DOCUMENT_NAME, asset.getName());
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION, "FIXME");
@@ -67,9 +68,9 @@ public class SummarizeStageHandler implements AssetStageHandler {
     /**
      * Creates an SPDX BOM from the inventory in the summarize stage.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/convert/convert_inventory-to-spdx.md">convert_inventory-to-spdx.md</a>
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for SPDX BOM conversion.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/convert/convert_inventory-to-spdx.md">convert_inventory-to-spdx.md</a>
      */
     private MavenProcessor handleInventoryToSpdxConversion(AssetExecutionContext context) {
         Asset asset = context.getAsset();
@@ -77,7 +78,8 @@ public class SummarizeStageHandler implements AssetStageHandler {
         processor.setStage(Stage.SUMMARIZE);
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
-        processor.setProcessorParameter(OUTPUT_BOM_FILE, context.getStageDirForAsset(Stage.SUMMARIZE).appendSpdxFile("JSON"));
+        processor.setProcessorParameter(OUTPUT_BOM_FILE,
+                                        context.getStageDirForAsset(Stage.SUMMARIZE).appendSpdxFile("JSON"));
         processor.setProcessorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, "JSON");
         processor.setProcessorParameter(PARAM_DOCUMENT_NAME, asset.getName());
         processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION, "FIXME");
@@ -91,10 +93,12 @@ public class SummarizeStageHandler implements AssetStageHandler {
         processor.setStage(Stage.SUMMARIZE);
 
         processor.setProcessorParameter(INPUT_ADVISOR_INVENTORIES_DIR, context.getCurrentInventoryDir());
-        processor.setProcessorParameter(INPUT_DASHBOARDS_DIR, context.getStageDirForAsset(Stage.REPORT).appendDashboardDir());
+        processor.setProcessorParameter(INPUT_DASHBOARDS_DIR,
+                                        context.getStageDirForAsset(Stage.REPORT).appendDashboardDir());
         processor.setProcessorParameter(INPUT_INVENTORIES_DIR, context.getStageDirForAsset(Stage.PREPARE).toString());
         processor.setProcessorParameter(INPUT_REPORTS_DIR, resolveReportsDir(context));
-        processor.setProcessorParameter(OUTPUT_RESOURCES_DIR, context.getStageDirForAsset(Stage.SUMMARIZE).toString() + "resources/");
+        processor.setProcessorParameter(OUTPUT_RESOURCES_DIR,
+                                        context.getStageDirForAsset(Stage.SUMMARIZE).toString() + "resources/");
 
         return processor;
     }
@@ -109,8 +113,12 @@ public class SummarizeStageHandler implements AssetStageHandler {
         if (reports != null) {
             List<PipelineConfiguration.Report> reportsForAsset = reports.stream()
                     .filter(report -> report != null
-                            && report.getAssetIds() != null
-                            && report.getAssetIds().contains(context.getAsset().getId()))
+                                      &&
+                                      report.getAssetIds() != null
+                                      && report.getAssetIds()
+                                              .contains(
+                                                      context.getAsset()
+                                                              .getId()))
                     .toList();
             if (reportsForAsset.size() == 1) {
                 return context.getWorkspace().getReportDir(reportsForAsset.get(0)).toString();
@@ -122,22 +130,29 @@ public class SummarizeStageHandler implements AssetStageHandler {
     /**
      * Creates an overview report from the resources gathered during previous stages.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/portfolio/portfolio_create-overview.md">portfolio_create-overview.md</a>
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for overview creation.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/portfolio/portfolio_create-overview.md">portfolio_create-overview.md</a>
      */
     private MavenProcessor handleOverviewCreation(AssetExecutionContext context) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_OVERVIEW);
         processor.setStage(Stage.SUMMARIZE);
 
         processor.setProcessorParameter(INPUT_ADVISOR_INVENTORIES_DIR, "advisor-inventories");
-        processor.setProcessorParameter(INPUT_DASHBOARDS_DIR, context.getStageDirForAsset(Stage.REPORT).appendDashboardDir());
-        processor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getStageDirForAsset(Stage.SUMMARIZE).toString() + "resources/");
+        processor.setProcessorParameter(INPUT_DASHBOARDS_DIR,
+                                        context.getStageDirForAsset(Stage.REPORT).appendDashboardDir());
+        processor.setProcessorParameter(INPUT_INVENTORY_DIR,
+                                        context.getStageDirForAsset(Stage.SUMMARIZE).toString() + "resources/");
         processor.setProcessorParameter(INPUT_INVENTORY_PATH, "source-inventories");
         processor.setProcessorParameter(INPUT_REPORTS_DIR, "vulnerability-reports");
-        processor.setProcessorParameter(OUTPUT_OVERVIEW_FILE, context.getStageDirForAsset(Stage.SUMMARIZE).appendOverviewFile());
-        processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE, context.getConfiguration().getOptions().getEnrichment().getSecurityPolicyFile());
-        processor.setProcessorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, context.getConfiguration().getOptions().getEnrichment().getSecurityPolicyActiveIds().toString());
+        processor.setProcessorParameter(OUTPUT_OVERVIEW_FILE,
+                                        context.getStageDirForAsset(Stage.SUMMARIZE).appendOverviewFile());
+        processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE,
+                                        context.getConfiguration().getOptions().getEnrichment()
+                                                .getSecurityPolicyFile());
+        processor.setProcessorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS,
+                                        context.getConfiguration().getOptions().getEnrichment()
+                                                .getSecurityPolicyActiveIds().toString());
         return processor;
     }
 

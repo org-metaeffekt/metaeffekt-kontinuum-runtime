@@ -1,18 +1,17 @@
 package org.metaeffekt.kontinuum.runtime.generator.gitlab;
 
-import java.util.*;
-
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.generator.shared.Pipeline;
 import org.metaeffekt.kontinuum.runtime.generator.shared.PipelineExecution;
 import org.metaeffekt.kontinuum.runtime.models.gitlab.GitlabConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.*;
-import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.ProcessorParameter;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.StandaloneProcessor;
+
+import java.util.*;
 
 /**
  * This class generates a gitlab pipeline from the given configuration files to include as a
@@ -27,12 +26,23 @@ public class GitlabPipeline {
 
     GitlabConfiguration gitlabConfiguration;
 
+    /**
+     * Creates a GitLab pipeline from the given pipeline and GitLab configuration.
+     *
+     * @param pipelineConfiguration the pipeline configuration to generate from
+     * @param gitlabConfiguration   the GitLab-specific configuration
+     */
     public GitlabPipeline(PipelineConfiguration pipelineConfiguration, GitlabConfiguration gitlabConfiguration) {
         this.gitlabConfiguration = gitlabConfiguration;
         Pipeline pipeline = new Pipeline(pipelineConfiguration, gitlabConfiguration);
         execution = pipeline.generatePipeline();
     }
 
+    /**
+     * Generates the complete GitLab CI pipeline document.
+     *
+     * @return the generated GitLab pipeline document
+     */
     public String generatePipeline() {
         execution.validate();
         generateStagesSection();
@@ -42,14 +52,17 @@ public class GitlabPipeline {
         return gitlabPipelineDocument.toString();
     }
 
+    /**
+     * Appends the stages section to the GitLab pipeline document.
+     */
     public void generateStagesSection() {
         StringBuilder stagesSection = new StringBuilder();
         stagesSection.append("stages:").append(System.lineSeparator());
         Set<String> requiredStages = new HashSet<>();
 
         execution.getContexts().stream()
-            .flatMap(ctx -> ctx.getProcessors().stream())
-            .forEach(p -> requiredStages.add(p.getStage().name()));
+                .flatMap(ctx -> ctx.getProcessors().stream())
+                .forEach(p -> requiredStages.add(p.getStage().name()));
 
         for (String stage : requiredStages.stream()
                 .sorted(Comparator.comparingInt(s -> Stage.valueOf(s).ordinal()))
@@ -60,16 +73,24 @@ public class GitlabPipeline {
         gitlabPipelineDocument.append(stagesSection.append(System.lineSeparator()));
     }
 
+    /**
+     * Appends the variables section to the GitLab pipeline document.
+     */
     public void generateVariablesSection() {
         StringBuilder variablesSection = new StringBuilder();
         variablesSection.append("variables:").append(System.lineSeparator())
                 .append("  GIT_DEPTH: ").append(gitlabConfiguration.GIT_DEPTH).append(System.lineSeparator())
-                .append("  GIT_STRATEGY: ").append(gitlabConfiguration.GIT_STRATEGY).append(System.lineSeparator())
-                .append("  CONTAINER_IMAGE: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(System.lineSeparator());
+                .append("  GIT_STRATEGY: ").append(gitlabConfiguration.GIT_STRATEGY)
+                .append(System.lineSeparator())
+                .append("  CONTAINER_IMAGE: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(
+                        System.lineSeparator());
 
         gitlabPipelineDocument.append(variablesSection).append(System.lineSeparator());
     }
 
+    /**
+     * Appends the default section to the GitLab pipeline document.
+     */
     public void generateDefaultSection() {
         StringBuilder defaultContent = new StringBuilder();
 
@@ -79,7 +100,8 @@ public class GitlabPipeline {
         }
 
         if (!defaultContent.isEmpty()) {
-            gitlabPipelineDocument.append("default:").append(System.lineSeparator()).append(defaultContent).append(System.lineSeparator());
+            gitlabPipelineDocument.append("default:").append(System.lineSeparator()).append(defaultContent).append(
+                    System.lineSeparator());
         }
     }
 
@@ -92,6 +114,9 @@ public class GitlabPipeline {
             ProcessorParameterKey.PARAM_SOURCE_MODE
     );
 
+    /**
+     * Appends the jobs section to the GitLab pipeline document.
+     */
     public void generateJobsSection() {
         Map<Processor, String> jobNames = assignJobNames();
 
@@ -102,7 +127,8 @@ public class GitlabPipeline {
                 StringBuilder job = new StringBuilder();
                 job.append(jobName).append(":").append(System.lineSeparator());
                 job.append("  ").append("stage: ").append(processor.getStage().name()).append(System.lineSeparator());
-                job.append("  ").append("image: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(System.lineSeparator());
+                job.append("  ").append("image: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(
+                        System.lineSeparator());
 
                 Set<Processor> dependencies = execution.getDependencies(processor);
                 if (dependencies != null && !dependencies.isEmpty()) {
@@ -222,4 +248,4 @@ public class GitlabPipeline {
     private String sanitizeNameSegment(String segment) {
         return segment.trim().replaceAll("[^a-zA-Z0-9_.-]+", "-");
     }
- }
+}

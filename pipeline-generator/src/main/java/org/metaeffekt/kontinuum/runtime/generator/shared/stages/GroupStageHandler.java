@@ -29,6 +29,11 @@ public class GroupStageHandler implements AssetStageHandler {
 
     private final Map<ReportGroupKey, ReportGroupExecutionContext> reportGroupContexts;
 
+    /**
+     * Creates a handler that registers inventory contributions on the given report group contexts.
+     *
+     * @param reportGroupContexts the report group contexts keyed by report group
+     */
     public GroupStageHandler(Map<ReportGroupKey, ReportGroupExecutionContext> reportGroupContexts) {
         this.reportGroupContexts = reportGroupContexts;
     }
@@ -59,14 +64,16 @@ public class GroupStageHandler implements AssetStageHandler {
             if (StringUtils.isNotBlank(report.getPreReportFilterFile())) {
                 preReportFilter = handlePreReportInventoryFiler(context, report);
                 context.addProcessor(preReportFilter);
-                inventoryFile = context.getWorkspace().getGroupedPreparedDir(report, context.getAsset()).appendAssetInventory();
+                inventoryFile = context.getWorkspace().getGroupedPreparedDir(report,
+                                                                             context.getAsset()).appendAssetInventory();
             }
 
             for (SupportedLocale locale : report.getLocales()) {
                 for (String type : report.getTypes()) {
                     ReportType reportType = ReportType.fromKey(type);
 
-                    StandaloneProcessor copyProcessor = handleInventoryCopy(context, report, reportType, locale, inventoryFile);
+                    StandaloneProcessor copyProcessor = handleInventoryCopy(context, report, reportType, locale,
+                                                                            inventoryFile);
                     if (preReportFilter != null) {
                         context.addDependency(copyProcessor, preReportFilter);
                     }
@@ -74,7 +81,8 @@ public class GroupStageHandler implements AssetStageHandler {
                     registerGroupPrerequisite(reportIndex, reportType, copyProcessor);
 
                     if (ReportType.requiresScan(reportType)) {
-                        MavenProcessor businessCaseProcessor = handleApplyBusinessCase(context, report, reportType, locale);
+                        MavenProcessor businessCaseProcessor = handleApplyBusinessCase(context, report, reportType,
+                                                                                       locale);
                         context.addDependency(businessCaseProcessor, copyProcessor);
                         context.addProcessor(businessCaseProcessor);
                         registerGroupPrerequisite(reportIndex, reportType, businessCaseProcessor);
@@ -98,15 +106,18 @@ public class GroupStageHandler implements AssetStageHandler {
      *
      * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_transform-inventories.md">util_transform-inventories.md</a>
      */
-    private MavenProcessor handlePreReportInventoryFiler(AssetExecutionContext context, PipelineConfiguration.Report report) {
+    private MavenProcessor handlePreReportInventoryFiler(AssetExecutionContext context,
+                                                         PipelineConfiguration.Report report) {
         Asset asset = context.getAsset();
-        MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(TRANSFORM_INVENTORIES);
+        MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(
+                TRANSFORM_INVENTORIES);
         mavenProcessor.setStage(Stage.GROUP);
 
         Workspace.AssetPath preparedDir = context.getWorkspace().getGroupedPreparedDir(report, asset);
         mavenProcessor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getCurrentInventoryFile());
         mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_DIR, preparedDir.appendAssetInventory());
-        mavenProcessor.setProcessorParameter(PARAM_KOTLIN_SCRIPT_FILE, context.getEnvironment().getScriptsDirNormalized() + "prepare.kts");
+        mavenProcessor.setProcessorParameter(PARAM_KOTLIN_SCRIPT_FILE,
+                                             context.getEnvironment().getScriptsDirNormalized() + "prepare.kts");
         mavenProcessor.setProcessorParameter(PARAM_ASSET_NAME, asset.getName());
 
         return mavenProcessor;
@@ -115,21 +126,25 @@ public class GroupStageHandler implements AssetStageHandler {
     /**
      * Copies the asset inventory into the grouped report subdirectory.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_copy-inventory.sh">util_copy-inventory.sh</a>
-     * @param context The asset execution context containing pipeline and asset information.
-     * @param report The report configuration defining the grouped target.
-     * @param reportType The report type being grouped.
-     * @param locale The target locale for the grouped report.
+     * @param context            The asset execution context containing pipeline and asset information.
+     * @param report             The report configuration defining the grouped target.
+     * @param reportType         The report type being grouped.
+     * @param locale             The target locale for the grouped report.
      * @param inputInventoryFile The inventory to copy (the filtered inventory if a pre-report filter is active).
      * @return The configured {@link StandaloneProcessor} for copying the inventory.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_copy-inventory.sh">util_copy-inventory.sh</a>
      */
-    private StandaloneProcessor handleInventoryCopy(AssetExecutionContext context, PipelineConfiguration.Report report, ReportType reportType, SupportedLocale locale, String inputInventoryFile) {
-        StandaloneProcessor standaloneProcessor = (StandaloneProcessor) context.getProcessorCatalog().getProcessorById(COPY_INVENTORY);
+    private StandaloneProcessor handleInventoryCopy(AssetExecutionContext context, PipelineConfiguration.Report report,
+                                                    ReportType reportType, SupportedLocale locale,
+                                                    String inputInventoryFile) {
+        StandaloneProcessor standaloneProcessor = (StandaloneProcessor) context.getProcessorCatalog().getProcessorById(
+                COPY_INVENTORY);
         standaloneProcessor.setStage(Stage.GROUP);
 
         standaloneProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, inputInventoryFile);
         standaloneProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
-                context.getGroupedStage(report, reportType, locale).appendAssetInventory());
+                                                  context.getGroupedStage(report, reportType,
+                                                                          locale).appendAssetInventory());
 
         // Setting the output inventory as the new "current" inventory is omitted here on purpose.
 
@@ -139,27 +154,33 @@ public class GroupStageHandler implements AssetStageHandler {
     /**
      * Applies business case specific changes to the inventory for all license reports.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_apply-business-case.md">util_apply-business-case.md</a>
-     * @param context The asset execution context containing pipeline and asset information.
-     * @param report The report configuration defining the grouped target.
+     * @param context    The asset execution context containing pipeline and asset information.
+     * @param report     The report configuration defining the grouped target.
      * @param reportType The report type being grouped.
-     * @param locale The target locale for the software distribution annex.
+     * @param locale     The target locale for the software distribution annex.
      * @return The configured {@link MavenProcessor} for applying the business case.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_apply-business-case.md">util_apply-business-case.md</a>
      */
-    private MavenProcessor handleApplyBusinessCase(AssetExecutionContext context, PipelineConfiguration.Report report, ReportType reportType, SupportedLocale locale) {
+    private MavenProcessor handleApplyBusinessCase(AssetExecutionContext context, PipelineConfiguration.Report report,
+                                                   ReportType reportType, SupportedLocale locale) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(APPLY_BUSINESS_CASE);
         processor.setStage(Stage.GROUP);
 
         processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().TMD_PASSWORD);
         processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().TMD_USERKEYS_FILE);
 
-        // Here, the "context.getCurrent()" inventory is not utilized on purpose as it is not set by the previous processor.
-        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getGroupedStage(report, reportType, locale).appendAssetInventory());
-        processor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getGroupedStage(report, reportType, locale).appendAssetInventory());
+        // Here, the "context.getCurrent()" inventory is not utilized on purpose as it is not set by the previous
+        // processor.
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE,
+                                        context.getGroupedStage(report, reportType, locale).appendAssetInventory());
+        processor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
+                                        context.getGroupedStage(report, reportType, locale).appendAssetInventory());
 
         processor.setProcessorParameter(ENV_TMD_SOURCE, context.getEnvironment().TMD_SOURCE);
         processor.setProcessorParameter(PARAM_LANGUAGE_MODE, locale.getIdentifier());
-        processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, context.getEnvironment().getWorkbenchDirNormalized() + context.getConfiguration().getOptions().getGlobal().getDebugParam());
+        processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR,
+                                        context.getEnvironment().getWorkbenchDirNormalized() +
+                                        context.getConfiguration().getOptions().getGlobal().getDebugParam());
 
         return processor;
     }

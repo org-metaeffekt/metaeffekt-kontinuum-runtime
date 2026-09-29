@@ -14,6 +14,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+/**
+ * Maven Mojo that generates a local execution pipeline from the configured pipeline definition.
+ */
 @Mojo(name = "generate-local-pipeline", defaultPhase = LifecyclePhase.GENERATE_RESOURCES)
 public class GenerateLocalPipelineMojo extends AbstractGeneratePipelineMojo {
 
@@ -27,7 +30,8 @@ public class GenerateLocalPipelineMojo extends AbstractGeneratePipelineMojo {
         File pipelineConfigFile = new File(pipelineConfigPath);
 
         if (!pipelineConfigFile.exists()) {
-            throw new MojoExecutionException("The pipeline configuration file " + pipelineConfigFile.getAbsolutePath() + " does not exist.");
+            throw new MojoExecutionException(
+                    "The pipeline configuration file " + pipelineConfigFile.getAbsolutePath() + " does not exist.");
         }
 
         LocalConfiguration localConfiguration = LocalConfiguration.builder()
@@ -35,8 +39,10 @@ public class GenerateLocalPipelineMojo extends AbstractGeneratePipelineMojo {
                 .TMD_PASSWORD(tmdPassword)
                 .TMD_USERKEYS_FILE(tmdUserkeysFile)
                 .TMD_SOURCE(tmdSource)
-                .ARTIFACT_RESOLVER_CONFIG_FILE(artifactResolverConfigFile)
-                .ARTIFACT_RESOLVER_PROXY_FILE(artifactResolverProxyFile)
+                .ARTIFACT_RESOLVER_CONFIG_FILE(
+                        artifactResolverConfigFile)
+                .ARTIFACT_RESOLVER_PROXY_FILE(
+                        artifactResolverProxyFile)
                 .SCAN_PROPERTIES_FILE(scanPropertiesFile)
                 .VULNERABILITY_MIRROR_DIR(vulnerabilityMirrorDir)
                 .VULNERABILITY_MIRROR_URL(vulnerabilityMirrorUrl)
@@ -45,10 +51,14 @@ public class GenerateLocalPipelineMojo extends AbstractGeneratePipelineMojo {
                 .WORKSPACE_DIR(workspaceDir)
                 .PORTFOLIO_MANAGER_URL(portfolioManagerUrl)
                 .PORTFOLIO_MANAGER_TOKEN(portfolioManagerToken)
-                .PORTFOLIO_MANAGER_CLIENT_KEYSTORE_FILE(portfolioManagerClientKeystoreFile)
-                .PORTFOLIO_MANAGER_CLIENT_KEYSTORE_PASSWORD(portfolioManagerClientKeystorePassword)
-                .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_FILE(portfolioManagerClientTruststoreFile)
-                .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD(portfolioManagerClientTruststorePassword)
+                .PORTFOLIO_MANAGER_CLIENT_KEYSTORE_FILE(
+                        portfolioManagerClientKeystoreFile)
+                .PORTFOLIO_MANAGER_CLIENT_KEYSTORE_PASSWORD(
+                        portfolioManagerClientKeystorePassword)
+                .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_FILE(
+                        portfolioManagerClientTruststoreFile)
+                .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD(
+                        portfolioManagerClientTruststorePassword)
                 .MAVEN_CLI_OPTS(mavenCliOpts)
                 .LOCAL_MAVEN_REPO(localMavenRepo)
                 .SETUP_COMMAND(setupCommand)

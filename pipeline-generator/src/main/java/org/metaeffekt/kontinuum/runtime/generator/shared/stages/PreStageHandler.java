@@ -5,7 +5,8 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Maven
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.DOWNLOAD_INDEX;
-import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
+import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.ENV_VULNERABILITY_MIRROR_DIR;
+import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.PARAM_MIRROR_ARCHIVE_URL;
 
 /**
  * Handler for the {@link Stage#PRE} stage.
@@ -28,9 +29,9 @@ public class PreStageHandler implements PipelineStageHandler {
     /**
      * Downloads the vulnerability index if the mirror is not currently up to date.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/mirror/mirror_download-index.md">mirror_download-index.md</a>
      * @param context The pipeline execution context containing pipeline information.
      * @return The configured {@link MavenProcessor} for downloading the index.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/mirror/mirror_download-index.md">mirror_download-index.md</a>
      */
     private MavenProcessor handleVulnerabilityIndexDownload(PipelineExecutionContext context) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(DOWNLOAD_INDEX);

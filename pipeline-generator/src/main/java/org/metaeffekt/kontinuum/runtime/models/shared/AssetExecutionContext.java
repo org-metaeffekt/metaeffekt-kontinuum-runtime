@@ -38,6 +38,15 @@ public class AssetExecutionContext extends AbstractExecutionContext {
     @Setter
     private String portfolioManagerReferenceInventoryDir;
 
+    /**
+     * Creates an asset execution context backed by a new processor execution plan.
+     *
+     * @param asset            the asset this context belongs to
+     * @param configuration    the pipeline configuration
+     * @param environment      the environment configuration
+     * @param workspace        the workspace used to resolve output directories
+     * @param processorCatalog the catalog of available processor definitions
+     */
     public AssetExecutionContext(Asset asset,
                                  PipelineConfiguration configuration,
                                  EnvironmentConfiguration environment,
@@ -46,6 +55,16 @@ public class AssetExecutionContext extends AbstractExecutionContext {
         this(new ProcessorExecutionPlan(), asset, configuration, environment, workspace, processorCatalog);
     }
 
+    /**
+     * Creates an asset execution context using the given processor execution plan.
+     *
+     * @param executionPlan    the processor execution plan that tracks prerequisites
+     * @param asset            the asset this context belongs to
+     * @param configuration    the pipeline configuration
+     * @param environment      the environment configuration
+     * @param workspace        the workspace used to resolve output directories
+     * @param processorCatalog the catalog of available processor definitions
+     */
     public AssetExecutionContext(ProcessorExecutionPlan executionPlan,
                                  Asset asset,
                                  PipelineConfiguration configuration,
@@ -66,14 +85,34 @@ public class AssetExecutionContext extends AbstractExecutionContext {
     }
 
 
+    /**
+     * Returns the stage output directory for the current asset.
+     *
+     * @param stage the pipeline stage
+     * @return the stage directory for the asset
+     */
     public Workspace.AssetPath getStageDirForAsset(Stage stage) {
         return workspace.getStageDirForAsset(asset, stage);
     }
 
-    public Workspace.AssetPath getGroupedStage(PipelineConfiguration.Report report, ReportType reportType, SupportedLocale locale) {
+    /**
+     * Returns the grouped directory for the current asset and report.
+     *
+     * @param report     the pipeline report
+     * @param reportType the kind of report
+     * @param locale     the locale
+     * @return the grouped directory for the asset
+     */
+    public Workspace.AssetPath getGroupedStage(PipelineConfiguration.Report report, ReportType reportType,
+                                               SupportedLocale locale) {
         return workspace.getGroupedDir(report, asset, reportType, locale);
     }
 
+    /**
+     * Returns the root asset that the current asset belongs to.
+     *
+     * @return the root asset, or the current asset when none is configured
+     */
     public Asset getRootAsset() {
         if (configuration == null || configuration.getProjectProperties() == null) {
             return asset;

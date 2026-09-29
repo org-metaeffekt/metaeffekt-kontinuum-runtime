@@ -35,10 +35,10 @@ public class SupportedLocaleTest {
     @Test
     public void testYamlDeserializationWithLocales() throws Exception {
         String yaml = """
-            assetIds: ["sample-asset"]
-            types: ["VR"]
-            locales: ["en_US", "de_DE"]
-            """;
+                assetIds: ["sample-asset"]
+                types: ["VR"]
+                locales: ["en_US", "de_DE"]
+                """;
 
         PipelineConfiguration.Report report = yamlMapper.readValue(yaml, PipelineConfiguration.Report.class);
 
@@ -52,10 +52,10 @@ public class SupportedLocaleTest {
     @Test
     public void testYamlDeserializationWithShortLanguageCodes() throws Exception {
         String yaml = """
-            assetIds: ["sample-asset"]
-            types: ["VR"]
-            locales: ["en", "de"]
-            """;
+                assetIds: ["sample-asset"]
+                types: ["VR"]
+                locales: ["en", "de"]
+                """;
 
         PipelineConfiguration.Report report = yamlMapper.readValue(yaml, PipelineConfiguration.Report.class);
 

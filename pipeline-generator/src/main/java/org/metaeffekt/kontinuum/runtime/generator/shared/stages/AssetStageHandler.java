@@ -15,6 +15,8 @@ public interface AssetStageHandler extends StageHandler {
 
     /**
      * Inspects the asset execution context and appends processors for this stage.
+     *
+     * @param context the asset execution context to inspect
      */
     void process(AssetExecutionContext context);
 }

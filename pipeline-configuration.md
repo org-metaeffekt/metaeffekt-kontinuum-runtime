@@ -54,7 +54,7 @@ options:
 | `reports`           | Optional | Specifies the documents (PDFs, annexes, archives) to produce and which assets to include.            |
 | `dashboards`        | Optional | Specifies assets for which vulnerability dashboards are generated.                                   |
 | `portfolioManager`  | Optional | Configures access to an external portfolio manager service, to offload / execute long-running tasks. |
-| `options`           | Optional | Feature toggles controlling license scanning, SBOM export, vulnerability data sources and so on.      |
+| `options`           | Optional | Feature toggles controlling license scanning, SBOM export, vulnerability data sources and so on.     |
 
 ---
 
@@ -99,15 +99,15 @@ projectProperties:
         url: "https://example.com/downloads/sample-asset-1.0.0.zip"
 ```
 
-| Parameter      | Type   | Required | Description                                                                            | What It Produces / Affects                                                                                         |
-|:---------------|:-------|:---------|:---------------------------------------------------------------------------------------|:-------------------------------------------------------------------------------------------------------------------|
-| `id`           | String | **Yes**  | Unique asset key within the pipeline.                                                  | Forms workspace stage directories (`<stage>/<asset-id>/...`) and links report/dashboard definitions to this asset. |
-| `name`         | String | **Yes**  | Component or asset name.                                                               | Asset name utilized throughout the pipeline run.                                                                   |
-| `version`      | String | **Yes**  | Asset version.                                                                         | Asset version utilized throughout the pipeline run.                                                                |
-| `reference`    | String | **Yes**  | Path to the reference inventory directory or file relative to the workbench directory. | Used as an information repository from which information missing in the extracted asset is pulled.                 |
+| Parameter      | Type   | Required | Description                                                                            | What It Produces / Affects                                                                                            |
+|:---------------|:-------|:---------|:---------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------|
+| `id`           | String | **Yes**  | Unique asset key within the pipeline.                                                  | Forms workspace stage directories (`<stage>/<asset-id>/...`) and links report/dashboard definitions to this asset.    |
+| `name`         | String | **Yes**  | Component or asset name.                                                               | Asset name utilized throughout the pipeline run.                                                                      |
+| `version`      | String | **Yes**  | Asset version.                                                                         | Asset version utilized throughout the pipeline run.                                                                   |
+| `reference`    | String | **Yes**  | Path to the reference inventory directory or file relative to the workbench directory. | Used as an information repository from which information missing in the extracted asset is pulled.                    |
 | `assessmentId` | String | Optional | Vulnerability assessment identifier.                                                   | Locates manual assessments in the workbench directory: `assessments/<project-name>/<assessmentId>/<context>/context`. |
-| `context`      | String | Optional | Assessment context (e.g., `local`, `remote`).                                          | Sub-directory qualifier to dynamically resolve context information.                                                |
-| `assets`       | List   | Optional | Nested list of child assets.                                                           | Supports hierarchical asset decomposition (e.g., an asset containing multiple other assets).                       |
+| `context`      | String | Optional | Assessment context (e.g., `local`, `remote`).                                          | Sub-directory qualifier to dynamically resolve context information.                                                   |
+| `assets`       | List   | Optional | Nested list of child assets.                                                           | Supports hierarchical asset decomposition (e.g., an asset containing multiple other assets).                          |
 
 ---
 
@@ -227,7 +227,7 @@ dashboards:
 | Parameter  | Type   | Required | Description                                                 | What It Produces / Affects                                                                  |
 |:-----------|:-------|:---------|:------------------------------------------------------------|:--------------------------------------------------------------------------------------------|
 | `assetIds` | List   | **Yes**  | List of asset IDs for which dashboards should be generated. | Automatically triggers vulnerability enrichment and generates a dashboard per listed asset. |
-| `tenant`   | String | **Yes**  | Multi-tenant organization identifier for the dashboard.     | Passed to dashboard generation (`param.tenant.id`).                                          |
+| `tenant`   | String | **Yes**  | Multi-tenant organization identifier for the dashboard.     | Passed to dashboard generation (`param.tenant.id`).                                         |
 
 ---
 
@@ -255,9 +255,10 @@ portfolioManager:
    Enriches the asset inventory with the downloaded Portfolio Manager reference inventory.
 
 > [!NOTE]
-> In short, the portfolio manager is currently meant to replace local resolve and scan workflows, 
+> In short, the portfolio manager is currently meant to replace local resolve and scan workflows,
 > as these are long-running processes requiring external data to produce sufficient results.
-> For this process to work, the relevant configuration files have to be availabel in the pipeline and the portfolio manager service
+> For this process to work, the relevant configuration files have to be availabel in the pipeline and the portfolio
+> manager service
 > has to be configured correctly.
 
 ---

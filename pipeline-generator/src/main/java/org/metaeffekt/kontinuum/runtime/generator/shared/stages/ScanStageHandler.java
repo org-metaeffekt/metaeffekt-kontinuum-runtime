@@ -3,7 +3,6 @@ package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.SCAN_INVENTORY;
@@ -34,9 +33,9 @@ public class ScanStageHandler implements AssetStageHandler {
     /**
      * Enriches the asset inventory with licensing and copyright information.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/scan/scan_scan-inventory.md">scan_scan-inventory.md</a>
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for scanning the inventory.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/scan/scan_scan-inventory.md">scan_scan-inventory.md</a>
      */
     private MavenProcessor handleLicenseScan(AssetExecutionContext context) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(SCAN_INVENTORY);
@@ -44,17 +43,17 @@ public class ScanStageHandler implements AssetStageHandler {
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
-                context.getStageDirForAsset(Stage.SCAN).appendAssetInventory());
+                                        context.getStageDirForAsset(Stage.SCAN).appendAssetInventory());
         processor.setProcessorParameter(PARAM_PROPERTIES_FILE,
-                context.getEnvironment().SCAN_PROPERTIES_FILE);
+                                        context.getEnvironment().SCAN_PROPERTIES_FILE);
         processor.setProcessorParameter(ENV_KOSMOS_PASSWORD,
-                context.getEnvironment().TMD_PASSWORD);
+                                        context.getEnvironment().TMD_PASSWORD);
         processor.setProcessorParameter(ENV_KOSMOS_USERKEYS_FILE,
-                context.getEnvironment().TMD_USERKEYS_FILE);
+                                        context.getEnvironment().TMD_USERKEYS_FILE);
 
         try {
             processor.setProcessorParameter(INPUT_OUTPUT_ANALYSIS_BASE_DIR,
-                    context.getStageDirForAsset(Stage.SCAN).appendLicenseAnalysisDir());
+                                            context.getStageDirForAsset(Stage.SCAN).appendLicenseAnalysisDir());
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }

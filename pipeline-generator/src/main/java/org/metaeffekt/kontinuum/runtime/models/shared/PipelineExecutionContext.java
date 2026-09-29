@@ -13,12 +13,27 @@ public class PipelineExecutionContext extends AbstractExecutionContext {
     private final EnvironmentConfiguration environment;
     private final ProcessorCatalog processorCatalog;
 
+    /**
+     * Creates a pipeline execution context backed by a new processor execution plan.
+     *
+     * @param configuration    the pipeline configuration
+     * @param environment      the environment configuration
+     * @param processorCatalog the catalog of available processor definitions
+     */
     public PipelineExecutionContext(PipelineConfiguration configuration,
                                     EnvironmentConfiguration environment,
                                     ProcessorCatalog processorCatalog) {
         this(new ProcessorExecutionPlan(), configuration, environment, processorCatalog);
     }
 
+    /**
+     * Creates a pipeline execution context using the given processor execution plan.
+     *
+     * @param executionPlan    the processor execution plan that tracks prerequisites
+     * @param configuration    the pipeline configuration
+     * @param environment      the environment configuration
+     * @param processorCatalog the catalog of available processor definitions
+     */
     public PipelineExecutionContext(ProcessorExecutionPlan executionPlan,
                                     PipelineConfiguration configuration,
                                     EnvironmentConfiguration environment,

@@ -47,9 +47,9 @@ public class DashboardStageHandler implements AssetStageHandler {
     /**
      * Creates a vulnerability dashboard for the asset based on the vulnerability assessment and security policy.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/advise/advise_create-dashboard.md">advise_create-dashboard.md</a>
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for dashboard creation.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/advise/advise_create-dashboard.md">advise_create-dashboard.md</a>
      */
     private MavenProcessor handleDashboard(AssetExecutionContext context) {
         EnrichmentOptions enrichmentOptions = context.getConfiguration().getOptions() != null
@@ -60,25 +60,26 @@ public class DashboardStageHandler implements AssetStageHandler {
         Asset asset = context.getAsset();
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE,
-                context.getStageDirForAsset(Stage.ADVISE).appendAssetInventory());
+                                        context.getStageDirForAsset(Stage.ADVISE).appendAssetInventory());
         processor.setProcessorParameter(OUTPUT_DASHBOARD_FILE,
-                context.getStageDirForAsset(Stage.REPORT).appendDashboardFile());
+                                        context.getStageDirForAsset(Stage.REPORT).appendDashboardFile());
         if (enrichmentOptions != null) {
             processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE,
-                    enrichmentOptions.getSecurityPolicyFile(context.getEnvironment().getWorkbenchDirNormalized()));
+                                            enrichmentOptions.getSecurityPolicyFile(
+                                                    context.getEnvironment().getWorkbenchDirNormalized()));
             processor.setProcessorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS,
-                    enrichmentOptions.getSecurityPolicyActiveIds() != null
-                            ? String.join(",", enrichmentOptions.getSecurityPolicyActiveIds())
-                            : null);
+                                            enrichmentOptions.getSecurityPolicyActiveIds() != null
+                                                    ? String.join(",", enrichmentOptions.getSecurityPolicyActiveIds())
+                                                    : null);
         }
         processor.setProcessorParameter(PARAM_TENANT_ID,
-                context.getConfiguration().getProjectProperties().getProject().getTenant());
+                                        context.getConfiguration().getProjectProperties().getProject().getTenant());
         processor.setProcessorParameter(PARAM_ASSET_ID,
-                asset.getAssessmentId());
+                                        asset.getAssessmentId());
         processor.setProcessorParameter(PARAM_ASSESSMENT_CONTEXT,
-                asset.getContext());
+                                        asset.getContext());
         processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
-                context.getEnvironment().getMirrorDatabaseDirNormalized());
+                                        context.getEnvironment().getMirrorDatabaseDirNormalized());
 
         return processor;
     }

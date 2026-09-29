@@ -1,6 +1,5 @@
 package org.metaeffekt.kontinuum.runtime;
 
-import org.metaeffekt.kontinuum.runtime.models.gitlab.GitlabConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.local.LocalConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.*;
 
@@ -27,7 +26,8 @@ public class TestUtils {
         asset.setVersion(ASSET_VERSION.value);
         asset.setReference(ASSET_REFERENCE_INVENTORY.value);
 
-        PipelineConfiguration.ProjectProperties.Asset.UrlResolver urlResolver = new PipelineConfiguration.ProjectProperties.Asset.UrlResolver();
+        PipelineConfiguration.ProjectProperties.Asset.UrlResolver urlResolver =
+                new PipelineConfiguration.ProjectProperties.Asset.UrlResolver();
         urlResolver.setUrl(URL_RESOLVER_URL.value);
 
         asset.setUrlResolver(urlResolver);
@@ -43,8 +43,10 @@ public class TestUtils {
 
     public static LocalConfiguration buildMinimalLocalConfiguration() {
         LocalConfiguration localConfiguration = LocalConfiguration.builder()
-                .KONTINUUM_DIR("~/Projects/metaeffekt/metaeffekt-kontinuum")
-                .SCAN_PROPERTIES_FILE("config/scan/scan-control.properties")
+                .KONTINUUM_DIR(
+                        "~/Projects/metaeffekt/metaeffekt-kontinuum")
+                .SCAN_PROPERTIES_FILE(
+                        "config/scan/scan-control.properties")
                 .WORKBENCH_DIR("workbench/")
                 .WORKSPACE_DIR("./workspace")
                 .build();
@@ -60,7 +62,7 @@ public class TestUtils {
                 pipelineConfiguration.getProjectProperties().getAssets().get(0),
                 pipelineConfiguration,
                 environmentConfiguration,
-                new Workspace(pipelineConfiguration,environmentConfiguration),
+                new Workspace(pipelineConfiguration, environmentConfiguration),
                 new DefaultProcessorCatalog());
     }
 }

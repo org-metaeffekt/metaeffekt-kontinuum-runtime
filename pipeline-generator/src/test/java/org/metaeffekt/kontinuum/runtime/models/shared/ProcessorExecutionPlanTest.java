@@ -92,7 +92,7 @@ class ProcessorExecutionPlanTest {
     }
 
     private static MavenProcessor processor(String id, Stage stage) {
-        MavenProcessor processor = new MavenProcessor(id, id + ".xml");
+        MavenProcessor processor = new MavenProcessor(id + ".xml");
         processor.setId(id);
         processor.setName(id);
         processor.setStage(stage);

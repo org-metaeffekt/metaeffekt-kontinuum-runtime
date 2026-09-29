@@ -6,7 +6,10 @@ import org.metaeffekt.kontinuum.runtime.models.shared.*;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Orchestrates pipeline generation.
@@ -30,6 +33,12 @@ public class Pipeline {
     private final EnvironmentConfiguration environmentConfiguration;
     private final ProcessorCatalog processorCatalog = new DefaultProcessorCatalog();
 
+    /**
+     * Creates a pipeline generator that validates and orchestrates the given configuration.
+     *
+     * @param pipelineConfiguration    the pipeline configuration to generate from
+     * @param environmentConfiguration the environment configuration used to resolve paths
+     */
     public Pipeline(PipelineConfiguration pipelineConfiguration,
                     EnvironmentConfiguration environmentConfiguration) {
 
@@ -40,6 +49,11 @@ public class Pipeline {
         this.workspace = new Workspace(pipelineConfiguration, environmentConfiguration);
     }
 
+    /**
+     * Generates the processor execution plan for the configured pipeline.
+     *
+     * @return the generated pipeline execution
+     */
     public PipelineExecution generatePipeline() {
         PipelineExecution execution = new PipelineExecution();
         PipelineExecutionContext pipelineContext = new PipelineExecutionContext(
@@ -147,7 +161,8 @@ public class Pipeline {
                 processor.setPreScript(environmentConfiguration.SETUP_COMMAND);
             } else {
                 StringBuilder stringBuilder = new StringBuilder();
-                stringBuilder.append(environmentConfiguration.SETUP_COMMAND).append(System.lineSeparator()).append(preScript);
+                stringBuilder.append(environmentConfiguration.SETUP_COMMAND).append(System.lineSeparator()).append(
+                        preScript);
                 processor.setPreScript(stringBuilder.toString());
             }
         }

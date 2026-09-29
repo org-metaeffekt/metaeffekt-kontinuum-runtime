@@ -5,6 +5,9 @@ import lombok.experimental.SuperBuilder;
 import org.metaeffekt.kontinuum.runtime.models.shared.EnvironmentConfiguration;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
+/**
+ * Environment configuration for pipeline execution on a local machine.
+ */
 @SuperBuilder
 public class LocalConfiguration extends EnvironmentConfiguration {
 
@@ -16,6 +19,9 @@ public class LocalConfiguration extends EnvironmentConfiguration {
         return KontinuumUtils.normalizeDir(WORKSPACE_DIR);
     }
 
+    /**
+     * Supported operating-system environments for local execution.
+     */
     public enum ExecutionEnvironment {
         UNIX,
         WINDOWS_NT

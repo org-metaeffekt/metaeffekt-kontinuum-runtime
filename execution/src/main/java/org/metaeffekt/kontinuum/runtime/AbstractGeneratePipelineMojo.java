@@ -6,6 +6,9 @@ import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
 
+/**
+ * Shared base class for Maven Mojos that generate a Kontinuum execution pipeline.
+ */
 @Setter
 public abstract class AbstractGeneratePipelineMojo extends AbstractMojo {
 

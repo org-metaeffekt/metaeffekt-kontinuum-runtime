@@ -12,7 +12,8 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
 /**
  * Handler for the {@link Stage#FETCH} stage.
  * Responsible for retrieving the target asset via URL, Maven parameters, or container image resolver.
- * Exactly one resolver is executed per asset, as enforced by pipeline configuration validation {@link org.metaeffekt.kontinuum.runtime.generator.shared.PipelineConfigurationLoader}.
+ * Exactly one resolver is executed per asset, as enforced by pipeline configuration validation
+ * {@link org.metaeffekt.kontinuum.runtime.generator.shared.PipelineConfigurationLoader}.
  */
 public class FetchStageHandler implements AssetStageHandler {
 
@@ -32,13 +33,17 @@ public class FetchStageHandler implements AssetStageHandler {
         } else if (asset.getContainerResolver() != null) {
             fetchProcessor = handleContainerResolver(context);
         } else {
-            // This exception is only thrown if there are errors in the PipelineConfigurationLoader and should have been caught by tests.
-            throw new IllegalStateException(String.format("Asset %s has no resolver configured but passed the pipeline configuration validation.", asset.getId()));
+            // This exception is only thrown if there are errors in the PipelineConfigurationLoader and should have
+            // been caught by tests.
+            throw new IllegalStateException(String.format(
+                    "Asset %s has no resolver configured but passed the pipeline configuration validation.",
+                    asset.getId()));
         }
         context.addProcessor(fetchProcessor);
 
         if (asset.isPreExtractedInventory()) {
-            // The fetched file already is an inventory, so it becomes the current inventory and the extract stage is skipped.
+            // The fetched file already is an inventory, so it becomes the current inventory and the extract stage is
+            // skipped.
             context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.FETCH).toString());
             context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.FETCH) + asset.getUrlResolverFileName());
         }
@@ -47,9 +52,9 @@ public class FetchStageHandler implements AssetStageHandler {
     /**
      * Downloads an asset from a file URL, remote file URL, or generic URL into the workspace stage directory.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/fetch/fetch_download-asset.md">fetch_download-asset.md</a>
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for downloading the asset.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/fetch/fetch_download-asset.md">fetch_download-asset.md</a>
      */
     private MavenProcessor handleUrlResolver(AssetExecutionContext context) {
         Asset asset = context.getAsset();
@@ -69,17 +74,19 @@ public class FetchStageHandler implements AssetStageHandler {
     }
 
     /**
-     * Downloads a Maven artifact using groupId, artifactId, and version conventions from a Maven repository into the workspace stage directory.
+     * Downloads a Maven artifact using groupId, artifactId, and version conventions from a Maven repository into the
+     * workspace stage directory.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/fetch/fetch_download-maven-artifact.md">fetch_download-maven-artifact.md</a>
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for downloading the Maven artifact.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/fetch/fetch_download-maven-artifact.md">fetch_download-maven-artifact.md</a>
      */
     private MavenProcessor handleMavenResolver(AssetExecutionContext context) {
         Asset asset = context.getAsset();
         Asset.MavenResolver mavenResolver = asset.getMavenResolver();
 
-        MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(DOWNLOAD_MAVEN_ARTIFACT);
+        MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(
+                DOWNLOAD_MAVEN_ARTIFACT);
         mavenProcessor.setStage(Stage.FETCH);
         mavenProcessor.setProcessorParameter(PARAM_GROUP_ID, mavenResolver.getGroupId());
         mavenProcessor.setProcessorParameter(PARAM_ARTIFACT_ID, mavenResolver.getArtifactId());
@@ -91,15 +98,17 @@ public class FetchStageHandler implements AssetStageHandler {
     }
 
     /**
-     * Downloads and saves a container image using its repository URL, image ID, and version tag into the workspace stage directory.
+     * Downloads and saves a container image using its repository URL, image ID, and version tag into the workspace
+     * stage directory.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/fetch/fetch_save-image.md">fetch_save-image.md</a>
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for saving and inspecting the container image.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/fetch/fetch_save-image.md">fetch_save-image.md</a>
      */
     private MavenProcessor handleContainerResolver(AssetExecutionContext context) {
         Asset asset = context.getAsset();
-        MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(SAVE_INSPECT_IMAGE);
+        MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(
+                SAVE_INSPECT_IMAGE);
         mavenProcessor.setStage(Stage.FETCH);
 
         mavenProcessor.setProcessorParameter(OUTPUT_DIR, context.getStageDirForAsset(Stage.FETCH).toString());

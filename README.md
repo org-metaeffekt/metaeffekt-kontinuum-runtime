@@ -1,15 +1,19 @@
 # metaeffekt-kontinuum-runtime
 
-`metaeffekt-kontinuum-runtime` houses both the dynamic CI/CD pipeline generator tooling and the runtime container environment used by `metaeffekt-kontinuum`.
+`metaeffekt-kontinuum-runtime` houses both the dynamic CI/CD pipeline generator tooling and the runtime container
+environment used by `metaeffekt-kontinuum`.
 
 ---
 
 ## 1. Dynamic Pipeline Generator (Maven Modules)
 
-The repository contains Maven modules responsible for generating CI/CD pipelines dynamically from project configurations:
+The repository contains Maven modules responsible for generating CI/CD pipelines dynamically from project
+configurations:
 
-- **`pipeline-generator`**: Core engine and models for parsing configurations, building execution graphs, and generating local shell scripts or GitLab CI YAML pipelines.
-- **`execution`**: `kontinuum-maven-plugin` providing Maven goal integration (`generate-local-pipeline`, `generate-gitlab-pipeline`) for executing pipeline generation.
+- **`pipeline-generator`**: Core engine and models for parsing configurations, building execution graphs, and generating
+  local shell scripts or GitLab CI YAML pipelines.
+- **`execution`**: `kontinuum-maven-plugin` providing Maven goal integration (`generate-local-pipeline`,
+  `generate-gitlab-pipeline`) for executing pipeline generation.
 - **`container`**: Packaging module for building the runtime Docker container image.
 
 ### Building the Java Tooling
@@ -20,28 +24,41 @@ To compile, test, and install the Java modules into your local Maven repository:
 mvn clean install
 ```
 
+Style and documentation rules are enforced by `mvn verify`; see [docs/code-quality.md](docs/code-quality.md).
+
 ---
 
 ## 2. Pipeline Orchestration & DAG Execution Architecture
 
-The pipeline generation architecture separates static processor catalog models from dynamic execution graph orchestration, enabling Directed Acyclic Graph (DAG) generation and parallel job execution.
+The pipeline generation architecture separates static processor catalog models from dynamic execution graph
+orchestration, enabling Directed Acyclic Graph (DAG) generation and parallel job execution.
 
 ### Scoped Execution Contexts
 
-Stage handlers declare the scope at which they run, and [`Pipeline`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/generator/shared/Pipeline.java) dispatches them accordingly:
+Stage handlers declare the scope at which they run, and [
+`Pipeline`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/generator/shared/Pipeline.java) dispatches
+them accordingly:
 
 - `PIPELINE` (`PipelineStageHandler`): once per pipeline, e.g. downloading the vulnerability index.
-- `ASSET` (`AssetStageHandler`): once per asset, e.g. fetch, extract, prepare, resolve, scan, advise and the per-asset group copies.
-- `REPORT_GROUP` (`ReportGroupStageHandler`): once per report group (a report entry combined with one report type). This guarantees exactly one document per type and locale, reading the grouped inventories produced by the asset-scoped group stage.
+- `ASSET` (`AssetStageHandler`): once per asset, e.g. fetch, extract, prepare, resolve, scan, advise and the per-asset
+  group copies.
+- `REPORT_GROUP` (`ReportGroupStageHandler`): once per report group (a report entry combined with one report type). This
+  guarantees exactly one document per type and locale, reading the grouped inventories produced by the asset-scoped
+  group stage.
 
-All contexts implement `ExecutionContext` and share their processor/dependency bookkeeping through `AbstractExecutionContext`.
+All contexts implement `ExecutionContext` and share their processor/dependency bookkeeping through
+`AbstractExecutionContext`.
 
 ### Execution Graph in `AssetExecutionContext`
 
-Rather than embedding mutable dependency references within static processor definitions, DAG dependencies are tracked within [`AssetExecutionContext`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/models/shared/AssetExecutionContext.java).
+Rather than embedding mutable dependency references within static processor definitions, DAG dependencies are tracked
+within [
+`AssetExecutionContext`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/models/shared/AssetExecutionContext.java).
 
-- **`addSequential(Processor... processors)`**: Convenience helper for linear stages. Registers each processor and automatically creates predecessor dependencies between them.
-- **`addDependency(Processor target, Processor... dependsOn)`**: Registers explicit directed dependencies between tasks for branching (fan-out) or merging (fan-in).
+- **`addSequential(Processor... processors)`**: Convenience helper for linear stages. Registers each processor and
+  automatically creates predecessor dependencies between them.
+- **`addDependency(Processor target, Processor... dependsOn)`**: Registers explicit directed dependencies between tasks
+  for branching (fan-out) or merging (fan-in).
 - **`getDependencies(Processor processor)`**: Queries the upstream prerequisites for any processor.
 
 ```java
@@ -60,23 +77,35 @@ context.addDependency(spdx, enrichment);
 context.addDependency(cdx, enrichment);
 ```
 
-Cross-context dependencies are supported: the asset-scoped group stage registers each asset's inventory contribution as a prerequisite of the matching `ReportGroupExecutionContext`, so generated jobs emit `needs:` edges across contexts.
+Cross-context dependencies are supported: the asset-scoped group stage registers each asset's inventory contribution as
+a prerequisite of the matching `ReportGroupExecutionContext`, so generated jobs emit `needs:` edges across contexts.
 
 ### Context Map Pipeline Generation
 
-[`Pipeline.generatePipeline()`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/generator/shared/Pipeline.java) returns `Map<Asset, AssetExecutionContext>`. This preserves both the ordered list of processors and the entire topological dependency graph for downstream generators.
+[
+`Pipeline.generatePipeline()`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/generator/shared/Pipeline.java)
+returns `Map<Asset, AssetExecutionContext>`. This preserves both the ordered list of processors and the entire
+topological dependency graph for downstream generators.
 
 ### GitLab CI DAG (`needs: [ ... ]`) Parallelism
 
-[`GitlabPipeline`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/generator/gitlab/GitlabPipeline.java) maps context dependencies into GitLab CI `needs: [ ... ]` entries:
-- Jobs with explicit dependencies emit `needs: [ <dep_job_1>, <dep_job_2> ]`, allowing GitLab CI to execute independent tasks concurrently without waiting for whole stages to complete.
+[
+`GitlabPipeline`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/generator/gitlab/GitlabPipeline.java)
+maps context dependencies into GitLab CI `needs: [ ... ]` entries:
+
+- Jobs with explicit dependencies emit `needs: [ <dep_job_1>, <dep_job_2> ]`, allowing GitLab CI to execute independent
+  tasks concurrently without waiting for whole stages to complete.
 - Falls back to stage-sequential ordering when no explicit dependencies are configured.
 
 ### Collision-Free Job Name Generation
 
 To prevent duplicate job name collisions in generated GitLab CI YAML files:
-- **Discriminator Keys (`DISCRIMINATOR_KEYS`)**: Automatically appends parameter qualifiers (such as document type, target language, mode, format) to base job names without processor-specific `if` checks.
-- **Occurrence Registry (`assignJobNames()`)**: Pre-computes job names across the pipeline and automatically appends index suffixes (`-2`, `-3`, etc.) to duplicate base names, ensuring 100% uniqueness while keeping `needs:` references precisely aligned.
+
+- **Discriminator Keys (`DISCRIMINATOR_KEYS`)**: Automatically appends parameter qualifiers (such as document type,
+  target language, mode, format) to base job names without processor-specific `if` checks.
+- **Occurrence Registry (`assignJobNames()`)**: Pre-computes job names across the pipeline and automatically appends
+  index suffixes (`-2`, `-3`, etc.) to duplicate base names, ensuring 100% uniqueness while keeping `needs:` references
+  precisely aligned.
 
 ---
 
@@ -84,63 +113,81 @@ To prevent duplicate job name collisions in generated GitLab CI YAML files:
 
 ### Optional Local Maven Repository (`localMavenRepo` / `LOCAL_MAVEN_REPO`)
 
-Allows specifying a custom local Maven repository directory for pipeline steps (injected as `-Dmaven.repo.local=<path>` into generated Maven executions).
+Allows specifying a custom local Maven repository directory for pipeline steps (injected as `-Dmaven.repo.local=<path>`
+into generated Maven executions).
 
-- **Mojo Configuration**: Configured via the `localMavenRepo` (or `local.maven.repo`) property in `AbstractGeneratePipelineMojo`, `GenerateGitlabPipelineMojo`, and `GenerateLocalPipelineMojo`.
-- **GitLab Container Default**: Works seamlessly with pre-cached dependencies in the runtime container located at `/root/.m2/repository`.
-- **Optional**: When omitted or blank, the `-Dmaven.repo.local` flag is omitted, allowing standard repository resolution.
+- **Mojo Configuration**: Configured via the `localMavenRepo` (or `local.maven.repo`) property in
+  `AbstractGeneratePipelineMojo`, `GenerateGitlabPipelineMojo`, and `GenerateLocalPipelineMojo`.
+- **GitLab Container Default**: Works seamlessly with pre-cached dependencies in the runtime container located at
+  `/root/.m2/repository`.
+- **Optional**: When omitted or blank, the `-Dmaven.repo.local` flag is omitted, allowing standard repository
+  resolution.
 
 ### Supported Locales
 
-[`SupportedLocale`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/models/shared/SupportedLocale.java) supports standard locale identifiers (`en_US`, `de_DE`, `en`, `de`) directly in YAML pipeline configuration files through Jackson `@JsonCreator` and `@JsonValue` annotations.
+[
+`SupportedLocale`](pipeline-generator/src/main/java/org/metaeffekt/kontinuum/runtime/models/shared/SupportedLocale.java)
+supports standard locale identifiers (`en_US`, `de_DE`, `en`, `de`) directly in YAML pipeline configuration files
+through Jackson `@JsonCreator` and `@JsonValue` annotations.
 Configurations strictly expect `locales:` under the report configuration.
 
 ### TMD_SOURCE Property
 
-The `TMD_SOURCE` property on `EnvironmentConfiguration` defaults to `ae-kosmos` with Lombok `@Builder.Default` support, properly propagated by pipeline generation Mojos.
+The `TMD_SOURCE` property on `EnvironmentConfiguration` defaults to `ae-kosmos` with Lombok `@Builder.Default` support,
+properly propagated by pipeline generation Mojos.
 
 ---
 
 ## 4. Processor Catalog & Models (`ProcessorDefinitions`)
 
-- **Domain Separation**: `Processor`, `MavenProcessor`, and `StandaloneProcessor` are pure task catalog descriptors defining CLI/Maven parameters, script locations, and lifecycle phases.
-- **Polymorphic Deep Copy**: `Processor.copy()` provides concrete implementations on subclasses (`MavenProcessor`, `StandaloneProcessor`, `ProcessorParameter`) to safely clone processor instances from the catalog without mutating defaults.
-- **Standalone Parameter Sanitization**: Standalone shell script generation filters out `null` and blank parameter values to avoid injecting literal `null` strings into command lines.
+- **Domain Separation**: `Processor`, `MavenProcessor`, and `StandaloneProcessor` are pure task catalog descriptors
+  defining CLI/Maven parameters, script locations, and lifecycle phases.
+- **Polymorphic Deep Copy**: `Processor.copy()` provides concrete implementations on subclasses (`MavenProcessor`,
+  `StandaloneProcessor`, `ProcessorParameter`) to safely clone processor instances from the catalog without mutating
+  defaults.
+- **Standalone Parameter Sanitization**: Standalone shell script generation filters out `null` and blank parameter
+  values to avoid injecting literal `null` strings into command lines.
 
 ---
 
 ## 5. Kontinuum Runtime Container
 
-The configuration of the container built via the GitHub workflow in this repository is described in [container/Dockerfile](container/Dockerfile).
+The configuration of the container built via the GitHub workflow in this repository is described
+in [container/Dockerfile](container/Dockerfile).
 
 ### Container Contents
 
 - **Base Image:** `maven:3.9.11-amazoncorretto-17-debian`
 - **Working Directory:** `/usr/src/metaeffekt-kontinuum`
 - **Cached Maven Artifacts:**
-  - `/root/.m2/repository/com/metaeffekt`
-  - `/root/.m2/repository/org/metaeffekt` (including `org.metaeffekt.kontinuum.runtime` artifacts)
-  - Pre-cached third-party dependencies required for offline pipeline execution.
+    - `/root/.m2/repository/com/metaeffekt`
+    - `/root/.m2/repository/org/metaeffekt` (including `org.metaeffekt.kontinuum.runtime` artifacts)
+    - Pre-cached third-party dependencies required for offline pipeline execution.
 
 ### Building the Container
 
-You can build the container using Maven or directly via the container build script. Both methods ensure that the Java generator modules are built first.
+You can build the container using Maven or directly via the container build script. Both methods ensure that the Java
+generator modules are built first.
 
 #### Option A: Building via Maven Profile
+
 ```bash
 mvn clean install -Pbuild-container
 ```
 
 #### Option B: Building via Shell Script
+
 ```bash
 ./container/build.sh
 ```
 
-Run `./container/build.sh --help` to view interactive and non-interactive build flags (e.g. core versions, image tags, Docker Hub credentials).
+Run `./container/build.sh --help` to view interactive and non-interactive build flags (e.g. core versions, image tags,
+Docker Hub credentials).
 
 ---
 
 ## 6. Pipeline Configuration Specification
 
-For the complete schema, detailed explanations of all configuration parameters, and YAML usage examples, refer to the [Pipeline Configuration Guide](pipeline-configuration.md).
+For the complete schema, detailed explanations of all configuration parameters, and YAML usage examples, refer to
+the [Pipeline Configuration Guide](pipeline-configuration.md).
 

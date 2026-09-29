@@ -46,7 +46,7 @@ class GitlabPipelineTest {
         int reportJobStart = pipeline.indexOf(reportJob);
         int reportJobEnd = pipeline.indexOf("\n\n", reportJobStart);
         String reportJobBlock = pipeline.substring(reportJobStart,
-                reportJobEnd < 0 ? pipeline.length() : reportJobEnd);
+                                                   reportJobEnd < 0 ? pipeline.length() : reportJobEnd);
 
         assertTrue(reportJobBlock.contains("needs: [" + asset.getId() + "-copy-inventory-GROUP"), reportJobBlock);
     }

@@ -14,6 +14,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * Jackson-mapped model of a Kontinuum pipeline YAML configuration, covering project
+ * properties, reports, dashboards, overviews, portfolio manager settings, and options.
+ */
 @Data
 public class PipelineConfiguration {
 
@@ -24,10 +28,16 @@ public class PipelineConfiguration {
     private PortfolioManager portfolioManager;
     private Options options;
 
+    /**
+     * Whether vulnerability enrichment is required by any dashboard or report type.
+     *
+     * @return true if the pipeline requires vulnerability enrichment
+     */
     public boolean requiresVulnerabilityEnrichment() {
         boolean hasDashboard = dashboards != null && dashboards.stream()
                 .filter(Objects::nonNull)
-                .anyMatch(d -> d.getAssetIds() != null && !d.getAssetIds().isEmpty());
+                .anyMatch(d -> d.getAssetIds() != null &&
+                               !d.getAssetIds().isEmpty());
         if (hasDashboard) {
             return true;
         }
@@ -42,6 +52,12 @@ public class PipelineConfiguration {
                 .anyMatch(ReportType::requiresVulnerabilityEnrichment);
     }
 
+    /**
+     * Whether vulnerability enrichment is required for the given asset.
+     *
+     * @param asset the asset to check
+     * @return true if the pipeline requires vulnerability enrichment for the asset
+     */
     public boolean requiresVulnerabilityEnrichment(ProjectProperties.Asset asset) {
         if (asset == null) {
             return false;
@@ -49,6 +65,12 @@ public class PipelineConfiguration {
         return requiresVulnerabilityEnrichment(asset.getId());
     }
 
+    /**
+     * Whether vulnerability enrichment is required for the given asset id.
+     *
+     * @param assetId the asset identifier to check
+     * @return true if the pipeline requires vulnerability enrichment for the asset id
+     */
     public boolean requiresVulnerabilityEnrichment(String assetId) {
         if (assetId == null) {
             return false;
@@ -73,12 +95,20 @@ public class PipelineConfiguration {
                 .anyMatch(ReportType::requiresVulnerabilityEnrichment);
     }
 
+    /**
+     * The {@code projectProperties} section: the project descriptor and its asset tree.
+     */
     @Data
     public static class ProjectProperties {
 
         private Project project;
         private List<Asset> assets;
 
+        /**
+         * Returns all assets in the project, flattened depth-first across the asset tree.
+         *
+         * @return the flattened list of assets, or an empty list if none are configured
+         */
         public List<Asset> getAllAssets() {
             if (this.assets == null || this.assets.isEmpty()) {
                 return Collections.emptyList();
@@ -88,6 +118,12 @@ public class PipelineConfiguration {
                     .collect(Collectors.toList());
         }
 
+        /**
+         * Finds the root asset in the configured asset tree that contains the target asset.
+         *
+         * @param targetAsset the asset to locate within the asset tree
+         * @return the containing root asset, or the target asset if it is not nested
+         */
         public Asset getRootAssetFor(Asset targetAsset) {
             if (this.assets == null || this.assets.isEmpty() || targetAsset == null) {
                 return targetAsset;
@@ -114,6 +150,9 @@ public class PipelineConfiguration {
             return false;
         }
 
+        /**
+         * The {@code project} descriptor identifying a project by id, name, version, and tenant.
+         */
         @Data
         public static class Project {
             private String id;
@@ -127,6 +166,9 @@ public class PipelineConfiguration {
             }
         }
 
+        /**
+         * A single asset entry, optionally nesting further assets and resolver configuration.
+         */
         @Data
         public static class Asset {
             private String id;
@@ -144,6 +186,10 @@ public class PipelineConfiguration {
             private MavenResolver mavenResolver;
             private ContainerResolver containerResolver;
 
+            /**
+             * Resolver configuration for fetching an asset from a URL, including optional
+             * credentials and a custom header.
+             */
             @Data
             public static class UrlResolver {
                 private String url;
@@ -155,6 +201,9 @@ public class PipelineConfiguration {
                 private String headerValue;
             }
 
+            /**
+             * Resolver configuration for fetching an asset as a Maven artifact.
+             */
             @Data
             public static class MavenResolver {
                 private String groupId;
@@ -163,6 +212,9 @@ public class PipelineConfiguration {
                 private String repoUrl = "https://repo1.maven.org/maven2";
             }
 
+            /**
+             * Resolver configuration for fetching an asset as a container image.
+             */
             @Data
             public static class ContainerResolver {
                 private String image;
@@ -170,9 +222,16 @@ public class PipelineConfiguration {
                 private String repoUrl = "docker.io";
             }
 
-            public String getReferenceDir(String workbenchPath) throws IllegalStateException{
+            /**
+             * Resolves the reference directory for this asset relative to the workbench path.
+             *
+             * @param workbenchPath the workbench root path used to normalize the reference directory
+             * @return the normalized reference directory
+             */
+            public String getReferenceDir(String workbenchPath) throws IllegalStateException {
                 if (StringUtils.isBlank(reference)) {
-                    throw new IllegalStateException("Tried to access reference inventory for asset " + this + " but is not set.");
+                    throw new IllegalStateException(
+                            "Tried to access reference inventory for asset " + this + " but is not set.");
                 }
 
                 if (Files.isDirectory(Path.of(reference))) {
@@ -183,29 +242,48 @@ public class PipelineConfiguration {
                 }
             }
 
+            /**
+             * Resolves the assessment context directory for this asset.
+             *
+             * @param project       the project providing the tenant
+             * @param workbenchPath the workbench root path used to normalize the context directory
+             * @return the normalized context directory
+             */
             public String getContextDir(ProjectProperties.Project project, String workbenchPath) {
                 if (StringUtils.isBlank(project.getName())) {
-                    throw new IllegalStateException("Tried to access tenant for project " + project + " but is not set.");
+                    throw new IllegalStateException(
+                            "Tried to access tenant for project " + project + " but is not set.");
                 }
 
                 if (StringUtils.isBlank(assessmentId)) {
-                    throw new IllegalStateException("Tried to access assessment id for asset " + this + " but is not set.");
+                    throw new IllegalStateException(
+                            "Tried to access assessment id for asset " + this + " but is not set.");
                 }
-                
+
                 if (StringUtils.isBlank(context)) {
                     throw new IllegalStateException("Tried to access context for asset " + this + " but is not set.");
                 }
 
-                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getTenant(), assessmentId, context, "context");
+                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getTenant(), assessmentId,
+                                                   context, "context");
             }
 
+            /**
+             * Resolves the assessment directory for this asset.
+             *
+             * @param project       the project providing the tenant
+             * @param workbenchPath the workbench root path used to normalize the assessment directory
+             * @return the normalized assessment directory
+             */
             public String getAssessmentDir(ProjectProperties.Project project, String workbenchPath) {
                 if (StringUtils.isBlank(project.getName())) {
-                    throw new IllegalStateException("Tried to access tenant for project " + project + " but is not set.");
+                    throw new IllegalStateException(
+                            "Tried to access tenant for project " + project + " but is not set.");
                 }
 
                 if (StringUtils.isBlank(assessmentId)) {
-                    throw new IllegalStateException("Tried to access assessment id for asset " + this + " but is not set.");
+                    throw new IllegalStateException(
+                            "Tried to access assessment id for asset " + this + " but is not set.");
                 }
 
                 return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getTenant(), assessmentId);
@@ -256,6 +334,11 @@ public class PipelineConfiguration {
                 return path;
             }
 
+            /**
+             * Streams this asset followed by all of its nested assets depth-first.
+             *
+             * @return a stream of this asset and its descendants
+             */
             public Stream<Asset> flattenStream() {
                 Stream<Asset> children = (this.assets == null)
                         ? Stream.empty()
@@ -271,6 +354,9 @@ public class PipelineConfiguration {
         }
     }
 
+    /**
+     * The {@code reports} section: report entries selecting assets and report types to generate.
+     */
     @Data
     public static class Report {
         private String id;
@@ -298,6 +384,8 @@ public class PipelineConfiguration {
          * The name identifying this report entry's output folder and report files. Prefers the
          * configured {@link #id}; otherwise the loader-assigned {@link #resolvedGroupId}. Falls back
          * to joined asset ids only when the entry was never processed by the loader.
+         *
+         * @return the resolved group id used for the output folder and report files
          */
         public String getGroupId() {
             if (StringUtils.isNotBlank(id)) {
@@ -313,29 +401,44 @@ public class PipelineConfiguration {
         }
     }
 
+    /**
+     * The {@code dashboards} section: dashboard entries selecting the assets to display.
+     */
     @Data
     public static class Dashboard {
         private List<String> assetIds;
     }
 
+    /**
+     * The {@code overviews} section: overview entries selecting the assets to summarize.
+     */
     @Data
     public static class Overview {
         private List<String> assetIds;
     }
 
+    /**
+     * The {@code portfolioManager} section: the portfolio manager project to publish to.
+     */
     @Data
     public static class PortfolioManager {
         private String project;
     }
 
+    /**
+     * The {@code options} section grouping global execution and enrichment options.
+     */
     @Data
     public static class Options {
 
         private GlobalOptions global = new GlobalOptions();
         private EnrichmentOptions enrichment = new EnrichmentOptions();
 
+        /**
+         * Global execution toggles for resolve, scan, and SBOM generation.
+         */
         @Data
-        public static class GlobalOptions{
+        public static class GlobalOptions {
             private Boolean enableResolve = false;
             private Boolean enableScan = false;
             private Boolean enableSpdxBom = false;
@@ -343,8 +446,11 @@ public class PipelineConfiguration {
             private String debugParam;
         }
 
+        /**
+         * Enrichment toggles and security policy configuration for advisory data sources.
+         */
         @Data
-        public static class EnrichmentOptions{
+        public static class EnrichmentOptions {
 
             private String securityPolicyFile;
             private List<String> securityPolicyActiveIds = new ArrayList<>();
@@ -360,9 +466,16 @@ public class PipelineConfiguration {
             private Boolean activateCsaf = true;
 
 
-            public String getSecurityPolicyFile(String workbenchPath) throws IllegalStateException{
+            /**
+             * Resolves the configured security policy file relative to the workbench path.
+             *
+             * @param workbenchPath the workbench root path used to normalize the policy file path
+             * @return the normalized security policy file path
+             */
+            public String getSecurityPolicyFile(String workbenchPath) throws IllegalStateException {
                 if (StringUtils.isBlank(securityPolicyFile)) {
-                    throw new IllegalStateException("Tried to access reference inventory for asset " + this + " but is not set.");
+                    throw new IllegalStateException(
+                            "Tried to access reference inventory for asset " + this + " but is not set.");
                 }
 
                 File file = new File(securityPolicyFile);

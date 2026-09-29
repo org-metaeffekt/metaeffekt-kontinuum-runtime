@@ -3,6 +3,9 @@ package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
+/**
+ * Handler for the {@link Stage#POST} stage. Currently reserved for future post-processing logic.
+ */
 public class PostStageHandler implements AssetStageHandler {
 
     @Override

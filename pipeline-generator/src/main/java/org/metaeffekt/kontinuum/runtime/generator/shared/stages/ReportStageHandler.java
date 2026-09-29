@@ -1,9 +1,12 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
-import org.metaeffekt.kontinuum.runtime.models.shared.*;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Report;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
+import org.metaeffekt.kontinuum.runtime.models.shared.ReportGroupExecutionContext;
+import org.metaeffekt.kontinuum.runtime.models.shared.ReportType;
+import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
+import org.metaeffekt.kontinuum.runtime.models.shared.SupportedLocale;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
 import java.util.List;
@@ -18,9 +21,12 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  * locales therefore produces six documents, not one per asset.
  * Based on report type:
  * <ul>
- *   <li>Software Distribution Annex (SDA): group merge &rarr; source aggregation &rarr; license aggregation &rarr; per locale SDA generation &rarr; annex archive.</li>
- *   <li>License Documentation (LD): group merge &rarr; source aggregation &rarr; license aggregation &rarr; per locale LD generation.</li>
- *   <li>Initial License Documentation (ILD): group merge &rarr; license aggregation &rarr; per locale ILD generation.</li>
+ *   <li>Software Distribution Annex (SDA): group merge &rarr; source aggregation &rarr; license aggregation &rarr;
+ *   per locale SDA generation &rarr; annex archive.</li>
+ *   <li>License Documentation (LD): group merge &rarr; source aggregation &rarr; license aggregation &rarr; per
+ *   locale LD generation.</li>
+ *   <li>Initial License Documentation (ILD): group merge &rarr; license aggregation &rarr; per locale ILD generation
+ *   .</li>
  *   <li>Other report types (e.g. VR, VSR, CR, CA): per locale report generation only.</li>
  * </ul>
  */
@@ -126,7 +132,9 @@ public class ReportStageHandler implements ReportGroupStageHandler {
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getReportDir().appendMergedInventoryFile());
         processor.setProcessorParameter(OUTPUT_TARGET_DIR, context.getReportDir().appendSourcesDir());
-        processor.setProcessorParameter(PARAM_CONFIG_FILE, context.getEnvironment().getConfigDirNormalized() + "source-aggregation/config.yaml");
+        processor.setProcessorParameter(PARAM_CONFIG_FILE,
+                                        context.getEnvironment().getConfigDirNormalized() + "source-aggregation" +
+                                        "/config.yaml");
         processor.setProcessorParameter(PARAM_PROTOCOL_FILE, context.getReportDir().appendSourceAggregationLog());
         processor.setProcessorParameter(PARAM_FAIL_ON_MISSING_SOURCES, "false");
 
@@ -146,8 +154,10 @@ public class ReportStageHandler implements ReportGroupStageHandler {
         processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().TMD_PASSWORD);
         processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().TMD_USERKEYS_FILE);
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getReportDir().appendMergedInventoryFile());
-        processor.setProcessorParameter(PARAM_REFERENCE_COMPONENTS_DIR, context.getEnvironment().getWorkbenchDirNormalized() + "components/");
-        processor.setProcessorParameter(PARAM_REFERENCE_LICENSES_DIR, context.getEnvironment().getWorkbenchDirNormalized() + "licenses/");
+        processor.setProcessorParameter(PARAM_REFERENCE_COMPONENTS_DIR,
+                                        context.getEnvironment().getWorkbenchDirNormalized() + "components/");
+        processor.setProcessorParameter(PARAM_REFERENCE_LICENSES_DIR,
+                                        context.getEnvironment().getWorkbenchDirNormalized() + "licenses/");
         processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, context.getReferenceInventoryDir());
         processor.setProcessorParameter(PARAM_TARGET_COMPONENTS_DIR, context.getReportDir().appendComponentsDir());
         processor.setProcessorParameter(PARAM_TARGET_LICENSES_DIR, context.getReportDir().appendLicensesDir());
@@ -160,7 +170,8 @@ public class ReportStageHandler implements ReportGroupStageHandler {
      *
      * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/report/report_create-document.md">report_create-document.md</a>
      */
-    private MavenProcessor handleReportGeneration(ReportGroupExecutionContext context, Report report, String type, SupportedLocale locale) {
+    private MavenProcessor handleReportGeneration(ReportGroupExecutionContext context, Report report, String type,
+                                                  SupportedLocale locale) {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_DOCUMENT);
         processor.setStage(Stage.REPORT);
         ReportType reportType = ReportType.fromKey(type);
@@ -171,20 +182,24 @@ public class ReportStageHandler implements ReportGroupStageHandler {
             processor.setProcessorParameter(PARAM_OVERVIEW_ADVISORS, "[\"CERT_FR\"]");
         } else {
             processor.setProcessorParameter(PARAM_OVERVIEW_ADVISORS,
-                    report.getOverviewAdvisors() == null || report.getOverviewAdvisors().isEmpty()
-                            ? null
-                            : String.join(", ", report.getOverviewAdvisors()));
+                                            report.getOverviewAdvisors() == null ||
+                                            report.getOverviewAdvisors().isEmpty()
+                                                    ? null
+                                                    : String.join(", ", report.getOverviewAdvisors()));
         }
 
         if (ReportType.requiresVulnerabilityEnrichment(reportType)) {
             if (context.getConfiguration().getOptions() != null
-                    && context.getConfiguration().getOptions().getEnrichment() != null) {
+                && context.getConfiguration().getOptions().getEnrichment() != null) {
                 processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE,
-                        context.getConfiguration().getOptions().getEnrichment().getSecurityPolicyFile(context.getEnvironment().getWorkbenchDirNormalized()));
+                                                context.getConfiguration().getOptions().getEnrichment()
+                                                        .getSecurityPolicyFile(
+                                                                context.getEnvironment().getWorkbenchDirNormalized()));
             }
         }
 
-        processor.setProcessorParameter(OUTPUT_DOCUMENT_FILE, context.getReportDir().appendReportFile(reportType, locale));
+        processor.setProcessorParameter(OUTPUT_DOCUMENT_FILE,
+                                        context.getReportDir().appendReportFile(reportType, locale));
         processor.setProcessorParameter(PARAM_COMPUTED_INVENTORY_DIR, context.getReportDir().appendComputedDir());
         processor.setProcessorParameter(PARAM_DOCUMENT_TYPE, type);
         processor.setProcessorParameter(PARAM_DOCUMENT_LANGUAGE, locale.getLanguage());
@@ -199,18 +214,23 @@ public class ReportStageHandler implements ReportGroupStageHandler {
         processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_ORGANIZATION, report.getOrganization());
         processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_CLASSIFICATION, report.getClassificationRating());
         processor.setProcessorParameter(PARAM_PROPERTY_SELECTOR_CONTROL, report.getControlRating());
-        processor.setProcessorParameter(PARAM_ASSET_DESCRIPTOR_FILE, KontinuumUtils.normalizeDir(context.getEnvironment().getDescriptorsDirNormalized(), reportType.getAssetDescriptorFile()));
+        processor.setProcessorParameter(PARAM_ASSET_DESCRIPTOR_FILE,
+                                        KontinuumUtils.normalizeDir(
+                                                context.getEnvironment().getDescriptorsDirNormalized(),
+                                                reportType.getAssetDescriptorFile()));
         processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR, context.getReferenceInventoryDir());
-        processor.setProcessorParameter(PARAM_REFERENCE_LICENSES_DIR, context.getEnvironment().getWorkbenchDirNormalized() + "licenses/");
-        processor.setProcessorParameter(PARAM_REFERENCE_COMPONENTS_DIR, context.getEnvironment().getWorkbenchDirNormalized() + "components/");
+        processor.setProcessorParameter(PARAM_REFERENCE_LICENSES_DIR,
+                                        context.getEnvironment().getWorkbenchDirNormalized() + "licenses/");
+        processor.setProcessorParameter(PARAM_REFERENCE_COMPONENTS_DIR,
+                                        context.getEnvironment().getWorkbenchDirNormalized() + "components/");
         processor.setProcessorParameter(ENV_KONTINUUM_DIR,
-                context.getEnvironment().getKontinuumDirNormalized());
+                                        context.getEnvironment().getKontinuumDirNormalized());
         processor.setProcessorParameter(ENV_KONTINUUM_PROCESSORS_DIR,
-                context.getEnvironment().getKontinuumProcessorsDirNormalized());
+                                        context.getEnvironment().getKontinuumProcessorsDirNormalized());
         processor.setProcessorParameter(ENV_WORKBENCH_DIR,
-                context.getEnvironment().getWorkbenchDirNormalized());
+                                        context.getEnvironment().getWorkbenchDirNormalized());
         processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
-                context.getEnvironment().getMirrorDatabaseDirNormalized());
+                                        context.getEnvironment().getMirrorDatabaseDirNormalized());
 
         return processor;
     }
@@ -221,18 +241,24 @@ public class ReportStageHandler implements ReportGroupStageHandler {
      * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/report/report_create-annex-archive.md">report_create-annex-archive.md</a>
      */
     private MavenProcessor handleAnnexArchiveCreation(ReportGroupExecutionContext context, SupportedLocale locale) {
-        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(CREATE_ANNEX_ARCHIVE);
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(
+                CREATE_ANNEX_ARCHIVE);
         processor.setStage(Stage.REPORT);
 
-        processor.setProcessorParameter(OUTPUT_ANNEX_ARCHIVE_FILE, context.getReportDir().appendAnnexArchiveFile(locale));
+        processor.setProcessorParameter(OUTPUT_ANNEX_ARCHIVE_FILE,
+                                        context.getReportDir().appendAnnexArchiveFile(locale));
         processor.setProcessorParameter(INPUT_INVENTORY_COMPONENTS_DIR, context.getReportDir().appendComponentsDir());
         processor.setProcessorParameter(INPUT_INVENTORY_LICENSES_DIR, context.getReportDir().appendLicensesDir());
         processor.setProcessorParameter(INPUT_INVENTORY_SOURCES_DIR, context.getReportDir().appendSourcesDir());
 
         if (locale.equals(SupportedLocale.DE_DE)) {
-            processor.setProcessorParameter(INPUT_DOCUMENT_DE_PDF_FILE, context.getReportDir().appendReportFile(ReportType.SOFTWARE_DISTRIBUTION_ANNEX, locale));
+            processor.setProcessorParameter(INPUT_DOCUMENT_DE_PDF_FILE,
+                                            context.getReportDir().appendReportFile(
+                                                    ReportType.SOFTWARE_DISTRIBUTION_ANNEX, locale));
         } else {
-            processor.setProcessorParameter(INPUT_DOCUMENT_EN_PDF_FILE, context.getReportDir().appendReportFile(ReportType.SOFTWARE_DISTRIBUTION_ANNEX, locale));
+            processor.setProcessorParameter(INPUT_DOCUMENT_EN_PDF_FILE,
+                                            context.getReportDir().appendReportFile(
+                                                    ReportType.SOFTWARE_DISTRIBUTION_ANNEX, locale));
         }
 
         return processor;

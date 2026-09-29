@@ -6,7 +6,6 @@ import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Options.EnrichmentOptions;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
-import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.ENRICH_INVENTORY;
@@ -34,9 +33,9 @@ public class AdviseStageHandler implements AssetStageHandler {
     /**
      * Enriches the asset inventory with vulnerability information from external databases.
      *
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/advise/advise_enrich-inventory.md">advise_enrich-inventory.md</a>
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for enriching the inventory with vulnerability data.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/advise/advise_enrich-inventory.md">advise_enrich-inventory.md</a>
      */
     private MavenProcessor handleVulnerabilityEnrichment(AssetExecutionContext context) {
         Asset asset = context.getAsset();
@@ -45,23 +44,24 @@ public class AdviseStageHandler implements AssetStageHandler {
 
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
-                context.getStageDirForAsset(Stage.ADVISE).appendAssetInventory());
+                                        context.getStageDirForAsset(Stage.ADVISE).appendAssetInventory());
         processor.setProcessorParameter(PARAM_CORRELATION_DIR,
-                context.getEnvironment().getCorrelationDirNormalized());
+                                        context.getEnvironment().getCorrelationDirNormalized());
 
         EnrichmentOptions enrichment = (context.getConfiguration().getOptions() != null
-                && context.getConfiguration().getOptions().getEnrichment() != null)
+                                        && context.getConfiguration().getOptions().getEnrichment() != null)
                 ? context.getConfiguration().getOptions().getEnrichment()
                 : new EnrichmentOptions();
 
         if (StringUtils.isNotBlank(enrichment.getSecurityPolicyFile())) {
             processor.setProcessorParameter(PARAM_SECURITY_POLICY_FILE,
-                    enrichment.getSecurityPolicyFile(context.getEnvironment().getWorkbenchDirNormalized()));
+                                            enrichment.getSecurityPolicyFile(
+                                                    context.getEnvironment().getWorkbenchDirNormalized()));
         }
         processor.setProcessorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS,
-                enrichment.getSecurityPolicyActiveIds() != null
-                        ? String.join(",", enrichment.getSecurityPolicyActiveIds())
-                        : null);
+                                        enrichment.getSecurityPolicyActiveIds() != null
+                                                ? String.join(",", enrichment.getSecurityPolicyActiveIds())
+                                                : null);
 
         processor.setProcessorParameter(PARAM_ACTIVATE_MSRC, String.valueOf(enrichment.getActivateMsrc()));
         processor.setProcessorParameter(PARAM_ACTIVATE_NVD, String.valueOf(enrichment.getActivateNvd()));
@@ -77,15 +77,19 @@ public class AdviseStageHandler implements AssetStageHandler {
         PipelineConfiguration.ProjectProperties.Project project = context.getConfiguration()
                 .getProjectProperties().getProject();
         processor.setProcessorParameter(PARAM_ASSESSMENT_DIRS,
-                asset.getAssessmentDir(project, context.getEnvironment().getWorkbenchDirNormalized()));
+                                        asset.getAssessmentDir(project,
+                                                               context.getEnvironment().getWorkbenchDirNormalized()));
         processor.setProcessorParameter(PARAM_CONTEXT_DIRS,
-                asset.getContextDir(project, context.getEnvironment().getWorkbenchDirNormalized()));
+                                        asset.getContextDir(project,
+                                                            context.getEnvironment().getWorkbenchDirNormalized()));
 
         processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
-                context.getEnvironment().getMirrorDatabaseDirNormalized());
+                                        context.getEnvironment().getMirrorDatabaseDirNormalized());
 
         try {
-            processor.setProcessorParameter(OUTPUT_TMP_DIR, context.getStageDirForAsset(Stage.ADVISE).appendVulnerabilityEnrichmentTempDir());
+            processor.setProcessorParameter(OUTPUT_TMP_DIR,
+                                            context.getStageDirForAsset(
+                                                    Stage.ADVISE).appendVulnerabilityEnrichmentTempDir());
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
         }

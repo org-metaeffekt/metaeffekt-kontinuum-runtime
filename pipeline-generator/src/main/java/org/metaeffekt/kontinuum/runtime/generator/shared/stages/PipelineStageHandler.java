@@ -14,6 +14,8 @@ public interface PipelineStageHandler extends StageHandler {
 
     /**
      * Inspects the pipeline context and appends pipeline-wide processors for this stage.
+     *
+     * @param context the pipeline execution context to inspect
      */
     void process(PipelineExecutionContext context);
 }

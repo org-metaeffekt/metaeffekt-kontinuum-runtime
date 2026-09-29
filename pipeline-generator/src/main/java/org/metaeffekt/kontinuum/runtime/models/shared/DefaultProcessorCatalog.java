@@ -2,8 +2,8 @@ package org.metaeffekt.kontinuum.runtime.models.shared;
 
 import java.util.*;
 
-import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.*;
+import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 
 /**
  * Java-native implementation of @link ProcessorCatalog providing all Kontinuum processor definitions.
@@ -13,6 +13,9 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
     private final List<ProcessorDefinitions.Processor> catalog;
     private final Map<String, ProcessorDefinitions.Processor> catalogById;
 
+    /**
+     * Creates the catalog and initializes all built-in Kontinuum processor definitions.
+     */
     public DefaultProcessorCatalog() {
         List<ProcessorDefinitions.Processor> list = initCatalog();
         list.sort(Comparator.comparing(ProcessorDefinitions.Processor::getId));
@@ -29,6 +32,9 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
         this.catalogById = Collections.unmodifiableMap(map);
     }
 
+    /**
+     * Identifiers of the built-in Kontinuum processors.
+     */
     public enum ProcessorIds {
         AGGREGATE_LICENSES("aggregate-licenses"),
         AGGREGATE_REFERENCE_LICENSES("aggregate-reference-licenses"),
@@ -156,510 +162,555 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
         list.add(scanInventory());
         list.add(transformInventories());
         list.add(updateIndex());
-        list.add(updateIndex_External());
+        list.add(updateIndexExternal());
         list.add(validateReferenceInventory());
         return list;
     }
 
 
     private static ProcessorDefinitions.MavenProcessor aggregateLicenses() {
-        return mavenProcessor(AGGREGATE_LICENSES, "Aggregate Licenses", "util/util_aggregate-licenses.xml", "This process enables the aggregation of license and component information using a reference inventory and Terms Metadata (TMD) for a specified inventory. The content will be generated to the specified target directories. This process is a part of the creation of a Software Distribution Annex.",
-            processorParameter(ENV_TMD_PASSWORD, true),
-            processorParameter(ENV_TMD_USERKEYS_FILE, true),
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(PARAM_REFERENCE_COMPONENTS_DIR, true),
-            processorParameter(PARAM_REFERENCE_LICENSES_DIR, true),
-            processorParameter(ENV_TMD_SOURCE, false),
-            processorParameter(PARAM_FAIL_ON_MISSING_COMPONENT_FILES, false),
-            processorParameter(PARAM_FAIL_ON_MISSING_LICENSE_FILE, false),
-            processorParameter(PARAM_REFERENCE_INVENTORY_DIR, false),
-            processorParameter(PARAM_REFERENCE_INVENTORY_INCLUDES, false),
-            processorParameter(PARAM_TARGET_COMPONENTS_DIR, false),
-            processorParameter(PARAM_TARGET_LICENSES_DIR, false)
+        return mavenProcessor(AGGREGATE_LICENSES, "Aggregate Licenses", "util/util_aggregate-licenses.xml",
+                              processorParameter(ENV_TMD_PASSWORD, true),
+                              processorParameter(ENV_TMD_USERKEYS_FILE, true),
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(PARAM_REFERENCE_COMPONENTS_DIR, true),
+                              processorParameter(PARAM_REFERENCE_LICENSES_DIR, true),
+                              processorParameter(ENV_TMD_SOURCE, false),
+                              processorParameter(PARAM_FAIL_ON_MISSING_COMPONENT_FILES, false),
+                              processorParameter(PARAM_FAIL_ON_MISSING_LICENSE_FILE, false),
+                              processorParameter(PARAM_REFERENCE_INVENTORY_DIR, false),
+                              processorParameter(PARAM_REFERENCE_INVENTORY_INCLUDES, false),
+                              processorParameter(PARAM_TARGET_COMPONENTS_DIR, false),
+                              processorParameter(PARAM_TARGET_LICENSES_DIR, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor aggregateReferenceLicenses() {
-        return mavenProcessor(AGGREGATE_REFERENCE_LICENSES, "Aggregate Reference Licenses", "util/util_aggregate-reference-licenses.xml", "This process enables the aggregation of license and component information from a reference inventory for the specified inventory. The content will be generated to the specified target directories. This process is a part of the creation of a Software Distribution Annex.",
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(PARAM_REFERENCE_INVENTORY_DIR, true),
-            processorParameter(PARAM_FAIL_ON_MISSING_LICENSE_FILE, false),
-            processorParameter(PARAM_REFERENCE_COMPONENTS_DIR, false),
-            processorParameter(PARAM_REFERENCE_INVENTORY_INCLUDES, false),
-            processorParameter(PARAM_REFERENCE_LICENSES_DIR, false),
-            processorParameter(PARAM_TARGET_COMPONENTS_DIR, false),
-            processorParameter(PARAM_TARGET_LICENSES_DIR, false)
+        return mavenProcessor(AGGREGATE_REFERENCE_LICENSES, "Aggregate Reference Licenses",
+                              "util/util_aggregate-reference-licenses.xml",
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(PARAM_REFERENCE_INVENTORY_DIR, true),
+                              processorParameter(PARAM_FAIL_ON_MISSING_LICENSE_FILE, false),
+                              processorParameter(PARAM_REFERENCE_COMPONENTS_DIR, false),
+                              processorParameter(PARAM_REFERENCE_INVENTORY_INCLUDES, false),
+                              processorParameter(PARAM_REFERENCE_LICENSES_DIR, false),
+                              processorParameter(PARAM_TARGET_COMPONENTS_DIR, false),
+                              processorParameter(PARAM_TARGET_LICENSES_DIR, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor aggregateSources() {
-        return mavenProcessor(AGGREGATE_SOURCES, "Aggregate Sources", "util/util_aggregate-sources.xml", "Checks a reference inventory for the artifacts contained within and downloads them from different configured data sources. This process is a precursor to generating an annex-document, which requires the additional artifact archives during generation.",
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_TARGET_DIR, true),
-            processorParameter(PARAM_CONFIG_FILE, true),
-            processorParameter(PARAM_PROTOCOL_FILE, false),
-            processorParameter(PARAM_FAIL_ON_MISSING_SOURCES, false)
+        return mavenProcessor(AGGREGATE_SOURCES, "Aggregate Sources", "util/util_aggregate-sources.xml",
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_TARGET_DIR, true),
+                              processorParameter(PARAM_CONFIG_FILE, true),
+                              processorParameter(PARAM_PROTOCOL_FILE, false),
+                              processorParameter(PARAM_FAIL_ON_MISSING_SOURCES, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor applyBusinessCase() {
-        return mavenProcessor(APPLY_BUSINESS_CASE, "Apply Business Case", "util/util_apply-business-case.xml", "An inventory can be evaluated in a defined business case and documentation context. This processor enables to apply business case specific modulation of an inventory. E.g. before producing a distribution annex.",
-            processorParameter(ENV_TMD_PASSWORD, true),
-            processorParameter(ENV_TMD_USERKEYS_FILE, true),
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(ENV_TMD_SOURCE, false),
-            processorParameter(PARAM_LANGUAGE_MODE, false),
-            processorParameter(PARAM_NOTICE_MODE_OVERWRITE, false),
-            processorParameter(PARAM_REFERENCE_INVENTORY_DIR, false),
-            processorParameter(PARAM_REFERENCE_INVENTORY_INCLUDES, false),
-            processorParameter(PARAM_SOURCE_MODE, false)
+        return mavenProcessor(APPLY_BUSINESS_CASE, "Apply Business Case", "util/util_apply-business-case.xml",
+                              processorParameter(ENV_TMD_PASSWORD, true),
+                              processorParameter(ENV_TMD_USERKEYS_FILE, true),
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(ENV_TMD_SOURCE, false),
+                              processorParameter(PARAM_LANGUAGE_MODE, false),
+                              processorParameter(PARAM_NOTICE_MODE_OVERWRITE, false),
+                              processorParameter(PARAM_REFERENCE_INVENTORY_DIR, false),
+                              processorParameter(PARAM_REFERENCE_INVENTORY_INCLUDES, false),
+                              processorParameter(PARAM_SOURCE_MODE, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor attachMetadata() {
-        return mavenProcessor(ATTACH_METADATA, "Attach Metadata", "advise/advise_attach-metadata.xml", "This process attaches specified metadata to a given input inventory. This process can be triggered before dashboard / report creation to ensure that necessary metadata is available.",
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(PARAM_METADATA_ASSET_ID, true),
-            processorParameter(PARAM_METADATA_ASSET_NAME, false),
-            processorParameter(PARAM_METADATA_ASSET_PATH, false),
-            processorParameter(PARAM_METADATA_ASSET_TYPE, false),
-            processorParameter(PARAM_METADATA_ASSET_VERSION, false)
+        return mavenProcessor(ATTACH_METADATA, "Attach Metadata", "advise/advise_attach-metadata.xml",
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(PARAM_METADATA_ASSET_ID, true),
+                              processorParameter(PARAM_METADATA_ASSET_NAME, false),
+                              processorParameter(PARAM_METADATA_ASSET_PATH, false),
+                              processorParameter(PARAM_METADATA_ASSET_TYPE, false),
+                              processorParameter(PARAM_METADATA_ASSET_VERSION, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor convertAssessments() {
-        return mavenProcessor(CONVERT_ASSESSMENTS, "Convert Assessments", "util/util_convert-assessments.xml", "This process converts assessments, based on an older version of the assessment format to the newest assessment format.",
-            processorParameter(INPUT_ASSESSMENT_DIR, true),
-            processorParameter(OUTPUT_ASSESSMENT_DIR, true),
-            processorParameter(PARAM_OUTPUT_FORMAT, true),
-            processorParameter(PARAM_OUTPUT_MODE, true)
+        return mavenProcessor(CONVERT_ASSESSMENTS, "Convert Assessments", "util/util_convert-assessments.xml",
+                              processorParameter(INPUT_ASSESSMENT_DIR, true),
+                              processorParameter(OUTPUT_ASSESSMENT_DIR, true),
+                              processorParameter(PARAM_OUTPUT_FORMAT, true),
+                              processorParameter(PARAM_OUTPUT_MODE, true)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor copyInventories() {
-        return mavenProcessor(COPY_INVENTORIES, "Copy Inventories", "util/util_copy-inventories.xml", "Copies a list of inventories to a directory. This is a utility processor used to copy different inventories from individual locations to a common directory.",
-            processorParameter(OUTPUT_INVENTORIES_DIR, true),
-            processorParameter(PARAM_INVENTORIES_LIST, true),
-            processorParameter(INPUT_BASE_DIR, true)
+        return mavenProcessor(COPY_INVENTORIES, "Copy Inventories", "util/util_copy-inventories.xml",
+                              processorParameter(OUTPUT_INVENTORIES_DIR, true),
+                              processorParameter(PARAM_INVENTORIES_LIST, true),
+                              processorParameter(INPUT_BASE_DIR, true)
         );
     }
+
     private static ProcessorDefinitions.StandaloneProcessor copyInventory() {
         return standaloneProcessor(COPY_INVENTORY, "Copy Inventory", "util/util_copy-inventory.sh",
-                processorParameter(INPUT_INVENTORY_FILE, true),
-                processorParameter(OUTPUT_INVENTORY_FILE, true));
+                                   processorParameter(INPUT_INVENTORY_FILE, true),
+                                   processorParameter(OUTPUT_INVENTORY_FILE, true));
     }
+
     private static ProcessorDefinitions.MavenProcessor copyPomDependencies() {
-        return mavenProcessor(COPY_POM_DEPENDENCIES, "Copy Pom Dependencies", "extract/extract_copy-pom-dependencies.xml", "This process copies dependencies found in a pom.xml file into a directory for further processing.",
-            processorParameter(OUTPUT_DEPENDENCIES_DIR, true),
-            processorParameter(PARAM_ARTIFACT_ID, true),
-            processorParameter(PARAM_EXCLUDE_TRANSITIVE_ENABLED, true),
-            processorParameter(PARAM_GROUP_ID, true),
-            processorParameter(PARAM_VERSION, true)
+        return mavenProcessor(COPY_POM_DEPENDENCIES, "Copy Pom Dependencies",
+                              "extract/extract_copy-pom-dependencies.xml",
+                              processorParameter(OUTPUT_DEPENDENCIES_DIR, true),
+                              processorParameter(PARAM_ARTIFACT_ID, true),
+                              processorParameter(PARAM_EXCLUDE_TRANSITIVE_ENABLED, true),
+                              processorParameter(PARAM_GROUP_ID, true),
+                              processorParameter(PARAM_VERSION, true)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor copyResources() {
-        return mavenProcessor(COPY_RESOURCES, "Copy Resources", "portfolio/portfolio_copy-resources.xml", "This process copies files needed for creating the overview report. The different sources need to be specified and are copied into the intended directory structure for the overview creation.",
-            processorParameter(INPUT_ADVISOR_INVENTORIES_DIR, true),
-            processorParameter(INPUT_DASHBOARDS_DIR, true),
-            processorParameter(INPUT_INVENTORIES_DIR, true),
-            processorParameter(INPUT_REPORTS_DIR, true),
-            processorParameter(OUTPUT_RESOURCES_DIR, true)
+        return mavenProcessor(COPY_RESOURCES, "Copy Resources", "portfolio/portfolio_copy-resources.xml",
+                              processorParameter(INPUT_ADVISOR_INVENTORIES_DIR, true),
+                              processorParameter(INPUT_DASHBOARDS_DIR, true),
+                              processorParameter(INPUT_INVENTORIES_DIR, true),
+                              processorParameter(INPUT_REPORTS_DIR, true),
+                              processorParameter(OUTPUT_RESOURCES_DIR, true)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor createAnnexArchive() {
-        return mavenProcessor(CREATE_ANNEX_ARCHIVE, "Create Annex Archive", "report/report_create-annex-archive.xml", "This process is for generating the archive .zip containing all Annex relevant content. The .zip contains the PDF document as well as the aggregated license and component directories of the inventory.",
-            processorParameter(OUTPUT_ANNEX_ARCHIVE_FILE, true),
-            processorParameter(INPUT_DOCUMENT_DE_PDF_FILE, false),
-            processorParameter(INPUT_DOCUMENT_EN_PDF_FILE, false),
-            processorParameter(INPUT_INVENTORY_COMPONENTS_DIR, false),
-            processorParameter(INPUT_INVENTORY_LICENSES_DIR, false),
-            processorParameter(INPUT_INVENTORY_SOURCES_DIR, false)
+        return mavenProcessor(CREATE_ANNEX_ARCHIVE, "Create Annex Archive", "report/report_create-annex-archive.xml",
+                              processorParameter(OUTPUT_ANNEX_ARCHIVE_FILE, true),
+                              processorParameter(INPUT_DOCUMENT_DE_PDF_FILE, false),
+                              processorParameter(INPUT_DOCUMENT_EN_PDF_FILE, false),
+                              processorParameter(INPUT_INVENTORY_COMPONENTS_DIR, false),
+                              processorParameter(INPUT_INVENTORY_LICENSES_DIR, false),
+                              processorParameter(INPUT_INVENTORY_SOURCES_DIR, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor createDashboard() {
-        return mavenProcessor(CREATE_DASHBOARD, "Create Dashboard", "advise/advise_create-dashboard.xml", "This process takes an enriched input inventory (see [advise_enrich-inventory](advise_enrich-inventory.md)) and creates a Vulnerability Assessment Dashboard from it. Additional parameters can influence the information contained in the resulting dashboard which are listed in the table below.",
-            processorParameter(ENV_VULNERABILITY_MIRROR_DIR, true),
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_DASHBOARD_FILE, true),
-            processorParameter(PARAM_ASSESSMENT_CONTEXT, true),
-            processorParameter(PARAM_ASSET_ID, true),
-            processorParameter(PARAM_SECURITY_POLICY_FILE, true),
-            processorParameter(PARAM_TENANT_ID, true),
-            processorParameter(ENV_VULNERABILITY_ASSESSMENT_API, false),
-            processorParameter(PARAM_EVENTS_SINCE_TIMESTAMP_FOR_DASHBOARD, false),
-            processorParameter(PARAM_PUT_EVENT_FOR_DASHBOARD, false),
-            processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false),
-            processorParameter(PARAM_TIMELINE_CONF_ENABLED, false),
-            processorParameter(PARAM_TIMELINE_MAX_THREADS, false),
-            processorParameter(PARAM_TIMELINE_TIME_SPENT_MAX, false),
-            processorParameter(PARAM_TIMELINE_VULN_PROVIDERS_LIST, false)
+        return mavenProcessor(CREATE_DASHBOARD, "Create Dashboard", "advise/advise_create-dashboard.xml",
+                              processorParameter(ENV_VULNERABILITY_MIRROR_DIR, true),
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_DASHBOARD_FILE, true),
+                              processorParameter(PARAM_ASSESSMENT_CONTEXT, true),
+                              processorParameter(PARAM_ASSET_ID, true),
+                              processorParameter(PARAM_SECURITY_POLICY_FILE, true),
+                              processorParameter(PARAM_TENANT_ID, true),
+                              processorParameter(ENV_VULNERABILITY_ASSESSMENT_API, false),
+                              processorParameter(PARAM_EVENTS_SINCE_TIMESTAMP_FOR_DASHBOARD, false),
+                              processorParameter(PARAM_PUT_EVENT_FOR_DASHBOARD, false),
+                              processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false),
+                              processorParameter(PARAM_TIMELINE_CONF_ENABLED, false),
+                              processorParameter(PARAM_TIMELINE_MAX_THREADS, false),
+                              processorParameter(PARAM_TIMELINE_TIME_SPENT_MAX, false),
+                              processorParameter(PARAM_TIMELINE_VULN_PROVIDERS_LIST, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor createDiff() {
-        return mavenProcessor(CREATE_DIFF, "Create Diff", "util/util_create-diff.xml", "This process creates two output files containing the differences between two provided inventory versions. Which inventory version is declared as \"base\" and which as \"compare\" is negligible since the comparison is done in both ways and saved separately. The parameters \"product.version\" and \"product.version.compare\" are only used for naming the two output files.",
-            processorParameter(INPUT_INVENTORY_COMPARE_FILE, true),
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_INVENTORY_DIR, true),
-            processorParameter(PARAM_INVENTORY_COMPARE_VERSION, true),
-            processorParameter(PARAM_INVENTORY_VERSION, true),
-            processorParameter(PARAM_SECURITY_POLICY_FILE, true),
-            processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false)
+        return mavenProcessor(CREATE_DIFF, "Create Diff", "util/util_create-diff.xml",
+                              processorParameter(INPUT_INVENTORY_COMPARE_FILE, true),
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_INVENTORY_DIR, true),
+                              processorParameter(PARAM_INVENTORY_COMPARE_VERSION, true),
+                              processorParameter(PARAM_INVENTORY_VERSION, true),
+                              processorParameter(PARAM_SECURITY_POLICY_FILE, true),
+                              processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor createDocument() {
-        return mavenProcessor(CREATE_DOCUMENT, "Create Document", "report/report_create-document.xml", "This process creates a document for a selected document type. Types to choose from are vulnerability report (VR), cert report (CR), software distribution annex (SDA), license documentation (LD) and initial license documentation (ILD). The document is generated for a specified set of inventories using an asset descriptor. The asset descriptor along with the specified inventories is consumed from user-specified sources. Updating the asset descriptor and providing the inventories is the responsibility of the user. The generated document (.pdf) along with aggregated sources (annex .zip) will be saved to the output directory. The different document types require different parameters, the following table lists them and their usage/description:",
-            processorParameter(ENV_KONTINUUM_DIR, true),
-            processorParameter(ENV_WORKBENCH_DIR, true),
-            processorParameter(INPUT_INVENTORY_DIR, true),
-            processorParameter(OUTPUT_DOCUMENT_FILE, true),
-            processorParameter(PARAM_ASSET_DESCRIPTOR_FILE, true),
-            processorParameter(PARAM_ASSET_ID, true),
-            processorParameter(PARAM_ASSET_NAME, true),
-            processorParameter(PARAM_ASSET_VERSION, true),
-            processorParameter(PARAM_ASSET_BUILD, true),
-            processorParameter(PARAM_DOCUMENT_TYPE, true),
-            processorParameter(PARAM_PRODUCT_NAME, true),
-            processorParameter(PARAM_PRODUCT_VERSION, true),
-            processorParameter(PARAM_PRODUCT_WATERMARK, true),
-            processorParameter(PARAM_PROPERTY_SELECTOR_ORGANIZATION, true),
-            processorParameter(ENV_KONTINUUM_PROCESSORS_DIR, false),
-            processorParameter(ENV_VULNERABILITY_MIRROR_DIR, false),
-            processorParameter(ENV_WORKBENCH_PROCESSORS_DIR, false),
-            processorParameter(PARAM_COMPUTED_INVENTORY_DIR, false),
-            processorParameter(PARAM_DOCUMENT_LANGUAGE, false),
-            processorParameter(PARAM_OVERVIEW_ADVISORS, false),
-            processorParameter(PARAM_PROPERTY_SELECTOR_CLASSIFICATION, false),
-            processorParameter(PARAM_PROPERTY_SELECTOR_CONTROL, false),
-            processorParameter(PARAM_REFERENCE_COMPONENTS_DIR, false),
-            processorParameter(PARAM_REFERENCE_INVENTORY_DIR, false),
-            processorParameter(PARAM_REFERENCE_LICENSES_DIR, false),
-            processorParameter(PARAM_SECURITY_POLICY_FILE, false),
-            processorParameter(PARAM_TEMPLATE_DIR, false)
+        return mavenProcessor(CREATE_DOCUMENT, "Create Document", "report/report_create-document.xml",
+                              processorParameter(ENV_KONTINUUM_DIR, true),
+                              processorParameter(ENV_WORKBENCH_DIR, true),
+                              processorParameter(INPUT_INVENTORY_DIR, true),
+                              processorParameter(OUTPUT_DOCUMENT_FILE, true),
+                              processorParameter(PARAM_ASSET_DESCRIPTOR_FILE, true),
+                              processorParameter(PARAM_ASSET_ID, true),
+                              processorParameter(PARAM_ASSET_NAME, true),
+                              processorParameter(PARAM_ASSET_VERSION, true),
+                              processorParameter(PARAM_ASSET_BUILD, true),
+                              processorParameter(PARAM_DOCUMENT_TYPE, true),
+                              processorParameter(PARAM_PRODUCT_NAME, true),
+                              processorParameter(PARAM_PRODUCT_VERSION, true),
+                              processorParameter(PARAM_PRODUCT_WATERMARK, true),
+                              processorParameter(PARAM_PROPERTY_SELECTOR_ORGANIZATION, true),
+                              processorParameter(ENV_KONTINUUM_PROCESSORS_DIR, false),
+                              processorParameter(ENV_VULNERABILITY_MIRROR_DIR, false),
+                              processorParameter(ENV_WORKBENCH_PROCESSORS_DIR, false),
+                              processorParameter(PARAM_COMPUTED_INVENTORY_DIR, false),
+                              processorParameter(PARAM_DOCUMENT_LANGUAGE, false),
+                              processorParameter(PARAM_OVERVIEW_ADVISORS, false),
+                              processorParameter(PARAM_PROPERTY_SELECTOR_CLASSIFICATION, false),
+                              processorParameter(PARAM_PROPERTY_SELECTOR_CONTROL, false),
+                              processorParameter(PARAM_REFERENCE_COMPONENTS_DIR, false),
+                              processorParameter(PARAM_REFERENCE_INVENTORY_DIR, false),
+                              processorParameter(PARAM_REFERENCE_LICENSES_DIR, false),
+                              processorParameter(PARAM_SECURITY_POLICY_FILE, false),
+                              processorParameter(PARAM_TEMPLATE_DIR, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor createOverview() {
-        return mavenProcessor(CREATE_OVERVIEW, "Create Overview", "portfolio/portfolio_create-overview.xml", "This process creates an overview with the resources copied with the portfolio_copy-resources.xml processor.",
-            processorParameter(INPUT_ADVISOR_INVENTORIES_DIR, true),
-            processorParameter(INPUT_DASHBOARDS_DIR, true),
-            processorParameter(INPUT_INVENTORY_DIR, true),
-            processorParameter(INPUT_INVENTORY_PATH, true),
-            processorParameter(INPUT_REPORTS_DIR, true),
-            processorParameter(OUTPUT_OVERVIEW_FILE, true),
-            processorParameter(PARAM_SECURITY_POLICY_FILE, true),
-            processorParameter(OUTPUT_NOTIFICATION_FILE, false),
-            processorParameter(PARAM_NOTIFICATION_CONFIG_FILE, false),
-            processorParameter(PARAM_NOTIFICATION_RULE_FILE, false),
-            processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false)
+        return mavenProcessor(CREATE_OVERVIEW, "Create Overview", "portfolio/portfolio_create-overview.xml",
+                              processorParameter(INPUT_ADVISOR_INVENTORIES_DIR, true),
+                              processorParameter(INPUT_DASHBOARDS_DIR, true),
+                              processorParameter(INPUT_INVENTORY_DIR, true),
+                              processorParameter(INPUT_INVENTORY_PATH, true),
+                              processorParameter(INPUT_REPORTS_DIR, true),
+                              processorParameter(OUTPUT_OVERVIEW_FILE, true),
+                              processorParameter(PARAM_SECURITY_POLICY_FILE, true),
+                              processorParameter(OUTPUT_NOTIFICATION_FILE, false),
+                              processorParameter(PARAM_NOTIFICATION_CONFIG_FILE, false),
+                              processorParameter(PARAM_NOTIFICATION_RULE_FILE, false),
+                              processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor cyclonedxToInventory() {
-        return mavenProcessor(CYCLONEDX_TO_INVENTORY, "Cyclonedx To Inventory", "convert/convert_cyclonedx-to-inventory.xml", "Used to convert a CycloneDX document into an inventory.",
-            processorParameter(INPUT_BOM_FILE, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(PARAM_DERIVE_ATTRIBUTES_FROM_PURL_ENABLED, false),
-            processorParameter(PARAM_INCLUDE_ASSETS_ENABLED, false),
-            processorParameter(PARAM_INCLUDE_LICENSES_ENABLED, false),
-            processorParameter(PARAM_INCLUDE_METADATA_COMPONENT_ENABLED, false)
+        return mavenProcessor(CYCLONEDX_TO_INVENTORY, "Cyclonedx To Inventory",
+                              "convert/convert_cyclonedx-to-inventory.xml",
+                              processorParameter(INPUT_BOM_FILE, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(PARAM_DERIVE_ATTRIBUTES_FROM_PURL_ENABLED, false),
+                              processorParameter(PARAM_INCLUDE_ASSETS_ENABLED, false),
+                              processorParameter(PARAM_INCLUDE_LICENSES_ENABLED, false),
+                              processorParameter(PARAM_INCLUDE_METADATA_COMPONENT_ENABLED, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor downloadAsset() {
-        return mavenProcessor(DOWNLOAD_ASSET, "Download Asset", "fetch/fetch_download-asset.xml", "This processor downloads a remote asset from a specified URL into a target directory.",
-            processorParameter(OUTPUT_ASSET_DIR, true),
-            processorParameter(PARAM_ASSET_URL, true),
-            processorParameter(PARAM_USERNAME, false),
-            processorParameter(PARAM_PASSWORD, false),
-            processorParameter(PARAM_TOKEN, false),
-            processorParameter(PARAM_HEADER_NAME, false),
-            processorParameter(PARAM_HEADER_VALUE, false)
+        return mavenProcessor(DOWNLOAD_ASSET, "Download Asset", "fetch/fetch_download-asset.xml",
+                              processorParameter(OUTPUT_ASSET_DIR, true),
+                              processorParameter(PARAM_ASSET_URL, true),
+                              processorParameter(PARAM_USERNAME, false),
+                              processorParameter(PARAM_PASSWORD, false),
+                              processorParameter(PARAM_TOKEN, false),
+                              processorParameter(PARAM_HEADER_NAME, false),
+                              processorParameter(PARAM_HEADER_VALUE, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor downloadDataSources() {
-        return mavenProcessor(DOWNLOAD_DATA_SOURCES, "Download Data Sources", "mirror/mirror_download-data-sources.xml", "This process downloads the vulnerability mirror from different data sources.",
-            processorParameter(ENV_MIRROR_DIR, true),
-            processorParameter(ENV_NVD_APIKEY, true),
-            processorParameter(PARAM_FAIL_ON_ERROR, false),
-            processorParameter(PARAM_FAIL_ON_ISSUE, false),
-            processorParameter(PARAM_PROXY_HOST, false),
-            processorParameter(PARAM_PROXY_PASS, false),
-            processorParameter(PARAM_PROXY_PORT, false),
-            processorParameter(PARAM_PROXY_SCHEME, false),
-            processorParameter(PARAM_PROXY_USER, false)
+        return mavenProcessor(DOWNLOAD_DATA_SOURCES, "Download Data Sources", "mirror/mirror_download-data-sources.xml",
+                              processorParameter(ENV_MIRROR_DIR, true),
+                              processorParameter(ENV_NVD_APIKEY, true),
+                              processorParameter(PARAM_FAIL_ON_ERROR, false),
+                              processorParameter(PARAM_FAIL_ON_ISSUE, false),
+                              processorParameter(PARAM_PROXY_HOST, false),
+                              processorParameter(PARAM_PROXY_PASS, false),
+                              processorParameter(PARAM_PROXY_PORT, false),
+                              processorParameter(PARAM_PROXY_SCHEME, false),
+                              processorParameter(PARAM_PROXY_USER, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor downloadIndex() {
-        return mavenProcessor(DOWNLOAD_INDEX, "Download Index", "mirror/mirror_download-index.xml", "This process downloads the vulnerability mirror index to a specified target directory to be used for later enrichment of inventories.",
-            processorParameter(ENV_VULNERABILITY_MIRROR_DIR, true),
-            processorParameter(PARAM_MIRROR_ARCHIVE_URL, true),
-            processorParameter(PARAM_MIRROR_ARCHIVE_PASSWORD, false),
-            processorParameter(PARAM_MIRROR_ARCHIVE_USERNAME, false)
+        return mavenProcessor(DOWNLOAD_INDEX, "Download Index", "mirror/mirror_download-index.xml",
+                              processorParameter(ENV_VULNERABILITY_MIRROR_DIR, true),
+                              processorParameter(PARAM_MIRROR_ARCHIVE_URL, true),
+                              processorParameter(PARAM_MIRROR_ARCHIVE_PASSWORD, false),
+                              processorParameter(PARAM_MIRROR_ARCHIVE_USERNAME, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor downloadMavenArtifact() {
-        return mavenProcessor(DOWNLOAD_MAVEN_ARTIFACT, "Download Maven Artifact", "fetch/fetch_download-maven-artifact.xml", "This processor downloads a remote Maven artifact specified by its group ID, artifact ID, and version from Maven Central or a custom repository URL into a target directory.",
-            processorParameter(OUTPUT_ASSET_DIR, true),
-            processorParameter(PARAM_ARTIFACT_ID, true),
-            processorParameter(PARAM_GROUP_ID, true),
-            processorParameter(PARAM_VERSION, true),
-            processorParameter(PARAM_CLASSIFIER, false),
-            processorParameter(PARAM_REPO_URL, false),
-            processorParameter(PARAM_TYPE, false)
+        return mavenProcessor(DOWNLOAD_MAVEN_ARTIFACT, "Download Maven Artifact",
+                              "fetch/fetch_download-maven-artifact.xml",
+                              processorParameter(OUTPUT_ASSET_DIR, true),
+                              processorParameter(PARAM_ARTIFACT_ID, true),
+                              processorParameter(PARAM_GROUP_ID, true),
+                              processorParameter(PARAM_VERSION, true),
+                              processorParameter(PARAM_CLASSIFIER, false),
+                              processorParameter(PARAM_REPO_URL, false),
+                              processorParameter(PARAM_TYPE, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor enrichAdvisors() {
-        return mavenProcessor(ENRICH_ADVISORS, "Enrich Advisors", "util/util_enrich-advisors.xml", "This process enriches an inventory based on the specified advisors. It is only used for cert-report document generation.",
-            processorParameter(ENV_VULNERABILITY_MIRROR_DIR, true),
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(PARAM_SECURITY_POLICY_FILE, true),
-            processorParameter(PARAM_REPORT_PERIOD_SINCE, false),
-            processorParameter(PARAM_REPORT_PERIOD_UNTIL, false),
-            processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false)
+        return mavenProcessor(ENRICH_ADVISORS, "Enrich Advisors", "util/util_enrich-advisors.xml",
+                              processorParameter(ENV_VULNERABILITY_MIRROR_DIR, true),
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(PARAM_SECURITY_POLICY_FILE, true),
+                              processorParameter(PARAM_REPORT_PERIOD_SINCE, false),
+                              processorParameter(PARAM_REPORT_PERIOD_UNTIL, false),
+                              processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor enrichInventory() {
-        return mavenProcessor(ENRICH_INVENTORY, "Enrich Inventory", "advise/advise_enrich-inventory.xml", "This process takes an input inventory and enriches it with vulnerability information. Additional configurations can influence the information contained in the resulting inventory such as which vulnerability databases should be used, custom vulnerabilities and many more, listed in the table below.",
-            processorParameter(ENV_VULNERABILITY_MIRROR_DIR, true),
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_TMP_DIR, true),
-            processorParameter(PARAM_ASSESSMENT_DIRS, true),
-            processorParameter(PARAM_CONTEXT_DIRS, true),
-            processorParameter(PARAM_CORRELATION_DIR, true),
-            processorParameter(PARAM_SECURITY_POLICY_FILE, true),
-            processorParameter(PARAM_ACTIVATE_CAPEC, false),
-            processorParameter(PARAM_ACTIVATE_CERTEU, false),
-            processorParameter(PARAM_ACTIVATE_CERTFR, false),
-            processorParameter(PARAM_ACTIVATE_CERTSEI, false),
-            processorParameter(PARAM_ACTIVATE_CORRELATION, false),
-            processorParameter(PARAM_ACTIVATE_CSAF, false),
-            processorParameter(PARAM_ACTIVATE_CWE, false),
-            processorParameter(PARAM_ACTIVATE_EOL, false),
-            processorParameter(PARAM_ACTIVATE_EPSS, false),
-            processorParameter(PARAM_ACTIVATE_KEV, false),
-            processorParameter(PARAM_ACTIVATE_KEYWORDS, false),
-            processorParameter(PARAM_ACTIVATE_MITRE_ATLAS, false),
-            processorParameter(PARAM_ACTIVATE_MITRE_ATTACK, false),
-            processorParameter(PARAM_ACTIVATE_MSRC, false),
-            processorParameter(PARAM_ACTIVATE_NVD, false),
-            processorParameter(PARAM_ACTIVATE_OSV, false),
-            processorParameter(PARAM_ACTIVATE_OSV_PROVIDERS, false),
-            processorParameter(PARAM_ACTIVATE_PURL_DERIVATION, false),
-            processorParameter(PARAM_ACTIVATE_STATUS, false),
-            processorParameter(PARAM_ACTIVATE_THREAT, false),
-            processorParameter(PARAM_ACTIVATE_VALIDATION, false),
-            processorParameter(PARAM_ACTIVATE_VULNERABILITIES_CUSTOM, false),
-            processorParameter(PARAM_ASSESSMENT_LABELS, false),
-            processorParameter(PARAM_DASHBOARD_FOOTER, false),
-            processorParameter(PARAM_DASHBOARD_SUBTITLE, false),
-            processorParameter(PARAM_DASHBOARD_TITLE, false),
-            processorParameter(PARAM_EXCLUDE_NVD_EQUIVALENT_MSRC, false),
-            processorParameter(PARAM_EXCLUDE_NVD_EQUIVALENT_OSV, false),
-            processorParameter(PARAM_REMOVE_GHSA_UNREVIEWED, false),
-            processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false),
-            processorParameter(PARAM_THREAT_CATALOG_FILE, false),
-            processorParameter(PARAM_VULNERABILITIES_CUSTOM_DIR, false)
+        return mavenProcessor(ENRICH_INVENTORY, "Enrich Inventory", "advise/advise_enrich-inventory.xml",
+                              processorParameter(ENV_VULNERABILITY_MIRROR_DIR, true),
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_TMP_DIR, true),
+                              processorParameter(PARAM_ASSESSMENT_DIRS, true),
+                              processorParameter(PARAM_CONTEXT_DIRS, true),
+                              processorParameter(PARAM_CORRELATION_DIR, true),
+                              processorParameter(PARAM_SECURITY_POLICY_FILE, true),
+                              processorParameter(PARAM_ACTIVATE_CAPEC, false),
+                              processorParameter(PARAM_ACTIVATE_CERTEU, false),
+                              processorParameter(PARAM_ACTIVATE_CERTFR, false),
+                              processorParameter(PARAM_ACTIVATE_CERTSEI, false),
+                              processorParameter(PARAM_ACTIVATE_CORRELATION, false),
+                              processorParameter(PARAM_ACTIVATE_CSAF, false),
+                              processorParameter(PARAM_ACTIVATE_CWE, false),
+                              processorParameter(PARAM_ACTIVATE_EOL, false),
+                              processorParameter(PARAM_ACTIVATE_EPSS, false),
+                              processorParameter(PARAM_ACTIVATE_KEV, false),
+                              processorParameter(PARAM_ACTIVATE_KEYWORDS, false),
+                              processorParameter(PARAM_ACTIVATE_MITRE_ATLAS, false),
+                              processorParameter(PARAM_ACTIVATE_MITRE_ATTACK, false),
+                              processorParameter(PARAM_ACTIVATE_MSRC, false),
+                              processorParameter(PARAM_ACTIVATE_NVD, false),
+                              processorParameter(PARAM_ACTIVATE_OSV, false),
+                              processorParameter(PARAM_ACTIVATE_OSV_PROVIDERS, false),
+                              processorParameter(PARAM_ACTIVATE_PURL_DERIVATION, false),
+                              processorParameter(PARAM_ACTIVATE_STATUS, false),
+                              processorParameter(PARAM_ACTIVATE_THREAT, false),
+                              processorParameter(PARAM_ACTIVATE_VALIDATION, false),
+                              processorParameter(PARAM_ACTIVATE_VULNERABILITIES_CUSTOM, false),
+                              processorParameter(PARAM_ASSESSMENT_LABELS, false),
+                              processorParameter(PARAM_DASHBOARD_FOOTER, false),
+                              processorParameter(PARAM_DASHBOARD_SUBTITLE, false),
+                              processorParameter(PARAM_DASHBOARD_TITLE, false),
+                              processorParameter(PARAM_EXCLUDE_NVD_EQUIVALENT_MSRC, false),
+                              processorParameter(PARAM_EXCLUDE_NVD_EQUIVALENT_OSV, false),
+                              processorParameter(PARAM_REMOVE_GHSA_UNREVIEWED, false),
+                              processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false),
+                              processorParameter(PARAM_THREAT_CATALOG_FILE, false),
+                              processorParameter(PARAM_VULNERABILITIES_CUSTOM_DIR, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor enrichWithReference() {
-        return mavenProcessor(ENRICH_WITH_REFERENCE, "Enrich With Reference", "util/util_enrich-with-reference.xml", "This process enriches a specified input inventory with a reference inventory to curate it with further information for later enrichment.",
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(PARAM_REFERENCE_INVENTORY_DIR, true)
+        return mavenProcessor(ENRICH_WITH_REFERENCE, "Enrich With Reference", "util/util_enrich-with-reference.xml",
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(PARAM_REFERENCE_INVENTORY_DIR, true)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor executeKotlinScript() {
-        return mavenProcessor(EXECUTE_KOTLIN_SCRIPT, "Execute Kotlin Script", "util/util_execute-kotlin-script.xml", "This process executes a specified kotlin script file. Instead of calling the `kotlin` CLI directly, the script is executed via the `ae-kotlin-scripting-maven-plugin` (akin to `util_transform-inventories`). The script is evaluated as an `InventoryFilterScript` and receives its arguments as a named parameter map, accessed in the script via the implicit `params` receiver.",
-            processorParameter(INPUT_KOTLIN_SCRIPT_FILE, true),
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(PARAM_ASSET_ID, false)
+        return mavenProcessor(EXECUTE_KOTLIN_SCRIPT, "Execute Kotlin Script", "util/util_execute-kotlin-script.xml",
+                              processorParameter(INPUT_KOTLIN_SCRIPT_FILE, true),
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(PARAM_ASSET_ID, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor generateReportSvg() {
-        return mavenProcessor(GENERATE_REPORT_SVG, "Generate Report Svg", "util/util_generate-report-svg.xml", "This process generates the SVG resources for different types of vulnerability reports for a specified inventory.",
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_SVG_DIR, true),
-            processorParameter(PARAM_SECURITY_POLICY_FILE, true),
-            processorParameter(PARAM_CVSS_ACTIVE, false),
-            processorParameter(PARAM_CVSS_VULNERABILITY_COUNT_LIMIT, false),
-            processorParameter(PARAM_OVERVIEW_ACTIVE, false),
-            processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false)
+        return mavenProcessor(GENERATE_REPORT_SVG, "Generate Report Svg", "util/util_generate-report-svg.xml",
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_SVG_DIR, true),
+                              processorParameter(PARAM_SECURITY_POLICY_FILE, true),
+                              processorParameter(PARAM_CVSS_ACTIVE, false),
+                              processorParameter(PARAM_CVSS_VULNERABILITY_COUNT_LIMIT, false),
+                              processorParameter(PARAM_OVERVIEW_ACTIVE, false),
+                              processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor inventoryToCyclonedx() {
-        return mavenProcessor(INVENTORY_TO_CYCLONEDX, "Inventory To Cyclonedx", "convert/convert_inventory-to-cyclonedx.xml", "Used to convert an inventory into a CycloneDX BOM either xml or json format.",
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_BOM_FILE, true),
-            processorParameter(PARAM_DOCUMENT_NAME, true),
-            processorParameter(PARAM_DOCUMENT_ORGANIZATION, true),
-            processorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, true),
-            processorParameter(PARAM_CUSTOM_LICENSE_MAPPINGS, false),
-            processorParameter(PARAM_DERIVE_ATTRIBUTES_FROM_PURL_ENABLED, false),
-            processorParameter(PARAM_DOCUMENT_COMMENT, false),
-            processorParameter(PARAM_DOCUMENT_DESCRIPTION, false),
-            processorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, false),
-            processorParameter(PARAM_DOCUMENT_PERSON, false),
-            processorParameter(PARAM_DOCUMENT_VERSION, false),
-            processorParameter(PARAM_INCLUDE_ASSETS_ENABLED, false),
-            processorParameter(PARAM_INCLUDE_LICENSE_TEXTS_ENABLED, false),
-            processorParameter(PARAM_LICENSE_EXPRESSIONS_ENABLED, false),
-            processorParameter(PARAM_MAP_RELATIONSHIPS_ENABLED, false),
-            processorParameter(PARAM_TECHNICAL_PROPERTIES_ENABLED, false)
+        return mavenProcessor(INVENTORY_TO_CYCLONEDX, "Inventory To Cyclonedx",
+                              "convert/convert_inventory-to-cyclonedx.xml",
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_BOM_FILE, true),
+                              processorParameter(PARAM_DOCUMENT_NAME, true),
+                              processorParameter(PARAM_DOCUMENT_ORGANIZATION, true),
+                              processorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, true),
+                              processorParameter(PARAM_CUSTOM_LICENSE_MAPPINGS, false),
+                              processorParameter(PARAM_DERIVE_ATTRIBUTES_FROM_PURL_ENABLED, false),
+                              processorParameter(PARAM_DOCUMENT_COMMENT, false),
+                              processorParameter(PARAM_DOCUMENT_DESCRIPTION, false),
+                              processorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, false),
+                              processorParameter(PARAM_DOCUMENT_PERSON, false),
+                              processorParameter(PARAM_DOCUMENT_VERSION, false),
+                              processorParameter(PARAM_INCLUDE_ASSETS_ENABLED, false),
+                              processorParameter(PARAM_INCLUDE_LICENSE_TEXTS_ENABLED, false),
+                              processorParameter(PARAM_LICENSE_EXPRESSIONS_ENABLED, false),
+                              processorParameter(PARAM_MAP_RELATIONSHIPS_ENABLED, false),
+                              processorParameter(PARAM_TECHNICAL_PROPERTIES_ENABLED, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor inventoryToSpdx() {
-        return mavenProcessor(INVENTORY_TO_SPDX, "Inventory To Spdx", "convert/convert_inventory-to-spdx.xml", "This process converts an inventory, independent of which stage it was produced in, into an SPDX document. All available parameters are listed in the table below. Parameters marked as \"not required\" already have default values associated.",
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_BOM_FILE, true),
-            processorParameter(PARAM_DOCUMENT_NAME, true),
-            processorParameter(PARAM_DOCUMENT_ORGANIZATION, true),
-            processorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, true),
-            processorParameter(PARAM_DERIVE_ATTRIBUTES_FROM_PURL_ENABLED, false),
-            processorParameter(PARAM_DOCUMENT_COMMENT, false),
-            processorParameter(PARAM_DOCUMENT_DESCRIPTION, false),
-            processorParameter(PARAM_DOCUMENT_ID_PREFIX, false),
-            processorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, false),
-            processorParameter(PARAM_DOCUMENT_PERSON, false),
-            processorParameter(PARAM_DOCUMENT_VERSION, false),
-            processorParameter(PARAM_INCLUDE_ASSETS_ENABLED, false),
-            processorParameter(PARAM_INCLUDE_LICENSE_TEXTS_ENABLED, false),
-            processorParameter(PARAM_LICENSE_EXPRESSIONS_ENABLED, false),
-            processorParameter(PARAM_MAP_RELATIONSHIPS_ENABLED, false),
-            processorParameter(PARAM_TECHNICAL_PROPERTIES_ENABLED, false)
+        return mavenProcessor(INVENTORY_TO_SPDX, "Inventory To Spdx", "convert/convert_inventory-to-spdx.xml",
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_BOM_FILE, true),
+                              processorParameter(PARAM_DOCUMENT_NAME, true),
+                              processorParameter(PARAM_DOCUMENT_ORGANIZATION, true),
+                              processorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, true),
+                              processorParameter(PARAM_DERIVE_ATTRIBUTES_FROM_PURL_ENABLED, false),
+                              processorParameter(PARAM_DOCUMENT_COMMENT, false),
+                              processorParameter(PARAM_DOCUMENT_DESCRIPTION, false),
+                              processorParameter(PARAM_DOCUMENT_ID_PREFIX, false),
+                              processorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, false),
+                              processorParameter(PARAM_DOCUMENT_PERSON, false),
+                              processorParameter(PARAM_DOCUMENT_VERSION, false),
+                              processorParameter(PARAM_INCLUDE_ASSETS_ENABLED, false),
+                              processorParameter(PARAM_INCLUDE_LICENSE_TEXTS_ENABLED, false),
+                              processorParameter(PARAM_LICENSE_EXPRESSIONS_ENABLED, false),
+                              processorParameter(PARAM_MAP_RELATIONSHIPS_ENABLED, false),
+                              processorParameter(PARAM_TECHNICAL_PROPERTIES_ENABLED, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor mergeAdvisors() {
-        return mavenProcessor(MERGE_ADVISORS, "Merge Advisors", "util/util_merge-advisors.xml", "This process merges inventories based on an individual security advisor and filters them using the security policy.",
-            processorParameter(INPUT_INVENTORY_DIR, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(PARAM_SECURITY_POLICY_FILE, true),
-            processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false)
+        return mavenProcessor(MERGE_ADVISORS, "Merge Advisors", "util/util_merge-advisors.xml",
+                              processorParameter(INPUT_INVENTORY_DIR, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(PARAM_SECURITY_POLICY_FILE, true),
+                              processorParameter(PARAM_SECURITY_POLICY_ACTIVE_IDS, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor mergeAssessments() {
-        return mavenProcessor(MERGE_ASSESSMENTS, "Merge Assessments", "util/util_merge-assessments.xml", "This process merges inventories and their assessments.",
-            processorParameter(INPUT_INVENTORY_DIR, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true)
+        return mavenProcessor(MERGE_ASSESSMENTS, "Merge Assessments", "util/util_merge-assessments.xml",
+                              processorParameter(INPUT_INVENTORY_DIR, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor mergeInventories() {
-        return mavenProcessor(MERGE_INVENTORIES, "Merge Inventories", "util/util_merge-inventories.xml", "This process merges multiple input inventories into one output inventory. The input inventories are specified using a directory. Additionally, a regex can be provided to further specify the inventories used for merging within the given directory. This process can be triggered at any point in the pipeline and is not bound to a phase.",
-            processorParameter(INPUT_INVENTORY_DIR, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(PARAM_INVENTORY_INCLUDES, false)
+        return mavenProcessor(MERGE_INVENTORIES, "Merge Inventories", "util/util_merge-inventories.xml",
+                              processorParameter(INPUT_INVENTORY_DIR, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(PARAM_INVENTORY_INCLUDES, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor portfolioDownload() {
-        return mavenProcessor(PORTFOLIO_DOWNLOAD, "Portfolio Download", "aggregate/aggregate_portfolio-download.xml", "This process enables the download of specific assets from a running portfolio manager service.",
-            processorParameter(OUTPUT_INVENTORY_DIR, true),
-            processorParameter(PARAM_ASSET_GROUP_ID, true),
-            processorParameter(PARAM_ASSET_ID, true),
-            processorParameter(PARAM_INVENTORY_MODIFIER, true),
-            processorParameter(PARAM_KEYSTORE_CONFIG_FILE, true),
-            processorParameter(PARAM_KEYSTORE_PASSWORD, true),
-            processorParameter(PARAM_PORTFOLIO_MANAGER_TOKEN, true),
-            processorParameter(PARAM_PORTFOLIO_MANAGER_URL, true),
-            processorParameter(PARAM_PROJECT_NAME, true),
-            processorParameter(PARAM_TRUSTSTORE_CONFIG_FILE, true),
-            processorParameter(PARAM_TRUSTSTORE_PASSWORD, true)
+        return mavenProcessor(PORTFOLIO_DOWNLOAD, "Portfolio Download", "aggregate/aggregate_portfolio-download.xml",
+                              processorParameter(OUTPUT_INVENTORY_DIR, true),
+                              processorParameter(PARAM_ASSET_GROUP_ID, true),
+                              processorParameter(PARAM_ASSET_ID, true),
+                              processorParameter(PARAM_INVENTORY_MODIFIER, true),
+                              processorParameter(PARAM_KEYSTORE_CONFIG_FILE, true),
+                              processorParameter(PARAM_KEYSTORE_PASSWORD, true),
+                              processorParameter(PARAM_PORTFOLIO_MANAGER_TOKEN, true),
+                              processorParameter(PARAM_PORTFOLIO_MANAGER_URL, true),
+                              processorParameter(PARAM_PROJECT_NAME, true),
+                              processorParameter(PARAM_TRUSTSTORE_CONFIG_FILE, true),
+                              processorParameter(PARAM_TRUSTSTORE_PASSWORD, true)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor portfolioDownloadJars() {
-        return mavenProcessor(PORTFOLIO_DOWNLOAD_JARS, "Portfolio Download Jars", "util/util_portfolio-download-jars.xml", "This process downloads the service and cli jars needed to run the portfolio manager. This is only necessary if the jars do not exist locally already.",
-            processorParameter(INPUT_CLI_DIR, true)
+        return mavenProcessor(PORTFOLIO_DOWNLOAD_JARS, "Portfolio Download Jars",
+                              "util/util_portfolio-download-jars.xml",
+                              processorParameter(INPUT_CLI_DIR, true)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor portfolioUpload() {
-        return mavenProcessor(PORTFOLIO_UPLOAD, "Portfolio Upload", "prepare/prepare_portfolio-upload.xml", "This process enables the upload of specific assets to a running portfolio manager service.",
-            processorParameter(INPUT_FILE, true),
-            processorParameter(PARAM_ASSET_GROUP_ID, true),
-            processorParameter(PARAM_ASSET_NAME, true),
-            processorParameter(PARAM_ASSET_VERSION, true),
-            processorParameter(PARAM_KEYSTORE_CONFIG_FILE, true),
-            processorParameter(PARAM_KEYSTORE_PASSWORD, true),
-            processorParameter(PARAM_PORTFOLIO_MANAGER_TOKEN, true),
-            processorParameter(PARAM_PORTFOLIO_MANAGER_URL, true),
-            processorParameter(PARAM_PROJECT_NAME, true),
-            processorParameter(PARAM_TRUSTSTORE_CONFIG_FILE, true),
-            processorParameter(PARAM_TRUSTSTORE_PASSWORD, true)
+        return mavenProcessor(PORTFOLIO_UPLOAD, "Portfolio Upload", "prepare/prepare_portfolio-upload.xml",
+                              processorParameter(INPUT_FILE, true),
+                              processorParameter(PARAM_ASSET_GROUP_ID, true),
+                              processorParameter(PARAM_ASSET_NAME, true),
+                              processorParameter(PARAM_ASSET_VERSION, true),
+                              processorParameter(PARAM_KEYSTORE_CONFIG_FILE, true),
+                              processorParameter(PARAM_KEYSTORE_PASSWORD, true),
+                              processorParameter(PARAM_PORTFOLIO_MANAGER_TOKEN, true),
+                              processorParameter(PARAM_PORTFOLIO_MANAGER_URL, true),
+                              processorParameter(PARAM_PROJECT_NAME, true),
+                              processorParameter(PARAM_TRUSTSTORE_CONFIG_FILE, true),
+                              processorParameter(PARAM_TRUSTSTORE_PASSWORD, true)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor resolveInventory() {
-        return mavenProcessor(RESOLVE_INVENTORY, "Resolve Inventory", "resolve/resolve_resolve-inventory.xml", "Used to resolve all artifacts contained in an inventory and gather additional information on those artifacts.",
-            processorParameter(ENV_MAVEN_INDEX_DIR, true),
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(PARAM_ARTIFACT_RESOLVER_CONFIG_FILE, true),
-            processorParameter(PARAM_ARTIFACT_RESOLVER_PROXY_FILE, true)
+        return mavenProcessor(RESOLVE_INVENTORY, "Resolve Inventory", "resolve/resolve_resolve-inventory.xml",
+                              processorParameter(ENV_MAVEN_INDEX_DIR, true),
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(PARAM_ARTIFACT_RESOLVER_CONFIG_FILE, true),
+                              processorParameter(PARAM_ARTIFACT_RESOLVER_PROXY_FILE, true)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor saveInspectImage() {
-        return mavenProcessor(SAVE_INSPECT_IMAGE, "Save Inspect Image", "fetch/fetch_save-image.xml", "This process saves and inspects a docker container image via its id and version. The extracted container information is then saved into a specified directory for further processing.",
-            processorParameter(OUTPUT_DIR, true),
-            processorParameter(PARAM_IMAGE_ID, true),
-            processorParameter(PARAM_IMAGE_VERSION, true),
-            processorParameter(PARAM_REPO_URL, false)
+        return mavenProcessor(SAVE_INSPECT_IMAGE, "Save Inspect Image", "fetch/fetch_save-image.xml",
+                              processorParameter(OUTPUT_DIR, true),
+                              processorParameter(PARAM_IMAGE_ID, true),
+                              processorParameter(PARAM_IMAGE_VERSION, true),
+                              processorParameter(PARAM_REPO_URL, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor scanDirectory() {
-        return mavenProcessor(SCAN_DIRECTORY, "Scan Directory", "prepare/prepare_scan-directory.xml", "This process scans a directory containing extracted / prepared artifacts into an inventory. The artifacts contained in the input directory are usually a result of the \"prepare\" process which extracts information from container images, dependencies listed in poms and so on.",
-            processorParameter(INPUT_EXTRACT_DIR, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(OUTPUT_SCAN_DIR, true),
-            processorParameter(PARAM_REFERENCE_INVENTORY_DIR, true)
+        return mavenProcessor(SCAN_DIRECTORY, "Scan Directory", "prepare/prepare_scan-directory.xml",
+                              processorParameter(INPUT_EXTRACT_DIR, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(OUTPUT_SCAN_DIR, true),
+                              processorParameter(PARAM_REFERENCE_INVENTORY_DIR, true)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor scanInventory() {
-        return mavenProcessor(SCAN_INVENTORY, "Scan Inventory", "scan/scan_scan-inventory.xml", "Scans a resolved inventory for licenses and copyrights and writes the resulting information to an inventory.",
-            processorParameter(ENV_KOSMOS_PASSWORD, true),
-            processorParameter(ENV_KOSMOS_USERKEYS_FILE, true),
-            processorParameter(INPUT_INVENTORY_FILE, true),
-            processorParameter(INPUT_OUTPUT_ANALYSIS_BASE_DIR, true),
-            processorParameter(OUTPUT_INVENTORY_FILE, true),
-            processorParameter(PARAM_PROPERTIES_FILE, true)
+        return mavenProcessor(SCAN_INVENTORY, "Scan Inventory", "scan/scan_scan-inventory.xml",
+                              processorParameter(ENV_KOSMOS_PASSWORD, true),
+                              processorParameter(ENV_KOSMOS_USERKEYS_FILE, true),
+                              processorParameter(INPUT_INVENTORY_FILE, true),
+                              processorParameter(INPUT_OUTPUT_ANALYSIS_BASE_DIR, true),
+                              processorParameter(OUTPUT_INVENTORY_FILE, true),
+                              processorParameter(PARAM_PROPERTIES_FILE, true)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor transformInventories() {
-        return mavenProcessor(TRANSFORM_INVENTORIES, "Transform Inventories", "util/util_transform-inventories.xml", "This process performs a transformation on a specified inventory using a Kotlin Script. These transformations can range from inventory merging to field replacements.",
-            processorParameter(INPUT_INVENTORY_DIR, true),
-            processorParameter(OUTPUT_INVENTORY_DIR, true),
-            processorParameter(PARAM_KOTLIN_SCRIPT_FILE, true),
-            processorParameter(PARAM_ASSET_NAME, false),
-            processorParameter(PARAM_FILTER_PRESET, false)
+        return mavenProcessor(TRANSFORM_INVENTORIES, "Transform Inventories", "util/util_transform-inventories.xml",
+                              processorParameter(INPUT_INVENTORY_DIR, true),
+                              processorParameter(OUTPUT_INVENTORY_DIR, true),
+                              processorParameter(PARAM_KOTLIN_SCRIPT_FILE, true),
+                              processorParameter(PARAM_ASSET_NAME, false),
+                              processorParameter(PARAM_FILTER_PRESET, false)
         );
     }
+
     private static ProcessorDefinitions.MavenProcessor updateIndex() {
-        return mavenProcessor(UPDATE_INDEX, "Update Index", "mirror/mirror_update-index.xml", "This processor creates or updates the indices of the mirror. It uses the previously downloaded data files of the external data sources. As a result the specified mirror directory is extended with the index files.",
-            processorParameter(ENV_MIRROR_DIR, true),
-            processorParameter(PARAM_FAIL_ON_ERROR, false),
-            processorParameter(PARAM_FAIL_ON_ISSUE, false),
-            processorParameter(PARAM_PROXY_HOST, false),
-            processorParameter(PARAM_PROXY_PASS, false),
-            processorParameter(PARAM_PROXY_PORT, false),
-            processorParameter(PARAM_PROXY_SCHEME, false),
-            processorParameter(PARAM_PROXY_USER, false)
+        return mavenProcessor(UPDATE_INDEX, "Update Index", "mirror/mirror_update-index.xml",
+                              processorParameter(ENV_MIRROR_DIR, true),
+                              processorParameter(PARAM_FAIL_ON_ERROR, false),
+                              processorParameter(PARAM_FAIL_ON_ISSUE, false),
+                              processorParameter(PARAM_PROXY_HOST, false),
+                              processorParameter(PARAM_PROXY_PASS, false),
+                              processorParameter(PARAM_PROXY_PORT, false),
+                              processorParameter(PARAM_PROXY_SCHEME, false),
+                              processorParameter(PARAM_PROXY_USER, false)
         );
     }
-    private static ProcessorDefinitions.MavenProcessor updateIndex_External() {
-        return mavenProcessor(UPDATE_INDEX_EXTERNAL, "Update Index_external", "mirror/mirror_update-index_external.xml", "This processor creates or updates the indices of the mirror. It uses the previously downloaded data files of the external data sources. As a result the specified mirror directory is extended with the index files.",
-            processorParameter(ENV_MIRROR_DIR, true),
-            processorParameter(PARAM_FAIL_ON_ERROR, false),
-            processorParameter(PARAM_FAIL_ON_ISSUE, false),
-            processorParameter(PARAM_PROXY_HOST, false),
-            processorParameter(PARAM_PROXY_PASS, false),
-            processorParameter(PARAM_PROXY_PORT, false),
-            processorParameter(PARAM_PROXY_SCHEME, false),
-            processorParameter(PARAM_PROXY_USER, false)
+
+    private static ProcessorDefinitions.MavenProcessor updateIndexExternal() {
+        return mavenProcessor(UPDATE_INDEX_EXTERNAL, "Update Index_external", "mirror/mirror_update-index_external.xml",
+                              processorParameter(ENV_MIRROR_DIR, true),
+                              processorParameter(PARAM_FAIL_ON_ERROR, false),
+                              processorParameter(PARAM_FAIL_ON_ISSUE, false),
+                              processorParameter(PARAM_PROXY_HOST, false),
+                              processorParameter(PARAM_PROXY_PASS, false),
+                              processorParameter(PARAM_PROXY_PORT, false),
+                              processorParameter(PARAM_PROXY_SCHEME, false),
+                              processorParameter(PARAM_PROXY_USER, false)
         );
     }
 
     private static ProcessorDefinitions.MavenProcessor validateReferenceInventory() {
-        return mavenProcessor(VALIDATE_REFERENCE_INVENTORY, "Validate Reference Inventory", "util/util_validate-reference-inventory.xml", "This process takes an input inventory directory and validates the contained inventories.",
-            processorParameter(INPUT_INVENTORY_DIR, true)
+        return mavenProcessor(VALIDATE_REFERENCE_INVENTORY, "Validate Reference Inventory",
+                              "util/util_validate-reference-inventory.xml",
+                              processorParameter(INPUT_INVENTORY_DIR, true)
         );
     }
 
     private static ProcessorDefinitions.MavenProcessor mavenProcessor(
-            ProcessorIds id, String name, String pomLocation, String description,
+            ProcessorIds id, String name, String pomLocation,
             ProcessorDefinitions.ProcessorParameter... parameters) {
-        ProcessorDefinitions.MavenProcessor processor = new ProcessorDefinitions.MavenProcessor(
-                description, pomLocation);
+        ProcessorDefinitions.MavenProcessor processor = new ProcessorDefinitions.MavenProcessor(pomLocation);
         processor.setParameters(Arrays.asList(parameters));
         processor.setId(id.getValue());
         processor.setName(name);
@@ -667,9 +718,11 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
     }
 
     private static ProcessorDefinitions.StandaloneProcessor standaloneProcessor(
-            ProcessorIds id, String name, String scriptLocation, ProcessorDefinitions.ProcessorParameter... parameters) {
+            ProcessorIds id, String name, String scriptLocation,
+            ProcessorDefinitions.ProcessorParameter... parameters) {
 
-        ProcessorDefinitions.StandaloneProcessor standaloneProcessor = new ProcessorDefinitions.StandaloneProcessor(scriptLocation);
+        ProcessorDefinitions.StandaloneProcessor standaloneProcessor = new ProcessorDefinitions.StandaloneProcessor(
+                scriptLocation);
         standaloneProcessor.setParameters(Arrays.asList(parameters));
         standaloneProcessor.setId(id.getValue());
         standaloneProcessor.setName(name);

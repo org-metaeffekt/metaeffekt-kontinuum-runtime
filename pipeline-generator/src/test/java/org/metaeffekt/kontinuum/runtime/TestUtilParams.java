@@ -1,6 +1,6 @@
 package org.metaeffekt.kontinuum.runtime;
 
-public enum TestUtilParams{
+public enum TestUtilParams {
 
     PROJECT_ID("project-id"),
     PROJECT_NAME("project-name"),

@@ -39,7 +39,9 @@ public abstract class AbstractExecutionContext implements ExecutionContext {
 
     @Override
     public void addSequential(Processor... processors) {
-        if (processors == null) return;
+        if (processors == null) {
+            return;
+        }
         Processor prev = null;
         for (Processor p : processors) {
             if (p != null) {

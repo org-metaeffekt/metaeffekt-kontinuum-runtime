@@ -12,8 +12,10 @@ public class ProcessorDefinitionsTest {
     @Test
     public void testMavenProcessorCopy() {
         List<ProcessorDefinitions.ProcessorParameter> params = new ArrayList<>();
-        params.add(new ProcessorDefinitions.ProcessorParameter(ProcessorParameterKey.PARAM_FAIL_ON_ERROR, true, "true"));
-        params.add(new ProcessorDefinitions.ProcessorParameter(ProcessorParameterKey.PARAM_FAIL_ON_ISSUE, false, "false"));
+        params.add(
+                new ProcessorDefinitions.ProcessorParameter(ProcessorParameterKey.PARAM_FAIL_ON_ERROR, true, "true"));
+        params.add(
+                new ProcessorDefinitions.ProcessorParameter(ProcessorParameterKey.PARAM_FAIL_ON_ISSUE, false, "false"));
 
         ProcessorDefinitions.MavenProcessor original = ProcessorDefinitions.MavenProcessor.builder()
                 .id("test-proc")
@@ -22,9 +24,9 @@ public class ProcessorDefinitionsTest {
                 .preScript("echo 'pre'")
                 .postScript("echo 'post'")
                 .parameters(params)
-                .lifecyclePhase("process-resources")
+                .lifecyclePhase(
+                        "process-resources")
                 .pomLocation("pom.xml")
-                .description("Test Description")
                 .profile("dev")
                 .build();
 
@@ -39,7 +41,6 @@ public class ProcessorDefinitionsTest {
         assertEquals(original.getPostScript(), copied.getPostScript());
         assertEquals(original.getLifecyclePhase(), copied.getLifecyclePhase());
         assertEquals(original.getPomLocation(), copied.getPomLocation());
-        assertEquals(original.getDescription(), copied.getDescription());
         assertEquals(original.getProfile(), copied.getProfile());
 
         assertNotNull(copied.getParameters());
@@ -64,16 +65,24 @@ public class ProcessorDefinitionsTest {
     @Test
     public void testStandaloneProcessorCopy() {
         List<ProcessorDefinitions.ProcessorParameter> params = new ArrayList<>();
-        params.add(new ProcessorDefinitions.ProcessorParameter(ProcessorParameterKey.PARAM_FAIL_ON_ERROR, true, "true"));
+        params.add(
+                new ProcessorDefinitions.ProcessorParameter(ProcessorParameterKey.PARAM_FAIL_ON_ERROR, true, "true"));
 
         ProcessorDefinitions.StandaloneProcessor original = ProcessorDefinitions.StandaloneProcessor.builder()
-                .id("standalone-proc")
+                .id("standalone" +
+                    "-proc")
                 .name("Standalone")
                 .stage(Stage.PREPARE)
-                .preScript("echo 'pre'")
-                .postScript("echo 'post'")
+                .preScript(
+                        "echo " +
+                        "'pre'")
+                .postScript(
+                        "echo " +
+                        "'post'")
                 .parameters(params)
-                .scriptLocation("scripts/run.sh")
+                .scriptLocation(
+                        "scripts" +
+                        "/run.sh")
                 .build();
 
         ProcessorDefinitions.StandaloneProcessor copied = original.copy();
@@ -92,15 +101,15 @@ public class ProcessorDefinitionsTest {
                 null, null, null, null, null
         );
 
-        ProcessorDefinitions.MavenProcessor p1 = new ProcessorDefinitions.MavenProcessor("p1", "pom1.xml");
+        ProcessorDefinitions.MavenProcessor p1 = new ProcessorDefinitions.MavenProcessor("pom1.xml");
         p1.setId("p1");
         p1.setName("P1");
 
-        ProcessorDefinitions.MavenProcessor p2 = new ProcessorDefinitions.MavenProcessor("p2", "pom2.xml");
+        ProcessorDefinitions.MavenProcessor p2 = new ProcessorDefinitions.MavenProcessor("pom2.xml");
         p2.setId("p2");
         p2.setName("P2");
 
-        ProcessorDefinitions.MavenProcessor p3 = new ProcessorDefinitions.MavenProcessor("p3", "pom3.xml");
+        ProcessorDefinitions.MavenProcessor p3 = new ProcessorDefinitions.MavenProcessor("pom3.xml");
         p3.setId("p3");
         p3.setName("P3");
 
@@ -124,15 +133,15 @@ public class ProcessorDefinitionsTest {
                 null, null, null, null, null
         );
 
-        ProcessorDefinitions.MavenProcessor p1 = new ProcessorDefinitions.MavenProcessor("p1", "pom1.xml");
+        ProcessorDefinitions.MavenProcessor p1 = new ProcessorDefinitions.MavenProcessor("pom1.xml");
         p1.setId("p1");
         p1.setName("P1");
 
-        ProcessorDefinitions.MavenProcessor p2 = new ProcessorDefinitions.MavenProcessor("p2", "pom2.xml");
+        ProcessorDefinitions.MavenProcessor p2 = new ProcessorDefinitions.MavenProcessor("pom2.xml");
         p2.setId("p2");
         p2.setName("P2");
 
-        ProcessorDefinitions.MavenProcessor p3 = new ProcessorDefinitions.MavenProcessor("p3", "pom3.xml");
+        ProcessorDefinitions.MavenProcessor p3 = new ProcessorDefinitions.MavenProcessor("pom3.xml");
         p3.setId("p3");
         p3.setName("P3");
 
@@ -153,7 +162,7 @@ public class ProcessorDefinitionsTest {
         params.add(new ProcessorDefinitions.ProcessorParameter(ProcessorParameterKey.PARAM_FAIL_ON_ERROR, true, null));
         params.add(new ProcessorDefinitions.ProcessorParameter(ProcessorParameterKey.PARAM_FAIL_ON_ISSUE, false, null));
 
-        ProcessorDefinitions.MavenProcessor processor = new ProcessorDefinitions.MavenProcessor("desc", "pom.xml");
+        ProcessorDefinitions.MavenProcessor processor = new ProcessorDefinitions.MavenProcessor("pom.xml");
         processor.setId("proc");
         processor.setName("Proc");
         processor.setParameters(params);

@@ -16,6 +16,12 @@ public class ProcessorExecutionPlan {
     private final Map<Processor, List<Processor>> dependencies = new IdentityHashMap<>();
     private final Map<ExecutionContext, List<Processor>> prerequisitesByContext = new IdentityHashMap<>();
 
+    /**
+     * Registers an execution context with the plan, initializing its processor and
+     * prerequisite lists.
+     *
+     * @param context the execution context to register
+     */
     public void registerContext(ExecutionContext context) {
         Objects.requireNonNull(context, "Execution context must not be null.");
         if (processorsByContext.containsKey(context)) {
@@ -25,6 +31,14 @@ public class ProcessorExecutionPlan {
         prerequisitesByContext.put(context, new ArrayList<>());
     }
 
+    /**
+     * Adds a processor under a registered execution context.
+     *
+     * @param <T>       the processor type
+     * @param context   the execution context owning the processor
+     * @param processor the processor to add
+     * @return the added processor, or null if the processor was null
+     */
     public <T extends Processor> T addProcessor(ExecutionContext context, T processor) {
         if (processor == null) {
             return null;
@@ -35,7 +49,8 @@ public class ProcessorExecutionPlan {
         }
         ExecutionContext previousContext = contextByProcessor.get(processor);
         if (previousContext != null) {
-            throw new IllegalStateException("Processor '" + processor.getId() + "' is already registered in execution context '" +
+            throw new IllegalStateException(
+                    "Processor '" + processor.getId() + "' is already registered in execution context '" +
                     previousContext.getName() + "'.");
         }
 
@@ -45,6 +60,12 @@ public class ProcessorExecutionPlan {
         return processor;
     }
 
+    /**
+     * Returns the processors registered for the given execution context.
+     *
+     * @param context the execution context to query
+     * @return the context's processors, or an empty list if the context is unregistered
+     */
     public List<Processor> getProcessors(ExecutionContext context) {
         List<Processor> contextProcessors = processorsByContext.get(context);
         return contextProcessors == null ? List.of() : Collections.unmodifiableList(contextProcessors);
@@ -54,10 +75,22 @@ public class ProcessorExecutionPlan {
         return Collections.unmodifiableList(processors);
     }
 
+    /**
+     * Returns the execution context a processor was registered under.
+     *
+     * @param processor the processor to look up
+     * @return the owning execution context, or null if the processor is unknown
+     */
     public ExecutionContext getContext(Processor processor) {
         return contextByProcessor.get(processor);
     }
 
+    /**
+     * Records that a target processor depends on the given processors.
+     *
+     * @param target    the processor that depends on others
+     * @param dependsOn the processors the target depends on
+     */
     public void addDependency(Processor target, Processor... dependsOn) {
         if (target == null || dependsOn == null) {
             return;
@@ -70,6 +103,12 @@ public class ProcessorExecutionPlan {
         }
     }
 
+    /**
+     * Returns the direct dependencies recorded for a processor.
+     *
+     * @param processor the processor to query
+     * @return the processor's dependencies, or an empty set if it has none
+     */
     public Set<Processor> getDependencies(Processor processor) {
         List<Processor> processorDependencies = dependencies.get(processor);
         if (processorDependencies == null || processorDependencies.isEmpty()) {
@@ -82,6 +121,9 @@ public class ProcessorExecutionPlan {
      * Records prerequisites for a report-group context before its report processors are created.
      * The prerequisite facts stay in the shared plan until the report handler connects them to
      * their generated processor nodes.
+     *
+     * @param context      the report-group execution context receiving the prerequisite
+     * @param prerequisite the prerequisite processor to record
      */
     public void addPrerequisite(ExecutionContext context, Processor prerequisite) {
         if (prerequisite == null) {
@@ -96,12 +138,20 @@ public class ProcessorExecutionPlan {
         }
     }
 
+    /**
+     * Returns the prerequisites recorded for the given execution context.
+     *
+     * @param context the execution context to query
+     * @return the context's prerequisites, or an empty list if it has none
+     */
     public List<Processor> getPrerequisites(ExecutionContext context) {
         List<Processor> contextPrerequisites = prerequisitesByContext.get(context);
         return contextPrerequisites == null ? List.of() : Collections.unmodifiableList(contextPrerequisites);
     }
 
-    /** Rejects missing graph nodes and dependency cycles. */
+    /**
+     * Rejects missing graph nodes and dependency cycles.
+     */
     public void validate() {
         getOrderedProcessors();
     }
@@ -109,6 +159,8 @@ public class ProcessorExecutionPlan {
     /**
      * Returns a deterministic serial order that honors every dependency. Stage order and then
      * registration order choose among processors that are currently unconstrained.
+     *
+     * @return the processors in a valid, deterministic execution order
      */
     public List<Processor> getOrderedProcessors() {
         validateRegisteredDependencies();
@@ -160,12 +212,14 @@ public class ProcessorExecutionPlan {
             ExecutionContext targetContext = contextByProcessor.get(target);
             if (targetContext == null) {
                 throw new IllegalStateException("Dependency target '" + processorName(target) +
-                        "' is not registered in the execution plan.");
+                                                "' is not registered in the execution plan.");
             }
             for (Processor prerequisite : entry.getValue()) {
                 if (!contextByProcessor.containsKey(prerequisite)) {
                     throw new IllegalStateException("Processor '" + describe(target) + "' in execution context '" +
-                            targetContext.getName() + "' depends on unregistered processor '" + processorName(prerequisite) + "'.");
+                                                    targetContext.getName() + "' depends on unregistered " +
+                                                    "processor '" + processorName(
+                            prerequisite) + "'.");
                 }
             }
         }
@@ -173,7 +227,9 @@ public class ProcessorExecutionPlan {
             for (Processor prerequisite : entry.getValue()) {
                 if (!contextByProcessor.containsKey(prerequisite)) {
                     throw new IllegalStateException("Execution context '" + entry.getKey().getName() +
-                            "' has unregistered prerequisite processor '" + processorName(prerequisite) + "'.");
+                                                    "' has unregistered prerequisite processor '" +
+                                                    processorName(
+                                                            prerequisite) + "'.");
                 }
             }
         }
@@ -192,8 +248,8 @@ public class ProcessorExecutionPlan {
     }
 
     private List<Processor> findCycle(Processor processor,
-                                     Map<Processor, Integer> state,
-                                     List<Processor> stack) {
+                                      Map<Processor, Integer> state,
+                                      List<Processor> stack) {
         Integer currentState = state.get(processor);
         if (currentState != null) {
             return null;
@@ -227,7 +283,7 @@ public class ProcessorExecutionPlan {
     private String describe(Processor processor) {
         ExecutionContext context = contextByProcessor.get(processor);
         return (context == null ? "unknown-context" : context.getName()) + "/" + processorName(processor) +
-                "[" + (processor.getStage() == null ? "unknown-stage" : processor.getStage().name()) + "]";
+               "[" + (processor.getStage() == null ? "unknown-stage" : processor.getStage().name()) + "]";
     }
 
     private String processorName(Processor processor) {
