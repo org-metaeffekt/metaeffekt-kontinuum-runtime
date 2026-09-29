@@ -38,7 +38,7 @@ public class DashboardStageHandler implements AssetStageHandler {
             }
             for (String assetId : dashboard.getAssetIds()) {
                 if (asset.getId().equals(assetId)) {
-                    context.addProcessor(handleDashboard(context, dashboard));
+                    context.addProcessor(handleDashboard(context));
                 }
             }
         }
@@ -51,7 +51,7 @@ public class DashboardStageHandler implements AssetStageHandler {
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for dashboard creation.
      */
-    private MavenProcessor handleDashboard(AssetExecutionContext context, Dashboard dashboard) {
+    private MavenProcessor handleDashboard(AssetExecutionContext context) {
         EnrichmentOptions enrichmentOptions = context.getConfiguration().getOptions() != null
                 ? context.getConfiguration().getOptions().getEnrichment()
                 : null;
@@ -72,7 +72,7 @@ public class DashboardStageHandler implements AssetStageHandler {
                             : null);
         }
         processor.setProcessorParameter(PARAM_TENANT_ID,
-                dashboard.getTenant());
+                context.getConfiguration().getProjectProperties().getProject().getTenant());
         processor.setProcessorParameter(PARAM_ASSET_ID,
                 asset.getAssessmentId());
         processor.setProcessorParameter(PARAM_ASSESSMENT_CONTEXT,

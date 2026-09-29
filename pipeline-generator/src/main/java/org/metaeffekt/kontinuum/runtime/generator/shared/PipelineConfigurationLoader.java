@@ -78,6 +78,11 @@ public class PipelineConfigurationLoader {
             log.error("Project id is missing.");
             isValid = false;
         }
+
+        if (pipelineConfiguration.requiresVulnerabilityEnrichment() && project.getTenant() == null) {
+            log.error("Project tenant must be set.");
+            isValid = false;
+        }
     }
 
     private void validateAssets() {
@@ -278,11 +283,6 @@ public class PipelineConfigurationLoader {
 
             if (!new HashSet<>(assetIds).containsAll(dashboard.getAssetIds())) {
                 log.error("A dashboard contains invalid 'assetIds'.");
-                isValid = false;
-            }
-
-            if (StringUtils.isBlank(dashboard.getTenant())) {
-                log.error("A dashboard is missing 'tenant'.");
                 isValid = false;
             }
         }

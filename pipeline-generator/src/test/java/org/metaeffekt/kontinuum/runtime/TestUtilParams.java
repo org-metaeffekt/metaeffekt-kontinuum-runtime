@@ -5,6 +5,7 @@ public enum TestUtilParams{
     PROJECT_ID("project-id"),
     PROJECT_NAME("project-name"),
     PROJECT_VERSION("project-version"),
+    PROJECT_TENANT("project-tenant"),
     ASSET_ID("asset-id"),
     ASSET_NAME("asset-name"),
     ASSET_VERSION("1.0.0"),

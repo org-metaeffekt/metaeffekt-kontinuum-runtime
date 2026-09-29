@@ -153,6 +153,7 @@ public class PipelineConfiguration {
             private String id;
             private String name;
             private String version;
+            private String tenant;
 
             @Override
             public String toString() {
@@ -229,7 +230,7 @@ public class PipelineConfiguration {
                     throw new IllegalStateException("Tried to access context for asset " + this + " but is not set.");
                 }
 
-                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getName(), assessmentId, context, "context");
+                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getTenant(), assessmentId, context, "context");
             }
 
             public String getAssessmentDir(ProjectProperties.Project project, String workbenchPath) {
@@ -241,7 +242,7 @@ public class PipelineConfiguration {
                     throw new IllegalStateException("Tried to access assessment id for asset " + this + " but is not set.");
                 }
 
-                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getName(), assessmentId);
+                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getTenant(), assessmentId);
             }
 
             /**
@@ -333,7 +334,6 @@ public class PipelineConfiguration {
     @Data
     public static class Dashboard {
         private List<String> assetIds;
-        private String tenant;
     }
 
     @Data

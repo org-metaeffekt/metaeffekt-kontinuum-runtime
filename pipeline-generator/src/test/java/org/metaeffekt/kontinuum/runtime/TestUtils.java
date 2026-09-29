@@ -19,6 +19,7 @@ public class TestUtils {
         project.setId(PROJECT_ID.value);
         project.setName(PROJECT_NAME.value);
         project.setVersion(PROJECT_VERSION.value);
+        project.setTenant(PROJECT_TENANT.value);
 
         PipelineConfiguration.ProjectProperties.Asset asset = new PipelineConfiguration.ProjectProperties.Asset();
         asset.setId(ASSET_ID.value);
