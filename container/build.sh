@@ -17,13 +17,25 @@ strip_quotes() {
     echo "$val"
 }
 
+# Helper for optional arguments: an empty value or an unresolved Maven
+# placeholder (${...}) both mean "not provided".
+read_optional() {
+    local val
+    val="$(strip_quotes "$1")"
+    if [[ "$val" == '${'*'}' ]]; then
+        echo ""
+    else
+        echo "$val"
+    fi
+}
+
 readonly AE_CORE_VERSION="$(strip_quotes "$1")"
 readonly AE_ARTIFACT_ANALYSIS_VERSION="$(strip_quotes "$2")"
 readonly AE_PORTFOLIO_MANAGER_VERSION="$(strip_quotes "$3")"
 readonly AE_KONTINUUM_BRANCH="$(strip_quotes "$4")"
 readonly DOCKER_TAG="$(strip_quotes "$5")"
-readonly DOCKER_USERNAME="$(strip_quotes "$6")"
-readonly DOCKER_ACCESS_TOKEN="$(strip_quotes "$7")"
+readonly DOCKER_USERNAME="$(read_optional "$6")"
+readonly DOCKER_ACCESS_TOKEN="$(read_optional "$7")"
 readonly DOCKER_REGISTRY="$(strip_quotes "$8")"
 
 AE_UNIVERSE_VERSION_INPUT="$(strip_quotes "$9")"
@@ -68,14 +80,6 @@ check_args() {
         echo "Error: DOCKER_TAG (argument 5) is missing or empty." >&2
         missing=1
     fi
-    if [[ -z "$DOCKER_USERNAME" ]]; then
-        echo "Error: DOCKER_USERNAME (argument 6) is missing or empty." >&2
-        missing=1
-    fi
-    if [[ -z "$DOCKER_ACCESS_TOKEN" ]]; then
-        echo "Error: DOCKER_ACCESS_TOKEN (argument 7) is missing or empty." >&2
-        missing=1
-    fi
     if [[ -z "$DOCKER_REGISTRY" ]]; then
         echo "Error: DOCKER_REGISTRY (argument 8) is missing or empty." >&2
         missing=1
@@ -91,7 +95,8 @@ check_args() {
 
     if [[ $missing -ne 0 ]]; then
         echo "" >&2
-        echo "Usage: $0 <AE_CORE_VERSION> <AE_ARTIFACT_ANALYSIS_VERSION> <AE_PORTFOLIO_MANAGER_VERSION> <AE_KONTINUUM_BRANCH> <DOCKER_TAG> <DOCKER_USERNAME> <DOCKER_ACCESS_TOKEN> <DOCKER_REGISTRY> <AE_UNIVERSE_VERSION> <AE_KOSMOS_VERSION>" >&2
+        echo "Usage: $0 <AE_CORE_VERSION> <AE_ARTIFACT_ANALYSIS_VERSION> <AE_PORTFOLIO_MANAGER_VERSION> <AE_KONTINUUM_BRANCH> <DOCKER_TAG> [DOCKER_USERNAME] [DOCKER_ACCESS_TOKEN] <DOCKER_REGISTRY> <AE_UNIVERSE_VERSION> <AE_KOSMOS_VERSION>" >&2
+        echo "  DOCKER_USERNAME / DOCKER_ACCESS_TOKEN are optional; when empty, no docker login is performed (e.g. for a local registry)." >&2
         exit 1
     fi
 }
@@ -178,6 +183,10 @@ EOF
             echo "Docker login failed"
             return 1
         }
+    elif [[ -n "$DOCKER_USERNAME" || -n "$DOCKER_ACCESS_TOKEN" ]]; then
+        echo "Warning: only one of DOCKER_USERNAME / DOCKER_ACCESS_TOKEN is set; skipping docker login." >&2
+    else
+        echo "No docker credentials provided; skipping docker login (expected for a local/unauthenticated registry)."
     fi
 
     docker buildx build \
