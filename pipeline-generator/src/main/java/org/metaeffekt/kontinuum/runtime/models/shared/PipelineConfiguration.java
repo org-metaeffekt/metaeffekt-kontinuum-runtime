@@ -199,6 +199,8 @@ public class PipelineConfiguration {
                 private String token;
                 private String headerName;
                 private String headerValue;
+                private AssetType assetType = AssetType.DEFAULT;
+                private String kotlinScriptFile;
             }
 
             /**
