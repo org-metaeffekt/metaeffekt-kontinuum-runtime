@@ -12,6 +12,7 @@ import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Proce
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.StandaloneProcessor;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class generates a gitlab pipeline from the given configuration files to include as a
@@ -118,46 +119,36 @@ public class GitlabPipeline {
      * Appends the jobs section to the GitLab pipeline document.
      */
     public void generateJobsSection() {
-        Map<Processor, String> jobNames = assignJobNames();
-
         for (ExecutionContext context : execution.getContexts()) {
-            for (Processor processor : context.getProcessors()) {
-                String jobName = jobNames.get(processor);
+            Map<String, List<Processor>> stageToProcessorMap = orderProcessorsByStage(context);
+
+            for (Map.Entry<String, List<Processor>> stageEntry : stageToProcessorMap.entrySet()) {
+                String stage = stageEntry.getKey();
 
                 StringBuilder job = new StringBuilder();
-                job.append(jobName).append(":").append(System.lineSeparator());
-                job.append("  ").append("stage: ").append(processor.getStage().name()).append(System.lineSeparator());
+                job.append(generateJobName(context, stage)).append(":").append(System.lineSeparator());
+                job.append("  ").append("stage: ").append(stage).append(System.lineSeparator());
                 job.append("  ").append("image: ").append(gitlabConfiguration.CONTAINER_IMAGE).append(
                         System.lineSeparator());
-
-                Set<Processor> dependencies = execution.getDependencies(processor);
-                if (dependencies != null && !dependencies.isEmpty()) {
-                    List<String> needJobNames = dependencies.stream()
-                            .map(jobNames::get)
-                            .filter(Objects::nonNull)
-                            .toList();
-                    if (!needJobNames.isEmpty()) {
-                        job.append("  ").append("needs: [")
-                                .append(String.join(", ", needJobNames))
-                                .append("]").append(System.lineSeparator());
-                    }
-                }
-
                 job.append("  ").append("script: ").append(System.lineSeparator());
                 job.append("    - |").append(System.lineSeparator());
 
-                if (processor instanceof MavenProcessor mavenProcessor) {
-                    if (mavenProcessor.getPreScript() != null) {
-                        job.append(mavenProcessor.getPreScript(6)).append(System.lineSeparator());
-                    }
+                for (Processor processor : stageEntry.getValue()) {
 
-                    job.append(generateMavenScriptBlock(mavenProcessor));
+                    if (processor instanceof MavenProcessor mavenProcessor) {
+                        if (mavenProcessor.getPreScript() != null) {
+                            job.append(mavenProcessor.getPreScript(6)).append(System.lineSeparator());
+                        }
 
-                    if (mavenProcessor.getPostScript() != null) {
-                        job.append(mavenProcessor.getPostScript(6)).append(System.lineSeparator());
+                        job.append(generateMavenScriptBlock(mavenProcessor));
+
+                        if (mavenProcessor.getPostScript() != null) {
+                            job.append(mavenProcessor.getPostScript(6)).append(System.lineSeparator());
+                        }
+                    } else if (processor instanceof StandaloneProcessor standaloneProcessor) {
+                        job.append(generateStandaloneScriptBlock(standaloneProcessor));
                     }
-                } else if (processor instanceof StandaloneProcessor standaloneProcessor) {
-                    job.append(generateStandaloneScriptBlock(standaloneProcessor));
+                    job.append(System.lineSeparator());
                 }
 
                 gitlabPipelineDocument.append(job).append(System.lineSeparator());
@@ -209,40 +200,17 @@ public class GitlabPipeline {
         return script.append(System.lineSeparator()).toString();
     }
 
-    private Map<Processor, String> assignJobNames() {
-        Map<Processor, String> jobNameMap = new IdentityHashMap<>();
-        Map<String, Integer> nameCounts = new HashMap<>();
 
-        for (ExecutionContext context : execution.getContexts()) {
-            String contextName = context.getName();
-            for (Processor processor : context.getProcessors()) {
-                String baseName = buildBaseJobName(processor, contextName);
-                int count = nameCounts.getOrDefault(baseName, 0) + 1;
-                nameCounts.put(baseName, count);
-
-                String uniqueName = (count == 1) ? baseName : baseName + "-" + count;
-                jobNameMap.put(processor, uniqueName);
-            }
-        }
-        return jobNameMap;
+    private Map<String, List<Processor>> orderProcessorsByStage(ExecutionContext context) {
+        return context.getProcessors().stream()
+                .collect(Collectors.groupingBy(
+                        processor -> processor.getStage().name(),
+                        LinkedHashMap::new,
+                        Collectors.toList()));
     }
 
-    private String buildBaseJobName(Processor processor, String contextName) {
-        StringBuilder name = new StringBuilder()
-                .append(contextName)
-                .append("-")
-                .append(processor.getId())
-                .append("-")
-                .append(processor.getStage().name());
-
-        for (ProcessorParameterKey key : DISCRIMINATOR_KEYS) {
-            processor.getParameters().stream()
-                    .filter(p -> p.getKey() == key && StringUtils.isNotBlank(p.getValue()))
-                    .findFirst()
-                    .ifPresent(p -> name.append("-").append(sanitizeNameSegment(p.getValue())));
-        }
-
-        return name.toString();
+    private String generateJobName(ExecutionContext context, String stage) {
+        return context.getName() + "-" + stage + "-" + UUID.randomUUID();
     }
 
     private String sanitizeNameSegment(String segment) {

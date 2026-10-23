@@ -70,15 +70,15 @@ public class PrepareStageHandler implements AssetStageHandler {
 
         MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(
                 ATTACH_METADATA);
-        mavenProcessor.setStage(Stage.EXTRACT);
+        mavenProcessor.setStage(Stage.PREPARE);
         mavenProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.PREPARE)
                 .appendAssetInventory());
         mavenProcessor.setProcessorParameter(PARAM_METADATA_ASSET_ID, asset.getId());
         mavenProcessor.setProcessorParameter(PARAM_METADATA_ASSET_NAME, asset.getName());
 
-        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.EXTRACT).toString());
-        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
+        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.PREPARE).toString());
+        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.PREPARE).appendAssetInventory());
 
         return mavenProcessor;
     }

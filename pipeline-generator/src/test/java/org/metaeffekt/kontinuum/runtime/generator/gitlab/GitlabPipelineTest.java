@@ -8,12 +8,13 @@ import org.metaeffekt.kontinuum.runtime.models.shared.SupportedLocale;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GitlabPipelineTest {
 
     @Test
-    void reportJobNeedsIncludeProcessorsFromMemberAssetContexts() {
+    void processorsOfTheSameStageAreCombinedIntoOneJob() {
         PipelineConfiguration configuration = TestUtils.buildMinimalPipelineConfiguration();
         PipelineConfiguration.ProjectProperties.Asset asset = configuration.getProjectProperties().getAssets().get(0);
         asset.setAssessmentId("assessment");
@@ -39,15 +40,17 @@ class GitlabPipelineTest {
                 .build();
         String pipeline = new GitlabPipeline(configuration, environment).generatePipeline();
 
-        String reportJob = pipeline.lines()
-                .filter(line -> line.startsWith("release-VR-create-document-REPORT"))
-                .findFirst()
-                .orElseThrow(() -> new AssertionError("Generated report job was not found."));
-        int reportJobStart = pipeline.indexOf(reportJob);
-        int reportJobEnd = pipeline.indexOf("\n\n", reportJobStart);
-        String reportJobBlock = pipeline.substring(reportJobStart,
-                                                   reportJobEnd < 0 ? pipeline.length() : reportJobEnd);
+        assertEquals(1, countJobsForStage(pipeline, "PREPARE"), pipeline);
+        assertTrue(pipeline.contains("advise/advise_attach-metadata.xml"), pipeline);
+        assertTrue(pipeline.contains("util/util_enrich-with-reference.xml"), pipeline);
 
-        assertTrue(reportJobBlock.contains("needs: [" + asset.getId() + "-copy-inventory-GROUP"), reportJobBlock);
+        assertEquals(1, countJobsForStage(pipeline, "REPORT"), pipeline);
+        assertTrue(pipeline.contains("report/report_create-document.xml"), pipeline);
+    }
+
+    private static long countJobsForStage(String pipeline, String stage) {
+        return pipeline.lines()
+                .filter(line -> line.equals("  stage: " + stage))
+                .count();
     }
 }
