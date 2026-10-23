@@ -286,7 +286,12 @@ public class PipelineConfiguration {
                             "Tried to access assessment id for asset " + this + " but is not set.");
                 }
 
-                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getTenant(), assessmentId);
+                if (StringUtils.isBlank(context)) {
+                    throw new IllegalStateException("Tried to access context for asset " + this + " but is not set.");
+                }
+
+                return KontinuumUtils.normalizeDir(workbenchPath, "assessments", project.getTenant(),
+                                                   assessmentId, context);
             }
 
             /**
@@ -464,6 +469,7 @@ public class PipelineConfiguration {
             private Boolean activateEpss = true;
             private Boolean activateEol = true;
             private Boolean activateCsaf = true;
+            private String osvProviders;
 
 
             /**
