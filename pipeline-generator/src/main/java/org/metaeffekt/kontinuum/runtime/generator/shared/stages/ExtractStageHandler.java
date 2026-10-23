@@ -5,7 +5,6 @@ import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Proj
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
-import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.ATTACH_METADATA;
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.SCAN_DIRECTORY;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 
@@ -29,12 +28,7 @@ public class ExtractStageHandler implements AssetStageHandler {
         }
 
         MavenProcessor inventoryExtraction = handleInventoryExtraction(context);
-        MavenProcessor metadataAttachment = handleMetadataAttachment(context);
-
-        context.addSequential(
-                inventoryExtraction,
-                metadataAttachment
-        );
+        context.addProcessor(inventoryExtraction);
     }
 
     /**
@@ -42,7 +36,7 @@ public class ExtractStageHandler implements AssetStageHandler {
      *
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for scanning and extracting the inventory.
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/prepare/prepare_scan-directory.md">prepare_scan-directory.md</a>
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/prepare/extract_scan-directory.md">extract_scan-directory.md</a>
      */
     private MavenProcessor handleInventoryExtraction(AssetExecutionContext context) {
         Asset asset = context.getAsset();
@@ -56,32 +50,6 @@ public class ExtractStageHandler implements AssetStageHandler {
         mavenProcessor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR,
                                              asset.getReferenceDir(
                                                      context.getEnvironment().getWorkbenchDirNormalized()));
-
-        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.EXTRACT).toString());
-        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
-
-        return mavenProcessor;
-    }
-
-    /**
-     * Attaches asset metadata (such as asset ID and name) to the extracted inventory.
-     *
-     * @param context The asset execution context containing pipeline and asset information.
-     * @return The configured {@link MavenProcessor} for attaching metadata.
-     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/advise/advise_attach-metadata.md">advise_attach-metadata.md</a>
-     */
-    private MavenProcessor handleMetadataAttachment(AssetExecutionContext context) {
-        Asset asset = context.getAsset();
-
-        MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(
-                ATTACH_METADATA);
-        mavenProcessor.setStage(Stage.EXTRACT);
-        mavenProcessor.setProcessorParameter(INPUT_INVENTORY_FILE,
-                                             context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
-        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
-                                             context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
-        mavenProcessor.setProcessorParameter(PARAM_METADATA_ASSET_ID, asset.getId());
-        mavenProcessor.setProcessorParameter(PARAM_METADATA_ASSET_NAME, asset.getName());
 
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.EXTRACT).toString());
         context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
