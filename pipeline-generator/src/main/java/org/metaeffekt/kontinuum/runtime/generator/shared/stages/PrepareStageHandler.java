@@ -33,8 +33,9 @@ public class PrepareStageHandler implements AssetStageHandler {
 
         boolean hasPortfolioManager = Objects.nonNull(context.getConfiguration().getPortfolioManager());
 
+        MavenProcessor metadataAttachment = handleMetadataAttachment(context);
         MavenProcessor inventoryReferenceEnrichment = handleInventoryReferenceEnrichment(context);
-        context.addProcessor(inventoryReferenceEnrichment);
+        context.addSequential(metadataAttachment, inventoryReferenceEnrichment);
 
         if (cycloneDxEnabled) {
             MavenProcessor cycloneDxProcessor = handleInventoryToCycloneDxConversion(context);
@@ -55,6 +56,31 @@ public class PrepareStageHandler implements AssetStageHandler {
             context.addDependency(uploadProcessor, inventoryReferenceEnrichment);
             context.addSequential(uploadProcessor, downloadProcessor);
         }
+    }
+
+    /**
+     * Attaches asset metadata (such as asset ID and name) to the extracted inventory.
+     *
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return The configured {@link MavenProcessor} for attaching metadata.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_attach-metadata.md">util_attach-metadata.md</a>
+     */
+    private MavenProcessor handleMetadataAttachment(AssetExecutionContext context) {
+        Asset asset = context.getAsset();
+
+        MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(
+                ATTACH_METADATA);
+        mavenProcessor.setStage(Stage.EXTRACT);
+        mavenProcessor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
+        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, context.getStageDirForAsset(Stage.PREPARE)
+                .appendAssetInventory());
+        mavenProcessor.setProcessorParameter(PARAM_METADATA_ASSET_ID, asset.getId());
+        mavenProcessor.setProcessorParameter(PARAM_METADATA_ASSET_NAME, asset.getName());
+
+        context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.EXTRACT).toString());
+        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
+
+        return mavenProcessor;
     }
 
     /**

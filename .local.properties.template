@@ -1,4 +1,13 @@
-# Versioning
+# Submodule Git Branches (for submodule synchronization)
+ae.kontinuum.branch=main
+ae.kontinuum.runtime.branch=main
+ae.workbench.branch=main
+ae.components.branch=main
+ae.examples.branch=main
+ae.mock.workbench.branch=main
+s-dit-007.workbench.branch=main
+
+# Maven Versions (for POM property alignment and dependencies)
 ae.core.version=HEAD-SNAPSHOT
 ae.artifact.analysis.version=HEAD-SNAPSHOT
 ae.kontinuum.version=HEAD-SNAPSHOT
@@ -6,10 +15,12 @@ ae.workbench.version=HEAD-SNAPSHOT
 ae.kontinuum.runtime.version=HEAD-SNAPSHOT
 ae.portfolio.manager.version=HEAD-SNAPSHOT
 s-dit-007.workbench.version=HEAD-SNAPSHOT
-
+ae.universe.version=3.1.0
+ae.kosmos.version=0.1.0
 
 # TermsMetaData
 tmd.password=
+tmd.source=kosmos
 
 # Docker Build Process
 docker.image.tag=
@@ -31,3 +42,6 @@ nvd.api.key=
 # Repository Paths
 ae.kontinuum.dir="/ABSOLUTE/PATH/TO/KONTINUUM"
 ae.workbench.dir="/ABSOLUTE/PATH/TO/WORKBENCH"
+
+# Debug
+debug.level=info # Possible values from most to least verbose are debug, warn, info. Errors are always propagated.
