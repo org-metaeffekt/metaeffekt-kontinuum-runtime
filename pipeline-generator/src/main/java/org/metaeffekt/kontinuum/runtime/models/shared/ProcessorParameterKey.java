@@ -66,7 +66,7 @@ public enum ProcessorParameterKey {
     OUTPUT_SVG_DIR("output.svg.dir"),
     OUTPUT_TARGET_DIR("output.target.dir"),
     OUTPUT_TMP_DIR("output.tmp.dir"),
-    OUTPUT_TRANSFORMED_INVENTORY_DIR("output.transformed.inventory.dir"),
+    OUTPUT_SCRIPTED_INVENTORY_DIR("output.scripted.inventory.dir"),
     PARAM_ACTIVATE_CAPEC("param.activate.capec"),
     PARAM_ACTIVATE_CERTEU("param.activate.certeu"),
     PARAM_ACTIVATE_CERTFR("param.activate.certfr"),
