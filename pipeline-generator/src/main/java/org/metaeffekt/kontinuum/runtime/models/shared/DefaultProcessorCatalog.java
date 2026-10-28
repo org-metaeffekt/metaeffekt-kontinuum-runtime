@@ -61,6 +61,8 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
         ENRICH_WITH_REFERENCE("enrich-with-reference"),
         ENRICH_INVENTORY_WITH_REFERENCE("enrich-inventory-with-reference"),
         EXECUTE_KOTLIN_SCRIPT("execute-kotlin-script"),
+        EXTRACT_LINUX_ARCH_INVENTORY("extract-linux-arch-inventory"),
+        EXTRACT_WINDOWS_INVENTORY("extract-windows-inventory"),
         GENERATE_REPORT_SVG("generate-report-svg"),
         INVENTORY_TO_CYCLONEDX("inventory-to-cyclonedx"),
         INVENTORY_TO_SPDX("inventory-to-spdx"),
@@ -147,6 +149,8 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
         list.add(enrichInventory());
         list.add(enrichWithReference());
         list.add(executeKotlinScript());
+        list.add(extractLinuxArchInventory());
+        list.add(extractWindowsInventory());
         list.add(generateReportSvg());
         list.add(inventoryToCyclonedx());
         list.add(inventoryToSpdx());
@@ -502,6 +506,32 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
                               processorParameter(INPUT_INVENTORY_FILE, true),
                               processorParameter(OUTPUT_INVENTORY_FILE, true),
                               processorParameter(PARAM_ASSET_ID, false)
+        );
+    }
+
+    private static ProcessorDefinitions.MavenProcessor extractLinuxArchInventory() {
+        return mavenProcessor(EXTRACT_LINUX_ARCH_INVENTORY, "Extract Linux Arch Inventory",
+                "extract/extract_linux-arch-inventory.xml",
+                processorParameter(INPUT_ARCHIVE_FILE, true),
+                processorParameter(PARAM_ANALYSIS_DIR, true),
+                processorParameter(OUTPUT_INVENTORY_FILE, true),
+                processorParameter(PARAM_EXCLUDE_PATTERN_FILE, true),
+                processorParameter(PARAM_ACTIVATE_FILE_PROCESSING, false),
+                processorParameter(PARAM_KOTLIN_SCRIPT_FILE, false),
+                processorParameter(OUTPUT_SCRIPTED_INVENTORY_DIR, false)
+        );
+    }
+
+    private static ProcessorDefinitions.MavenProcessor extractWindowsInventory() {
+        return mavenProcessor(EXTRACT_WINDOWS_INVENTORY, "Extract Windows Inventory",
+                "extract/extract_windows-inventory.xml",
+                processorParameter(INPUT_ARCHIVE_FILE, true),
+                processorParameter(PARAM_ANALYSIS_DIR, true),
+                processorParameter(OUTPUT_INVENTORY_FILE, true),
+                processorParameter(PARAM_EXCLUDE_PATTERN_FILE, true),
+                processorParameter(PARAM_ACTIVATE_FILE_PROCESSING, false),
+                processorParameter(PARAM_KOTLIN_SCRIPT_FILE, false),
+                processorParameter(OUTPUT_SCRIPTED_INVENTORY_DIR, false)
         );
     }
 
