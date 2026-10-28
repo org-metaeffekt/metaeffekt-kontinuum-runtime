@@ -201,6 +201,7 @@ public class PipelineConfiguration {
                 private String headerValue;
                 private AssetType assetType = AssetType.DEFAULT;
                 private String kotlinScriptFile;
+                private String excludePatternFile;
             }
 
             /**

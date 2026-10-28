@@ -24,12 +24,6 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  */
 public class ExtractStageHandler implements AssetStageHandler {
 
-    /**
-     * Exclude pattern file for the appliance extraction, relative to the workbench.
-     * Required by the extraction plugin.
-     */
-    private static final String EXCLUDE_PATTERN_FILE = "config/extractor/exclude-patterns.yaml";
-
     @Override
     public Stage getStage() {
         return Stage.EXTRACT;
@@ -109,7 +103,7 @@ public class ExtractStageHandler implements AssetStageHandler {
         mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
                 context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
         mavenProcessor.setProcessorParameter(PARAM_EXCLUDE_PATTERN_FILE,
-                KontinuumUtils.normalizeFilePath(workbenchDir, EXCLUDE_PATTERN_FILE));
+                KontinuumUtils.normalizeFilePath(workbenchDir, asset.getUrlResolver().getExcludePatternFile()));
 
         String kotlinScriptFile = asset.getUrlResolver().getKotlinScriptFile();
         if (StringUtils.isNotBlank(kotlinScriptFile)) {

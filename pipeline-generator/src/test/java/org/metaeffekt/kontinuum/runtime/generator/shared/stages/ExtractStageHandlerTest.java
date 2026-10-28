@@ -27,6 +27,7 @@ class ExtractStageHandlerTest {
         context = TestUtils.buildMinimalAssetExecutionContext();
         urlResolver = context.getAsset().getUrlResolver();
         urlResolver.setUrl(ARCHIVE_URL);
+        urlResolver.setExcludePatternFile("config/excludes.yaml");
     }
 
     @Test
@@ -65,7 +66,7 @@ class ExtractStageHandlerTest {
         assertTrue(param(INPUT_ARCHIVE_FILE).endsWith("/sample-extract.tar"));
         assertTrue(param(PARAM_ANALYSIS_DIR).endsWith("/analysis/"));
         assertTrue(param(OUTPUT_INVENTORY_FILE).endsWith(".xlsx"));
-        assertNotNull(param(PARAM_EXCLUDE_PATTERN_FILE));
+        assertEquals("workbench/config/excludes.yaml", param(PARAM_EXCLUDE_PATTERN_FILE));
     }
 
     @Test
