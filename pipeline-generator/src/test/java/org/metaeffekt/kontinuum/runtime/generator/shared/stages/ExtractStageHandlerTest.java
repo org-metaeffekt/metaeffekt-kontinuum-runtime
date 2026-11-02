@@ -5,11 +5,13 @@ import org.junit.jupiter.api.Test;
 import org.metaeffekt.kontinuum.runtime.TestUtils;
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetType;
+import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset.UrlResolver;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.ProcessorParameter;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey;
+import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
@@ -21,10 +23,12 @@ class ExtractStageHandlerTest {
     private AssetExecutionContext context;
     private UrlResolver urlResolver;
     private final ExtractStageHandler handler = new ExtractStageHandler();
+    private Asset asset;
 
     @BeforeEach
     void setUp() {
         context = TestUtils.buildMinimalAssetExecutionContext();
+        asset = context.getAsset();
         urlResolver = context.getAsset().getUrlResolver();
         urlResolver.setUrl(ARCHIVE_URL);
         urlResolver.setExcludePatternFile("config/excludes.yaml");
@@ -39,7 +43,7 @@ class ExtractStageHandlerTest {
 
     @Test
     void windowsAssetTypeUsesWindowsExtraction() {
-        urlResolver.setAssetType(AssetType.WINDOWS);
+        asset.setType(AssetType.WINDOWS);
 
         handler.process(context);
 
@@ -49,7 +53,7 @@ class ExtractStageHandlerTest {
 
     @Test
     void linuxAssetTypeUsesLinuxExtraction() {
-        urlResolver.setAssetType(AssetType.LINUX);
+        asset.setType(AssetType.LINUX);
 
         handler.process(context);
 
@@ -59,7 +63,7 @@ class ExtractStageHandlerTest {
 
     @Test
     void applianceExtractionSetsRequiredParameters() {
-        urlResolver.setAssetType(AssetType.WINDOWS);
+        asset.setType(AssetType.WINDOWS);
 
         handler.process(context);
 
@@ -71,7 +75,7 @@ class ExtractStageHandlerTest {
 
     @Test
     void applianceExtractionWithoutKotlinScriptLeavesScriptParametersEmpty() {
-        urlResolver.setAssetType(AssetType.WINDOWS);
+        asset.setType(AssetType.WINDOWS);
 
         handler.process(context);
 
@@ -81,7 +85,7 @@ class ExtractStageHandlerTest {
 
     @Test
     void applianceExtractionWithKotlinScriptSetsScriptParameters() {
-        urlResolver.setAssetType(AssetType.WINDOWS);
+        asset.setType(AssetType.WINDOWS);
         urlResolver.setKotlinScriptFile("scripts/transform.kts");
 
         handler.process(context);
@@ -92,7 +96,7 @@ class ExtractStageHandlerTest {
 
     @Test
     void applianceExtractionIsTheOnlyProcessorAndSetsCurrentInventory() {
-        urlResolver.setAssetType(AssetType.WINDOWS);
+        asset.setType(AssetType.WINDOWS);
 
         handler.process(context);
 
@@ -102,7 +106,7 @@ class ExtractStageHandlerTest {
 
     @Test
     void preExtractedInventorySkipsExtractionForAllAssetTypes() {
-        urlResolver.setAssetType(AssetType.WINDOWS);
+        asset.setType(AssetType.WINDOWS);
         urlResolver.setUrl("file:///tmp/inventory.xlsx");
 
         handler.process(context);

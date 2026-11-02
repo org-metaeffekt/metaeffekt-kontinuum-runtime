@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.metaeffekt.kontinuum.runtime.models.shared.AssetType;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Dashboard;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Loads and validates a pipeline configuration from a YAML file.
@@ -68,6 +70,7 @@ public class PipelineConfigurationLoader {
         }
 
         validateProject();
+        inheritFromParentAssets();
         validateAssets();
         resolveReportGroupIds();
         validateReports();
@@ -78,6 +81,42 @@ public class PipelineConfigurationLoader {
 
         if (!isValid) {
             throw new IllegalStateException("Pipeline configuration contains errors.");
+        }
+    }
+
+    /**
+     * Copies {@code version}, {@code reference} and {@code context} from each parent asset to its nested assets,
+     * unless the nested asset defines its own value. Nested assets inherit from their direct parent, so values
+     * cascade through all nesting levels.
+     */
+    private void inheritFromParentAssets() {
+        List<Asset> topLevelAssets = pipelineConfiguration.getProjectProperties().getAssets();
+        if (topLevelAssets == null) {
+            return;
+        }
+        for (Asset topLevelAsset : topLevelAssets) {
+            inheritIntoNestedAssets(topLevelAsset);
+        }
+    }
+
+    private void inheritIntoNestedAssets(Asset parent) {
+        if (parent == null || parent.getAssets() == null) {
+            return;
+        }
+        for (Asset child : parent.getAssets()) {
+            if (child == null) {
+                continue;
+            }
+            if (StringUtils.isBlank(child.getVersion())) {
+                child.setVersion(parent.getVersion());
+            }
+            if (StringUtils.isBlank(child.getReference())) {
+                child.setReference(parent.getReference());
+            }
+            if (StringUtils.isBlank(child.getContext())) {
+                child.setContext(parent.getContext());
+            }
+            inheritIntoNestedAssets(child);
         }
     }
 
@@ -108,6 +147,7 @@ public class PipelineConfigurationLoader {
         }
 
         List<Asset> allAssets = getAllAssets();
+        Set<String> seenAssetIds = new HashSet<>();
 
         for (Asset asset : allAssets) {
             if (asset == null) {
@@ -120,15 +160,21 @@ public class PipelineConfigurationLoader {
                 isValid = false;
             }
 
+            if (StringUtils.isNotBlank(asset.getId()) && !seenAssetIds.add(asset.getId())) {
+                log.error("Asset id {} is used more than once. Asset ids must be unique across all nesting levels.",
+                        asset.getId());
+                isValid = false;
+            }
+
             if (StringUtils.isBlank(asset.getAssessmentId()) && assessmentFieldsRequiredForAsset(asset)) {
                 log.error("Asset {} requires 'assessmentId' to be set because either reports or dashboards require it.",
-                          asset);
+                        asset);
                 isValid = false;
             }
 
             if (StringUtils.isBlank(asset.getContext()) && assessmentFieldsRequiredForAsset(asset)) {
                 log.error("Asset {} requires 'context' to be set because either reports or dashboards require it.",
-                          asset);
+                        asset);
                 isValid = false;
             }
 
@@ -137,15 +183,46 @@ public class PipelineConfigurationLoader {
                 isValid = false;
             }
 
-            if (asset.getMavenResolver() == null && asset.getUrlResolver() == null &&
-                asset.getContainerResolver() == null) {
-                log.error("Asset {} requires a resolver to bet set.", asset);
-                isValid = false;
-            }
-
+            validateAssetSource(asset, isTopLevelAsset(asset, topLevelAssets));
             validateMavenResolver(asset);
             validateUrlResolver(asset);
             validateContainerResolver(asset);
+        }
+    }
+
+    private boolean isTopLevelAsset(Asset asset, List<Asset> topLevelAssets) {
+        return topLevelAssets != null && topLevelAssets.stream().anyMatch(topLevel -> topLevel == asset);
+    }
+
+    private void validateAssetSource(Asset asset, boolean isTopLevelAsset) {
+        long resolverCount = Stream.of(asset.getUrlResolver(), asset.getMavenResolver(), asset.getContainerResolver())
+                .filter(Objects::nonNull)
+                .count();
+
+        if (resolverCount > 1) {
+            log.error("Asset {} must define at most one resolver, but found {}.", asset, resolverCount);
+            isValid = false;
+        }
+
+        if (isTopLevelAsset && resolverCount == 0) {
+            log.error("Top-level asset {} requires a resolver, since it has no parent asset to fall back to.", asset);
+            isValid = false;
+        }
+
+        if (resolverCount == 0 && asset.getType() != AssetType.DEFAULT) {
+            log.error("Asset {} defines a 'type' but no resolver. The type only applies to assets with a resolver.",
+                    asset);
+            isValid = false;
+        }
+
+        validateExtractionScript(asset);
+    }
+
+    private void validateExtractionScript(Asset asset) {
+        Asset.ExtractionScript extractionScript = asset.getExtractionScript();
+        if (extractionScript != null && StringUtils.isBlank(extractionScript.getScript())) {
+            log.error("Asset {} requires 'extractionScript.script' to be set.", asset);
+            isValid = false;
         }
     }
 
@@ -183,10 +260,10 @@ public class PipelineConfigurationLoader {
         } else if (StringUtils.isNotBlank(urlResolver.getUrlPattern())) {
             String urlPattern = urlResolver.getUrlPattern();
             if ((urlPattern.contains("${name}") && StringUtils.isBlank(asset.getName()))
-                || (urlPattern.contains("${version}") && StringUtils.isBlank(asset.getVersion()))) {
+                    || (urlPattern.contains("${version}") && StringUtils.isBlank(asset.getVersion()))) {
                 isValid = false;
                 log.error("Asset {} requires 'urlResolver.urlPattern' to only contain placeholders which are set.",
-                          asset);
+                        asset);
             } else {
                 if (urlPattern.contains("${name}")) {
                     urlPattern = urlPattern.replace("${name}", asset.getName());
@@ -272,14 +349,14 @@ public class PipelineConfigurationLoader {
             for (String type : report.getTypes()) {
                 if (!ReportType.allKeys().contains(type)) {
                     log.error("A report with 'assetIds': {} contains an invalid type in 'types': {}.",
-                              report.getAssetIds(), type);
+                            report.getAssetIds(), type);
                     isValid = false;
                 }
             }
 
             if (report.getLocales() == null || report.getLocales().isEmpty()) {
                 log.error("A report with 'assetIds': {} is missing or contains an empty 'locales' list.",
-                          report.getAssetIds());
+                        report.getAssetIds());
                 isValid = false;
                 continue;
             }
@@ -287,7 +364,7 @@ public class PipelineConfigurationLoader {
             for (SupportedLocale locale : report.getLocales()) {
                 if (locale == null) {
                     log.error("A report with 'assetIds': {} contains a null locale in 'locales'.",
-                              report.getAssetIds());
+                            report.getAssetIds());
                     isValid = false;
                 }
             }
@@ -375,7 +452,7 @@ public class PipelineConfigurationLoader {
             if (assessmentFieldsRequired()) {
                 log.error(
                         "Pipeline configuration requires 'options' and 'enrichment' to be set because either reports " +
-                        "or dashboards require it.");
+                                "or dashboards require it.");
                 isValid = false;
                 return;
             }
@@ -413,7 +490,7 @@ public class PipelineConfigurationLoader {
         if (StringUtils.isBlank(enrichmentOptions.getSecurityPolicyFile()) && assessmentFieldsRequired()) {
             log.error(
                     "Enrichment Options requires 'securityPolicyFile' to be set because either reports or dashboards " +
-                    "require it.");
+                            "require it.");
             isValid = false;
         }
     }
@@ -445,9 +522,9 @@ public class PipelineConfigurationLoader {
                     .filter(r -> hasAssessmentType(r, asset.getId()))
                     .toList();
             dashboardsRequiringAssessmentFields.addAll(getDashboards()
-                                                               .stream()
-                                                               .filter(d -> d.getAssetIds().contains(asset.getId()))
-                                                               .toList());
+                    .stream()
+                    .filter(d -> d.getAssetIds().contains(asset.getId()))
+                    .toList());
         }
 
         return !reportsRequiringAssessmentFields.isEmpty() || !dashboardsRequiringAssessmentFields.isEmpty();

@@ -185,6 +185,8 @@ public class PipelineConfiguration {
             private UrlResolver urlResolver;
             private MavenResolver mavenResolver;
             private ContainerResolver containerResolver;
+            private AssetType type = AssetType.DEFAULT;
+            private ExtractionScript extractionScript;
 
             /**
              * Resolver configuration for fetching an asset from a URL, including optional
@@ -199,7 +201,6 @@ public class PipelineConfiguration {
                 private String token;
                 private String headerName;
                 private String headerValue;
-                private AssetType assetType = AssetType.DEFAULT;
                 private String kotlinScriptFile;
                 private String excludePatternFile;
             }
@@ -223,6 +224,16 @@ public class PipelineConfiguration {
                 private String image;
                 private String tag;
                 private String repoUrl = "docker.io";
+            }
+
+            /**
+             * Derives the inventory of this asset by applying a script to the inventory of its parent asset.
+             */
+            @Data
+            public static class ExtractionScript {
+                private String script;
+                private String inventory;
+                private Map<String, String> params = new LinkedHashMap<>();
             }
 
             /**
@@ -335,6 +346,40 @@ public class PipelineConfiguration {
                     path = path.substring(slash + 1);
                 }
                 return path;
+            }
+
+            /**
+             * Whether this asset is derived from its parent asset by applying an extraction script.
+             *
+             * @return true if an extraction script is configured
+             */
+            public boolean isScriptedAsset() {
+                return extractionScript != null;
+            }
+
+            /**
+             * Returns the file name of the inventory written by the extraction script.
+             * Defaults to {@code <id>.xlsx} if no inventory is configured.
+             *
+             * @return the inventory file name or null if no extraction script is configured
+             */
+            public String getExtractionScriptInventoryFileName() {
+                if (extractionScript == null) {
+                    return null;
+                }
+                String fileName = StringUtils.isBlank(extractionScript.getInventory())
+                        ? id
+                        : extractionScript.getInventory();
+                return StringUtils.endsWithIgnoreCase(fileName, ".xlsx") ? fileName : fileName + ".xlsx";
+            }
+
+            /**
+             * Whether this asset defines its own source. Assets without a resolver use the inventory of their parent.
+             *
+             * @return true if any resolver is configured
+             */
+            public boolean hasResolver() {
+                return urlResolver != null || mavenResolver != null || containerResolver != null;
             }
 
             /**

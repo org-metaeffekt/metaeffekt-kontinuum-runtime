@@ -13,6 +13,7 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  * Handler for the {@link Stage#FETCH} stage.
  * Responsible for retrieving the target asset via URL, Maven parameters, or container image resolver.
  * Exactly one resolver is executed per asset, as enforced by pipeline configuration validation
+ * Assets without a resolver are skipped, since they use the inventory of their parent asset.
  * {@link org.metaeffekt.kontinuum.runtime.generator.shared.PipelineConfigurationLoader}.
  */
 public class FetchStageHandler implements AssetStageHandler {
@@ -25,6 +26,10 @@ public class FetchStageHandler implements AssetStageHandler {
     @Override
     public void process(AssetExecutionContext context) {
         Asset asset = context.getAsset();
+        if (!asset.hasResolver()) {
+            // Assets without a resolver use the inventory of their parent asset and are not fetched.
+            return;
+        }
         MavenProcessor fetchProcessor;
         if (asset.getUrlResolver() != null) {
             fetchProcessor = handleUrlResolver(context);

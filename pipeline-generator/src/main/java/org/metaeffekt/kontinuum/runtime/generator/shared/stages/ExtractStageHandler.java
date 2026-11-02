@@ -48,10 +48,10 @@ public class ExtractStageHandler implements AssetStageHandler {
      * an explicit type use the default extraction.
      */
     private static AssetType getAssetType(Asset asset) {
-        if (asset.getUrlResolver() == null || asset.getUrlResolver().getAssetType() == null) {
+        if (asset.getUrlResolver() == null || asset.getType() == null) {
             return AssetType.DEFAULT;
         }
-        return asset.getUrlResolver().getAssetType();
+        return asset.getType();
     }
 
     /**
