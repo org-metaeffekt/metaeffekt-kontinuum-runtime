@@ -516,8 +516,7 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
                 processorParameter(PARAM_ANALYSIS_DIR, true),
                 processorParameter(OUTPUT_INVENTORY_FILE, true),
                 processorParameter(PARAM_EXCLUDE_PATTERN_FILE, true),
-                processorParameter(PARAM_ACTIVATE_FILE_PROCESSING, false),
-                processorParameter(PARAM_KOTLIN_SCRIPT_FILE, false)
+                processorParameter(PARAM_ACTIVATE_FILE_PROCESSING, false)
         );
     }
 
@@ -528,8 +527,7 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
                 processorParameter(PARAM_ANALYSIS_DIR, true),
                 processorParameter(OUTPUT_INVENTORY_FILE, true),
                 processorParameter(PARAM_EXCLUDE_PATTERN_FILE, true),
-                processorParameter(PARAM_ACTIVATE_FILE_PROCESSING, false),
-                processorParameter(PARAM_KOTLIN_SCRIPT_FILE, false)
+                processorParameter(PARAM_ACTIVATE_FILE_PROCESSING, false)
         );
     }
 

@@ -262,7 +262,7 @@ public class PipelineConfiguration {
             }
 
             /**
-             * Derives the inventory of this asset by applying a script to the inventory of its parent asset.
+             * Kotlin script applied to the inventory of this asset.
              */
             @Data
             public static class ExtractionScript {
@@ -384,7 +384,7 @@ public class PipelineConfiguration {
             }
 
             /**
-             * Whether this asset is derived from its parent asset by applying an extraction script.
+             * Whether an extraction script is configured for this asset.
              *
              * @return true if an extraction script is configured
              */
