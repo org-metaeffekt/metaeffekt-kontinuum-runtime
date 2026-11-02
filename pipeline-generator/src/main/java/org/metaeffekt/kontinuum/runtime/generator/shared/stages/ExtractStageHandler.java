@@ -1,28 +1,42 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
-import org.apache.commons.lang3.StringUtils;
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
-import org.metaeffekt.kontinuum.runtime.models.shared.AssetType;
 import org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
+import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
-import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.EXTRACT_LINUX_ARCH_INVENTORY;
-import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.EXTRACT_WINDOWS_INVENTORY;
+import java.util.IdentityHashMap;
+import java.util.Map;
+
+import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.EXECUTE_KOTLIN_SCRIPT;
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.SCAN_DIRECTORY;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
 
 /**
  * Handler for the {@link Stage#EXTRACT} stage.
- * Responsible for extracting an inventory from fetched assets. Depending on the asset type of the
- * url resolver, the inventory is extracted by scanning the fetched directory (default) or from a
- * Windows or Linux appliance extraction archive.
- * Assets whose url resolver already references an extracted inventory (a local {@code .xls}/{@code .xlsx}
- * file) skip this stage, since the fetched file already is an inventory.
+ * Determines the inventory of each asset:
+ * <ul>
+ *     <li>Assets with a resolver extract their inventory from the fetched files, depending on their asset type
+ *     (directory scan by default, or a Windows or Linux appliance extraction archive). Assets whose url resolver
+ *     already references an extracted inventory skip the extraction.</li>
+ *     <li>Assets without a resolver use the inventory of their parent asset.</li>
+ * </ul>
+ * If an extraction script is configured, it is applied to the inventory afterward.
  */
 public class ExtractStageHandler implements AssetStageHandler {
+
+    /**
+     * Remembers the inventory and the producing processor of every processed asset, so that nested assets without
+     * a resolver can use the inventory of their parent. Assets are processed parent-first (see
+     * {@link org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties#getAllAssets()}).
+     */
+    private final Map<Asset, ExtractionResult> extractionResults = new IdentityHashMap<>();
+
+    private record ExtractionResult(String inventoryFile, String inventoryDir, Processor producer) {
+    }
 
     @Override
     public Stage getStage() {
@@ -31,31 +45,99 @@ public class ExtractStageHandler implements AssetStageHandler {
 
     @Override
     public void process(AssetExecutionContext context) {
-        if (context.getAsset().isPreExtractedInventory()) {
-            return;
+        Asset asset = context.getAsset();
+        Processor producer;
+
+        if (asset.hasResolver()) {
+            producer = handleExtraction(context);
+        } else {
+            producer = useParentInventory(context);
         }
 
-        MavenProcessor inventoryExtraction = switch (getAssetType(context.getAsset())) {
-            case WINDOWS -> handleApplianceExtraction(context, EXTRACT_WINDOWS_INVENTORY);
-            case LINUX -> handleApplianceExtraction(context, EXTRACT_LINUX_ARCH_INVENTORY);
-            case DEFAULT -> handleInventoryExtraction(context);
-        };
-        context.addProcessor(inventoryExtraction);
+        if (asset.isScriptedAsset()) {
+            MavenProcessor script = handleExtractionScript(context);
+            context.addProcessor(script);
+            if (producer != null) {
+                context.addDependency(script, producer);
+            }
+            producer = script;
+        }
+
+        extractionResults.put(asset, new ExtractionResult(
+                context.getCurrentInventoryFile(), context.getCurrentInventoryDir(), producer));
     }
 
     /**
-     * Determines the asset type of the url resolver. Assets without url resolver or without
-     * an explicit type use the default extraction.
+     * Extracts the inventory of an asset with a resolver, depending on its asset type.
+     *
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return the extraction processor, or null if the fetched file already is an inventory
      */
-    private static AssetType getAssetType(Asset asset) {
-        if (asset.getUrlResolver() == null || asset.getType() == null) {
-            return AssetType.DEFAULT;
+    private Processor handleExtraction(AssetExecutionContext context) {
+        Asset asset = context.getAsset();
+        if (asset.isPreExtractedInventory()) {
+            return null;
         }
-        return asset.getType();
+
+        MavenProcessor extraction = switch (asset.getType()) {
+            case WINDOWS -> handleApplianceExtraction(context, ProcessorIds.EXTRACT_WINDOWS_INVENTORY);
+            case LINUX -> handleApplianceExtraction(context, ProcessorIds.EXTRACT_LINUX_ARCH_INVENTORY);
+            default -> handleInventoryExtraction(context);
+        };
+        context.addProcessor(extraction);
+        return extraction;
     }
 
     /**
-     * Extracts an inventory from the fetched artifact directory.
+     * Uses the inventory of the parent asset as the inventory of the current asset.
+     *
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return the processor that produced the parent inventory, or null if it was produced in an earlier stage
+     */
+    private Processor useParentInventory(AssetExecutionContext context) {
+        Asset parent = context.getParentAsset();
+        ExtractionResult parentResult = extractionResults.get(parent);
+        if (parentResult == null) {
+            throw new IllegalStateException(String.format(
+                    "Asset %s has no resolver, but no inventory of its parent asset %s is available.",
+                    context.getAsset(), parent));
+        }
+
+        context.setCurrentInventoryFile(parentResult.inventoryFile());
+        context.setCurrentInventoryDir(parentResult.inventoryDir());
+        return parentResult.producer();
+    }
+
+    /**
+     * Applies the extraction script of the asset to its current inventory.
+     *
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return The configured {@link MavenProcessor} for executing the kotlin script.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_execute-kotlin-script.md">util_execute-kotlin-script.md</a>
+     */
+    private MavenProcessor handleExtractionScript(AssetExecutionContext context) {
+        Asset asset = context.getAsset();
+        String scriptedInventoryDir = context.getStageDirForAsset(Stage.EXTRACT) + "scripted/";
+        String scriptedInventoryFile = scriptedInventoryDir + asset.getExtractionScriptInventoryFileName();
+
+        MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(
+                EXECUTE_KOTLIN_SCRIPT);
+        processor.setStage(Stage.EXTRACT);
+        processor.setProcessorParameter(INPUT_KOTLIN_SCRIPT_FILE,
+                KontinuumUtils.normalizeFilePath(context.getEnvironment().getWorkbenchDirNormalized(),
+                        asset.getExtractionScript().getScript()));
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
+        processor.setProcessorParameter(OUTPUT_INVENTORY_FILE, scriptedInventoryFile);
+        processor.setProcessorParameter(PARAM_ASSET_ID, asset.getId());
+
+        context.setCurrentInventoryFile(scriptedInventoryFile);
+        context.setCurrentInventoryDir(scriptedInventoryDir);
+
+        return processor;
+    }
+
+    /**
+     * Extracts an inventory from a Windows or Linux appliance extraction archive.
      *
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for scanning and extracting the inventory.
@@ -104,13 +186,6 @@ public class ExtractStageHandler implements AssetStageHandler {
                 context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
         mavenProcessor.setProcessorParameter(PARAM_EXCLUDE_PATTERN_FILE,
                 KontinuumUtils.normalizeFilePath(workbenchDir, asset.getUrlResolver().getExcludePatternFile()));
-
-        String kotlinScriptFile = asset.getUrlResolver().getKotlinScriptFile();
-        if (StringUtils.isNotBlank(kotlinScriptFile)) {
-            mavenProcessor.setProcessorParameter(PARAM_KOTLIN_SCRIPT_FILE,
-                    KontinuumUtils.normalizeFilePath(workbenchDir, kotlinScriptFile));
-            mavenProcessor.setProcessorParameter(OUTPUT_SCRIPTED_INVENTORY_DIR, extractDir + "scripted/");
-        }
 
         context.setCurrentInventoryDir(extractDir);
         context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());

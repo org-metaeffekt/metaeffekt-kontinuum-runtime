@@ -119,4 +119,16 @@ public class AssetExecutionContext extends AbstractExecutionContext {
         }
         return configuration.getProjectProperties().getRootAssetFor(asset);
     }
+
+    /**
+     * Returns the direct parent of the current asset.
+     *
+     * @return the parent asset, or null if the current asset is a top-level asset
+     */
+    public Asset getParentAsset() {
+        if (configuration == null || configuration.getProjectProperties() == null) {
+            return null;
+        }
+        return configuration.getProjectProperties().getParentFor(asset);
+    }
 }

@@ -136,6 +136,41 @@ public class PipelineConfiguration {
             return targetAsset;
         }
 
+        /**
+         * Finds the direct parent of the target asset within the configured asset tree.
+         *
+         * @param targetAsset the asset whose parent to look up
+         * @return the direct parent asset, or null if the target is a top-level asset or not part of the tree
+         */
+        public Asset getParentFor(Asset targetAsset) {
+            if (this.assets == null || targetAsset == null) {
+                return null;
+            }
+            for (Asset topLevelAsset : this.assets) {
+                Asset parent = findParent(topLevelAsset, targetAsset);
+                if (parent != null) {
+                    return parent;
+                }
+            }
+            return null;
+        }
+
+        private Asset findParent(Asset current, Asset target) {
+            if (current == null || current.getAssets() == null) {
+                return null;
+            }
+            for (Asset child : current.getAssets()) {
+                if (child == target) {
+                    return current;
+                }
+                Asset parent = findParent(child, target);
+                if (parent != null) {
+                    return parent;
+                }
+            }
+            return null;
+        }
+
         private boolean containsAsset(Asset current, Asset target) {
             if (current == target || (current.getId() != null && current.getId().equals(target.getId()))) {
                 return true;
@@ -201,7 +236,6 @@ public class PipelineConfiguration {
                 private String token;
                 private String headerName;
                 private String headerValue;
-                private String kotlinScriptFile;
                 private String excludePatternFile;
             }
 

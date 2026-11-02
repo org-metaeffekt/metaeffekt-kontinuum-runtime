@@ -209,9 +209,9 @@ public class PipelineConfigurationLoader {
             isValid = false;
         }
 
-        if (resolverCount == 0 && asset.getType() != AssetType.DEFAULT) {
-            log.error("Asset {} defines a 'type' but no resolver. The type only applies to assets with a resolver.",
-                    asset);
+        if (asset.getType() != AssetType.DEFAULT && asset.getUrlResolver() == null) {
+            log.error("Asset {} defines type {}, which is currently only supported with a 'urlResolver'.",
+                    asset, asset.getType());
             isValid = false;
         }
 
