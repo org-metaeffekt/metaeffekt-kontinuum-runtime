@@ -3,6 +3,7 @@ package org.metaeffekt.kontinuum.runtime.models.shared;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
 import java.io.File;
@@ -349,7 +350,7 @@ public class PipelineConfiguration {
                     return false;
                 }
                 String url = urlResolver.getUrl();
-                if (!StringUtils.startsWithIgnoreCase(url, "file:")) {
+                if (!Strings.CI.startsWith(url, "file:")) {
                     return false;
                 }
                 String lowerCaseUrl = url.toLowerCase(Locale.ROOT);
@@ -404,7 +405,7 @@ public class PipelineConfiguration {
                 String fileName = StringUtils.isBlank(extractionScript.getInventory())
                         ? id
                         : extractionScript.getInventory();
-                return StringUtils.endsWithIgnoreCase(fileName, ".xlsx") ? fileName : fileName + ".xlsx";
+                return Strings.CI.endsWith(fileName, ".xlsx") ? fileName : fileName + ".xlsx";
             }
 
             /**
