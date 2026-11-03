@@ -200,6 +200,7 @@ public enum ProcessorParameterKey {
     PARAM_REPO_URL("param.repo.url"),
     PARAM_REPORT_PERIOD_SINCE("param.report.period.since"),
     PARAM_REPORT_PERIOD_UNTIL("param.report.period.until"),
+    PARAM_SCRIPT_PARAMS("param.script.params"),
     PARAM_SECURITY_POLICY_ACTIVE_IDS("param.security.policy.active.ids"),
     PARAM_SECURITY_POLICY_FILE("param.security.policy.file"),
     PARAM_SOURCE_MODE("param.source.mode"),

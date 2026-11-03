@@ -505,7 +505,8 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
                               processorParameter(INPUT_KOTLIN_SCRIPT_FILE, true),
                               processorParameter(INPUT_INVENTORY_FILE, true),
                               processorParameter(OUTPUT_INVENTORY_FILE, true),
-                              processorParameter(PARAM_ASSET_ID, false)
+                              processorParameter(PARAM_ASSET_ID, false),
+                              processorParameter(PARAM_SCRIPT_PARAMS, false)
         );
     }
 

@@ -1,5 +1,7 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
@@ -34,6 +36,8 @@ public class ExtractStageHandler implements AssetStageHandler {
      * {@link org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties#getAllAssets()}).
      */
     private final Map<Asset, ExtractionResult> extractionResults = new IdentityHashMap<>();
+
+    private static final ObjectMapper JSON_MAPPER = new ObjectMapper();
 
     private record ExtractionResult(String inventoryFile, String inventoryDir, Processor producer) {
     }
@@ -130,6 +134,11 @@ public class ExtractStageHandler implements AssetStageHandler {
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE, scriptedInventoryFile);
         processor.setProcessorParameter(PARAM_ASSET_ID, asset.getId());
 
+        Map<String, String> scriptParams = asset.getExtractionScript().getParams();
+        if (scriptParams != null && !scriptParams.isEmpty()) {
+            processor.setProcessorParameter(PARAM_SCRIPT_PARAMS, toJson(scriptParams, asset));
+        }
+
         context.setCurrentInventoryFile(scriptedInventoryFile);
         context.setCurrentInventoryDir(scriptedInventoryDir);
 
@@ -191,5 +200,14 @@ public class ExtractStageHandler implements AssetStageHandler {
         context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
 
         return mavenProcessor;
+    }
+
+    private static String toJson(Map<String, String> scriptParams, Asset asset) {
+        try {
+            return JSON_MAPPER.writeValueAsString(scriptParams);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException(
+                    "Failed to convert 'extractionScript.params' of asset " + asset + " to json.", e);
+        }
     }
 }

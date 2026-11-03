@@ -222,6 +222,8 @@ projectProperties:
           extractionScript:
             script: "scripts/extract-os.kts"
             inventory: "os-inventory.xlsx"
+            params:
+               filter: "os"
         - id: "appliance-drivers"
           name: "appliance-drivers"
           assessmentId: "appliance-drivers"
@@ -229,10 +231,11 @@ projectProperties:
             script: "scripts/extract-drivers.kts"
 ```
 
-| Parameter                    | Type   | Required | Description                                                                |
-|:-----------------------------|:-------|:---------|:---------------------------------------------------------------------------|
-| `extractionScript.script`    | String | **Yes**  | Path to the kotlin script relative to the workbench directory.             |
-| `extractionScript.inventory` | String | Optional | File name of the inventory written by the script. Defaults to `<id>.xlsx`. |
+| Parameter                    | Type   | Required | Description                                                                                                                 |
+|:-----------------------------|:-------|:---------|:----------------------------------------------------------------------------------------------------------------------------|
+| `extractionScript.script`    | String | **Yes**  | Path to the kotlin script relative to the workbench directory.                                                              |
+| `extractionScript.inventory` | String | Optional | File name of the inventory written by the script. Defaults to `<id>.xlsx`.                                                  |
+| `extractionScript.params`    | Map    | Optional | Additional parameters passed to the script as a JSON object (`param.script.params`). Values must not contain single quotes. |
 
 The inventory of each asset is determined in the `EXTRACT` stage:
 

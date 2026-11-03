@@ -220,9 +220,22 @@ public class PipelineConfigurationLoader {
 
     private void validateExtractionScript(Asset asset) {
         Asset.ExtractionScript extractionScript = asset.getExtractionScript();
-        if (extractionScript != null && StringUtils.isBlank(extractionScript.getScript())) {
+        if (extractionScript == null) {
+            return;
+        }
+
+        if (StringUtils.isBlank(extractionScript.getScript())) {
             log.error("Asset {} requires 'extractionScript.script' to be set.", asset);
             isValid = false;
+        }
+
+        if (extractionScript.getParams() != null) {
+            extractionScript.getParams().forEach((key, value) -> {
+                if (StringUtils.contains(key, '\'') || StringUtils.contains(value, '\'')) {
+                    log.error("Asset {} must not use single quotes in 'extractionScript.params' ({}).", asset, key);
+                    isValid = false;
+                }
+            });
         }
     }
 

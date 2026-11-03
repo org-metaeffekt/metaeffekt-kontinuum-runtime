@@ -127,6 +127,29 @@ class ExtractStageHandlerTest {
     }
 
     @Test
+    void extractionScriptPassesParamsAsJson() {
+        Asset.ExtractionScript extractionScript = extractionScript("scripts/transform.kts");
+        extractionScript.getParams().put("filter", "os");
+        extractionScript.getParams().put("mode", "strict");
+        asset.setExtractionScript(extractionScript);
+
+        handler.process(context);
+
+        Processor script = context.getProcessors().get(1);
+        assertEquals("{\"filter\":\"os\",\"mode\":\"strict\"}", param(script, PARAM_SCRIPT_PARAMS));
+    }
+
+    @Test
+    void extractionScriptWithoutParamsOmitsParameter() {
+        asset.setExtractionScript(extractionScript("scripts/transform.kts"));
+
+        handler.process(context);
+
+        Processor script = context.getProcessors().get(1);
+        assertNull(param(script, PARAM_SCRIPT_PARAMS));
+    }
+
+    @Test
     void childWithoutResolverUsesParentInventory() {
         Asset child = addChild("child");
         ProcessorExecutionPlan plan = new ProcessorExecutionPlan();

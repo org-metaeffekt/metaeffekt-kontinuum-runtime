@@ -141,4 +141,13 @@ class PipelineConfigurationLoaderTest {
         child.setExtractionScript(extractionScript);
         return child;
     }
+
+    @Test
+    void extractionScriptParamWithSingleQuoteIsRejected() {
+        Asset child = scriptedChild("child");
+        child.getExtractionScript().getParams().put("filter", "it's");
+        parent.getAssets().add(child);
+
+        assertThrows(IllegalStateException.class, this::validate);
+    }
 }
