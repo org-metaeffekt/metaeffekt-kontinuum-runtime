@@ -16,7 +16,7 @@ The pipeline generator compiles this YAML configuration into either a dynamic **
     - [Asset Definitions (`assets`)](#22-asset-definitions-assets)
     - [Asset Resolvers (`urlResolver`, `mavenResolver`, `containerResolver`)](#23-asset-resolvers)
     - [Asset Types (`type`)](#24-asset-types-type)
-    - [Asset Hierarchies and Extraction Scripts (`assets`,`extractionScript`)](#25-asset-hierarchies-and-extraction-scripts)
+    - [Asset Hierarchies and Extraction Scripts (`assets`, `extractionScript`)](#25-asset-hierarchies-and-extraction-scripts)
 3. [Reports Configuration (`reports`)](#3-reports-configuration-reports)
     - [Supported Report Types](#31-supported-report-types)
     - [Single-Asset vs. Multi-Asset Consolidation](#32-single-asset-vs-multi-asset-consolidation)
@@ -206,29 +206,29 @@ applied to its inventory.
 
 ```yaml
 projectProperties:
-  assets:
-    - id: "appliance"
-      name: "appliance"
-      version: "1.0.0"
-      reference: "inventories/appliance/inventory"
-      context: "local"
-      type: "WINDOWS"
-      urlResolver:
-        url: "file:///data/appliance-extract.tar"
-      assets:
-        - id: "appliance-os"
-          name: "appliance-os"
-          assessmentId: "appliance-os"
-          extractionScript:
-            script: "scripts/extract-os.kts"
-            inventory: "os-inventory.xlsx"
-            params:
-               filter: "os"
-        - id: "appliance-drivers"
-          name: "appliance-drivers"
-          assessmentId: "appliance-drivers"
-          extractionScript:
-            script: "scripts/extract-drivers.kts"
+   assets:
+      - id: "appliance"
+        name: "appliance"
+        version: "1.0.0"
+        reference: "inventories/appliance/inventory"
+        context: "local"
+        type: "WINDOWS"
+        urlResolver:
+           url: "file:///data/appliance-extract.tar"
+        assets:
+           - id: "appliance-os"
+             name: "appliance-os"
+             assessmentId: "appliance-os"
+             extractionScript:
+                script: "scripts/extract-os.kts"
+                inventory: "os-inventory.xlsx"
+                params:
+                   filter: "os"
+           - id: "appliance-drivers"
+             name: "appliance-drivers"
+             assessmentId: "appliance-drivers"
+             extractionScript:
+                script: "scripts/extract-drivers.kts"
 ```
 
 | Parameter                    | Type   | Required | Description                                                                                                                 |

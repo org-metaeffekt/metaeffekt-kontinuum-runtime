@@ -39,6 +39,6 @@ public enum AssetType {
             }
         }
         throw new IllegalArgumentException(
-                "Unknown assetType: '" + value + "'. Supported values are [default, windows, linux].");
+                "Unknown type: '" + value + "'. Supported values are [default, windows, linux].");
     }
 }

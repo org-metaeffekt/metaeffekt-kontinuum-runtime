@@ -418,6 +418,15 @@ public class PipelineConfiguration {
             }
 
             /**
+             * Sets the asset type. Falls back to {@link AssetType#DEFAULT} if the type is empty in the configuration.
+             *
+             * @param type the asset type, may be null
+             */
+            public void setType(AssetType type) {
+                this.type = type == null ? AssetType.DEFAULT : type;
+            }
+
+            /**
              * Streams this asset followed by all of its nested assets depth-first.
              *
              * @return a stream of this asset and its descendants

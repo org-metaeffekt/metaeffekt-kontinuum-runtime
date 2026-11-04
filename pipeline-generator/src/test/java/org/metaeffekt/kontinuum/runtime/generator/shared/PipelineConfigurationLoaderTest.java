@@ -150,4 +150,12 @@ class PipelineConfigurationLoaderTest {
 
         assertThrows(IllegalStateException.class, this::validate);
     }
+
+    @Test
+    void emptyTypeFallsBackToDefault() {
+        parent.setType(null);
+
+        assertEquals(AssetType.DEFAULT, parent.getType());
+        assertDoesNotThrow(this::validate);
+    }
 }

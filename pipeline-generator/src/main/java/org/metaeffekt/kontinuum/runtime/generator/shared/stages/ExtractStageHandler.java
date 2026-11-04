@@ -146,7 +146,7 @@ public class ExtractStageHandler implements AssetStageHandler {
     }
 
     /**
-     * Extracts an inventory from a Windows or Linux appliance extraction archive.
+     * Extracts an inventory from the fetched artifact directory.
      *
      * @param context The asset execution context containing pipeline and asset information.
      * @return The configured {@link MavenProcessor} for scanning and extracting the inventory.
@@ -172,8 +172,7 @@ public class ExtractStageHandler implements AssetStageHandler {
     }
 
     /**
-     * Extracts an inventory from a Windows or Linux appliance extraction archive. Optionally applies
-     * a kotlin script to the extracted inventory.
+     * Extracts an inventory from a Windows or Linux appliance extraction archive.
      *
      * @param context     The asset execution context containing pipeline and asset information.
      * @param processorId The extraction processor to use (windows or linux).
