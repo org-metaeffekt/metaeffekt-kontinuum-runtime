@@ -409,12 +409,23 @@ public class PipelineConfiguration {
             }
 
             /**
+             * Counts the resolvers configured for this asset.
+             *
+             * @return the number of configured resolvers
+             */
+            public int resolverCount() {
+                return (urlResolver != null ? 1 : 0)
+                        + (mavenResolver != null ? 1 : 0)
+                        + (containerResolver != null ? 1 : 0);
+            }
+
+            /**
              * Whether this asset defines its own source. Assets without a resolver use the inventory of their parent.
              *
              * @return true if any resolver is configured
              */
             public boolean hasResolver() {
-                return urlResolver != null || mavenResolver != null || containerResolver != null;
+                return resolverCount() > 0;
             }
 
             /**

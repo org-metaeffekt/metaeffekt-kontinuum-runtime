@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * Loads and validates a pipeline configuration from a YAML file.
@@ -195,9 +194,7 @@ public class PipelineConfigurationLoader {
     }
 
     private void validateAssetSource(Asset asset, boolean isTopLevelAsset) {
-        int resolverCount = (int) Stream.of(asset.getUrlResolver(), asset.getMavenResolver(), asset.getContainerResolver())
-                .filter(Objects::nonNull)
-                .count();
+        int resolverCount = asset.resolverCount();
 
         if (resolverCount > 1) {
             log.error("Asset {} must define at most one resolver, but found {}.", asset, resolverCount);
