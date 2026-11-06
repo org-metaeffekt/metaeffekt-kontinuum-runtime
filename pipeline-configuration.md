@@ -15,6 +15,8 @@ The pipeline generator compiles this YAML configuration into either a dynamic **
     - [Project Metadata (`project`)](#21-project-metadata-project)
     - [Asset Definitions (`assets`)](#22-asset-definitions-assets)
     - [Asset Resolvers (`urlResolver`, `mavenResolver`, `containerResolver`)](#23-asset-resolvers)
+    - [Asset Types (`type`)](#24-asset-types-type)
+    - [Asset Hierarchies and Extraction Scripts (`assets`, `extractionScript`)](#25-asset-hierarchies-and-extraction-scripts)
 3. [Reports Configuration (`reports`)](#3-reports-configuration-reports)
     - [Supported Report Types](#31-supported-report-types)
     - [Single-Asset vs. Multi-Asset Consolidation](#32-single-asset-vs-multi-asset-consolidation)
@@ -99,22 +101,32 @@ projectProperties:
         url: "https://example.com/downloads/sample-asset-1.0.0.zip"
 ```
 
-| Parameter      | Type   | Required | Description                                                                            | What It Produces / Affects                                                                                            |
-|:---------------|:-------|:---------|:---------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------|
-| `id`           | String | **Yes**  | Unique asset key within the pipeline.                                                  | Forms workspace stage directories (`<stage>/<asset-id>/...`) and links report/dashboard definitions to this asset.    |
-| `name`         | String | **Yes**  | Component or asset name.                                                               | Asset name utilized throughout the pipeline run.                                                                      |
-| `version`      | String | **Yes**  | Asset version.                                                                         | Asset version utilized throughout the pipeline run.                                                                   |
-| `reference`    | String | **Yes**  | Path to the reference inventory directory or file relative to the workbench directory. | Used as an information repository from which information missing in the extracted asset is pulled.                    |
-| `assessmentId` | String | Optional | Vulnerability assessment identifier.                                                   | Locates manual assessments in the workbench directory: `assessments/<project-name>/<assessmentId>/<context>/context`. |
-| `context`      | String | Optional | Assessment context (e.g., `local`, `remote`).                                          | Sub-directory qualifier to dynamically resolve context information.                                                   |
-| `assets`       | List   | Optional | Nested list of child assets.                                                           | Supports hierarchical asset decomposition (e.g., an asset containing multiple other assets).                          |
+| Parameter          | Type   | Required | Description                                                                                    | What It Produces / Affects                                                                                            |
+|:-------------------|:-------|:---------|:-----------------------------------------------------------------------------------------------|:----------------------------------------------------------------------------------------------------------------------|
+| `id`               | String | **Yes**  | Unique asset key within the pipeline.                                                          | Forms workspace stage directories (`<stage>/<asset-id>/...`) and links report/dashboard definitions to this asset.    |
+| `name`             | String | **Yes**  | Component or asset name.                                                                       | Asset name utilized throughout the pipeline run.                                                                      |
+| `version`          | String | **Yes**  | Asset version.                                                                                 | Asset version utilized throughout the pipeline run.                                                                   |
+| `reference`        | String | **Yes**  | Path to the reference inventory directory or file relative to the workbench directory.         | Used as an information repository from which information missing in the extracted asset is pulled.                    |
+| `assessmentId`     | String | Optional | Vulnerability assessment identifier.                                                           | Locates manual assessments in the workbench directory: `assessments/<project-name>/<assessmentId>/<context>/context`. |
+| `context`          | String | Optional | Assessment context (e.g., `local`, `remote`).                                                  | Sub-directory qualifier to dynamically resolve context information.                                                   |
+| `type`             | Enum   | Optional | Asset type controlling the extraction: `DEFAULT`, `WINDOWS` or `LINUX`. Defaults to `DEFAULT`. | Selects the extraction processor in the `EXTRACT` stage. See [Asset Types](#24-asset-types-type).                     |
+| `extractionScript` | Object | Optional | Kotlin script applied to the inventory of the asset.                                           | Produces the final inventory of the asset. See [Asset Hierarchies](#25-asset-hierarchies-and-extraction-scripts).     |
+| `assets`           | List   | Optional | Nested list of child assets.                                                                   | Models asset hierarchies. Child assets without a resolver use the inventory of their parent asset.                    |
+
+Nested assets inherit `version`, `reference` and `context` from their direct parent asset unless they define their own
+values. `id`, `name` and `assessmentId` are not inherited, as each asset stands on its own. Asset ids must be unique
+across all nesting levels.
 
 ---
 
 ### 2.3 Asset Resolvers
 
-Each asset should define **at most one** resolver indicating how the asset is downloaded or retrieved in the `FETCH`
-stage.
+A resolver defines how an asset is downloaded or retrieved in the `FETCH` stage. Each asset must define **at most
+one** resolver:
+
+- **Top-level assets** require exactly one resolver.
+- **Nested assets** may define their own resolver. Without a resolver, they skip the `FETCH` stage and use the inventory
+  of their parent asset instead.
 
 #### `urlResolver`
 
@@ -123,6 +135,8 @@ Downloads an asset from an HTTP(S) URL or a local/remote file URL.
 ```yaml
 urlResolver:
   url: "https://github.com/example/example/archive/refs/tags/v0.17.0.zip"
+  # Optional, only used for asset types WINDOWS and LINUX:
+  excludePatternFile: "config/extraction/exclude-patterns.yaml"
   # Optional authentication options:
   username: "user"
   password: "secret-password"
@@ -163,13 +177,86 @@ containerResolver:
 
 ---
 
+### 2.4 Asset Types (`type`)
+
+The asset type controls how the inventory is extracted from the fetched files in the `EXTRACT` stage.
+
+```yaml
+- id: "windows-appliance"
+  type: "WINDOWS"
+  urlResolver:
+    url: "file:///data/windows-extract.tar"
+    excludePatternFile: "config/extraction/exclude-patterns.yaml"
+```
+
+| Type      | Extraction                                                                      |
+|:----------|:--------------------------------------------------------------------------------|
+| `DEFAULT` | Scans the fetched directory (`extract_scan-directory`).                         |
+| `WINDOWS` | Extracts a Windows appliance extraction archive (`extract_windows-inventory`).  |
+| `LINUX`   | Extracts a Linux appliance extraction archive (`extract_linux-arch-inventory`). |
+
+`WINDOWS` and `LINUX` are currently only supported in combination with a `urlResolver`.
+
+---
+
+### 2.5 Asset Hierarchies and Extraction Scripts
+
+Assets can be nested to model hierarchies. Each asset, at any nesting level, can define an `extractionScript` that is
+applied to its inventory.
+
+```yaml
+projectProperties:
+   assets:
+      - id: "appliance"
+        name: "appliance"
+        version: "1.0.0"
+        reference: "inventories/appliance/inventory"
+        context: "local"
+        type: "WINDOWS"
+        urlResolver:
+           url: "file:///data/appliance-extract.tar"
+        assets:
+           - id: "appliance-os"
+             name: "appliance-os"
+             assessmentId: "appliance-os"
+             extractionScript:
+                script: "scripts/extract-os.kts"
+                inventory: "os-inventory.xlsx"
+                params:
+                   filter: "os"
+           - id: "appliance-drivers"
+             name: "appliance-drivers"
+             assessmentId: "appliance-drivers"
+             extractionScript:
+                script: "scripts/extract-drivers.kts"
+```
+
+| Parameter                    | Type   | Required | Description                                                                                                                 |
+|:-----------------------------|:-------|:---------|:----------------------------------------------------------------------------------------------------------------------------|
+| `extractionScript.script`    | String | **Yes**  | Path to the kotlin script relative to the workbench directory.                                                              |
+| `extractionScript.inventory` | String | Optional | File name of the inventory written by the script. Defaults to `<id>.xlsx`.                                                  |
+| `extractionScript.params`    | Map    | Optional | Additional parameters passed to the script as a JSON object (`param.script.params`). Values must not contain single quotes. |
+
+The inventory of each asset is determined in the `EXTRACT` stage:
+
+1. **Source:** Assets with a resolver extract their inventory from the fetched files (see
+   [Asset Types](#24-asset-types-type)). Assets without a resolver use the inventory of their direct parent asset.
+2. **Script:** If an `extractionScript` is configured, it is applied to that inventory using
+   `util_execute-kotlin-script`. The script result becomes the inventory of the asset and the input for its nested
+   assets.
+
+Scripts of nested assets wait for the inventory of their parent asset, so the generated GitLab pipeline declares the
+corresponding `needs` dependencies.
+
+---
+
 ## 3. Reports Configuration (`reports`)
 
 The `reports` section defines which types of documents are generated for which assets.
 
 ```yaml
 reports:
-  - id: "report-group-1" 
+  - id: "report-group-1"
     assetIds: [ "sample-asset" ]     # Assets included in this report
     types: [ "VR", "SDA" ]           # Report types to generate
     locales: [ "en_US", "de_DE" ]    # Locales to render
@@ -369,6 +456,23 @@ projectProperties:
       containerResolver:
         image: "nginx"
         tag: "1.25-alpine"
+
+    # Asset 4: Windows appliance with nested assets derived by kotlin scripts
+    - id: "windows-appliance"
+      name: "windows-appliance"
+      version: "1.0.0"
+      reference: "inventories/windows-appliance/inventory"
+      context: "production"
+      type: "WINDOWS"
+      urlResolver:
+         url: "file:///data/windows-appliance-extract.tar"
+         excludePatternFile: "config/extraction/exclude-patterns.yaml"
+      assets:
+         - id: "windows-appliance-drivers"
+           name: "windows-appliance-drivers"
+           assessmentId: "windows-appliance-drivers"
+           extractionScript:
+              script: "scripts/extract-drivers.kts"
 
 reports:
   # Multi-asset Vulnerability Report
