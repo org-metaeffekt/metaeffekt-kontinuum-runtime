@@ -388,7 +388,7 @@ public class PipelineConfiguration {
              *
              * @return true if an extraction script is configured
              */
-            public boolean isScriptedAsset() {
+            public boolean isAssetExtractedViaScript() {
                 return extractionScript != null;
             }
 

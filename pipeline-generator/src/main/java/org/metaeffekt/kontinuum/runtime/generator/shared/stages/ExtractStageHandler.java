@@ -58,7 +58,7 @@ public class ExtractStageHandler implements AssetStageHandler {
             producer = useParentInventory(context);
         }
 
-        if (asset.isScriptedAsset()) {
+        if (asset.isAssetExtractedViaScript()) {
             MavenProcessor script = handleExtractionScript(context);
             context.addProcessor(script);
             if (producer != null) {
@@ -86,7 +86,9 @@ public class ExtractStageHandler implements AssetStageHandler {
         MavenProcessor extraction = switch (asset.getType()) {
             case WINDOWS -> handleApplianceExtraction(context, ProcessorIds.EXTRACT_WINDOWS_INVENTORY);
             case LINUX -> handleApplianceExtraction(context, ProcessorIds.EXTRACT_LINUX_ARCH_INVENTORY);
-            default -> handleInventoryExtraction(context);
+            case DEFAULT -> handleInventoryExtraction(context);
+            default -> throw new IllegalStateException(
+                    "Asset " + asset + " has no valid asset type set, must be either WINDOWS, LINUX or DEFAULT.");
         };
         context.addProcessor(extraction);
         return extraction;

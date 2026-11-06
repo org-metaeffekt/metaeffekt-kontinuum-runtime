@@ -195,7 +195,7 @@ public class PipelineConfigurationLoader {
     }
 
     private void validateAssetSource(Asset asset, boolean isTopLevelAsset) {
-        long resolverCount = Stream.of(asset.getUrlResolver(), asset.getMavenResolver(), asset.getContainerResolver())
+        int resolverCount = (int) Stream.of(asset.getUrlResolver(), asset.getMavenResolver(), asset.getContainerResolver())
                 .filter(Objects::nonNull)
                 .count();
 
