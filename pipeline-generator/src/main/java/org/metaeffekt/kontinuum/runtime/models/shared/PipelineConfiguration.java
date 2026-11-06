@@ -3,6 +3,7 @@ package org.metaeffekt.kontinuum.runtime.models.shared;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
 import java.io.File;
@@ -136,6 +137,41 @@ public class PipelineConfiguration {
             return targetAsset;
         }
 
+        /**
+         * Finds the direct parent of the target asset within the configured asset tree.
+         *
+         * @param targetAsset the asset whose parent to look up
+         * @return the direct parent asset, or null if the target is a top-level asset or not part of the tree
+         */
+        public Asset getParentFor(Asset targetAsset) {
+            if (this.assets == null || targetAsset == null) {
+                return null;
+            }
+            for (Asset topLevelAsset : this.assets) {
+                Asset parent = findParent(topLevelAsset, targetAsset);
+                if (parent != null) {
+                    return parent;
+                }
+            }
+            return null;
+        }
+
+        private Asset findParent(Asset current, Asset target) {
+            if (current == null || current.getAssets() == null) {
+                return null;
+            }
+            for (Asset child : current.getAssets()) {
+                if (child == target) {
+                    return current;
+                }
+                Asset parent = findParent(child, target);
+                if (parent != null) {
+                    return parent;
+                }
+            }
+            return null;
+        }
+
         private boolean containsAsset(Asset current, Asset target) {
             if (current == target || (current.getId() != null && current.getId().equals(target.getId()))) {
                 return true;
@@ -185,6 +221,8 @@ public class PipelineConfiguration {
             private UrlResolver urlResolver;
             private MavenResolver mavenResolver;
             private ContainerResolver containerResolver;
+            private AssetType type = AssetType.DEFAULT;
+            private ExtractionScript extractionScript;
 
             /**
              * Resolver configuration for fetching an asset from a URL, including optional
@@ -199,6 +237,7 @@ public class PipelineConfiguration {
                 private String token;
                 private String headerName;
                 private String headerValue;
+                private String excludePatternFile;
             }
 
             /**
@@ -220,6 +259,16 @@ public class PipelineConfiguration {
                 private String image;
                 private String tag;
                 private String repoUrl = "docker.io";
+            }
+
+            /**
+             * Kotlin script applied to the inventory of this asset.
+             */
+            @Data
+            public static class ExtractionScript {
+                private String script;
+                private String inventory;
+                private Map<String, String> params = new LinkedHashMap<>();
             }
 
             /**
@@ -301,7 +350,7 @@ public class PipelineConfiguration {
                     return false;
                 }
                 String url = urlResolver.getUrl();
-                if (!StringUtils.startsWithIgnoreCase(url, "file:")) {
+                if (!Strings.CI.startsWith(url, "file:")) {
                     return false;
                 }
                 String lowerCaseUrl = url.toLowerCase(Locale.ROOT);
@@ -332,6 +381,60 @@ public class PipelineConfiguration {
                     path = path.substring(slash + 1);
                 }
                 return path;
+            }
+
+            /**
+             * Whether an extraction script is configured for this asset.
+             *
+             * @return true if an extraction script is configured
+             */
+            public boolean isAssetExtractedViaScript() {
+                return extractionScript != null;
+            }
+
+            /**
+             * Returns the file name of the inventory written by the extraction script.
+             * Defaults to {@code <id>.xlsx} if no inventory is configured.
+             *
+             * @return the inventory file name or null if no extraction script is configured
+             */
+            public String getExtractionScriptInventoryFileName() {
+                if (extractionScript == null) {
+                    return null;
+                }
+                String fileName = StringUtils.isBlank(extractionScript.getInventory())
+                        ? id
+                        : extractionScript.getInventory();
+                return Strings.CI.endsWith(fileName, ".xlsx") ? fileName : fileName + ".xlsx";
+            }
+
+            /**
+             * Counts the resolvers configured for this asset.
+             *
+             * @return the number of configured resolvers
+             */
+            public int resolverCount() {
+                return (urlResolver != null ? 1 : 0)
+                        + (mavenResolver != null ? 1 : 0)
+                        + (containerResolver != null ? 1 : 0);
+            }
+
+            /**
+             * Whether this asset defines its own source. Assets without a resolver use the inventory of their parent.
+             *
+             * @return true if any resolver is configured
+             */
+            public boolean hasResolver() {
+                return resolverCount() > 0;
+            }
+
+            /**
+             * Sets the asset type. Falls back to {@link AssetType#DEFAULT} if the type is empty in the configuration.
+             *
+             * @param type the asset type, may be null
+             */
+            public void setType(AssetType type) {
+                this.type = type == null ? AssetType.DEFAULT : type;
             }
 
             /**
