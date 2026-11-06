@@ -74,6 +74,8 @@ public class AdviseStageHandler implements AssetStageHandler {
         processor.setProcessorParameter(PARAM_ACTIVATE_OSV, String.valueOf(enrichment.getActivateOsv()));
         processor.setProcessorParameter(PARAM_ACTIVATE_CSAF, String.valueOf(enrichment.getActivateCsaf()));
 
+        processor.setProcessorParameter(PARAM_ACTIVATE_OSV_PROVIDERS, String.valueOf(enrichment.getOsvProviders()));
+
         PipelineConfiguration.ProjectProperties.Project project = context.getConfiguration()
                 .getProjectProperties().getProject();
         processor.setProcessorParameter(PARAM_ASSESSMENT_DIRS,
