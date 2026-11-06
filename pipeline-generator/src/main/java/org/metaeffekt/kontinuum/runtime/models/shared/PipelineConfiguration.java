@@ -407,6 +407,7 @@ public class PipelineConfiguration {
     @Data
     public static class Dashboard {
         private List<String> assetIds;
+        private String assessmentApi;
     }
 
     /**

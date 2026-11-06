@@ -38,7 +38,7 @@ public class DashboardStageHandler implements AssetStageHandler {
             }
             for (String assetId : dashboard.getAssetIds()) {
                 if (asset.getId().equals(assetId)) {
-                    context.addProcessor(handleDashboard(context));
+                    context.addProcessor(handleDashboard(context, dashboard));
                 }
             }
         }
@@ -48,10 +48,11 @@ public class DashboardStageHandler implements AssetStageHandler {
      * Creates a vulnerability dashboard for the asset based on the vulnerability assessment and security policy.
      *
      * @param context The asset execution context containing pipeline and asset information.
+     * @param dashboard The dashboard currently being processed.
      * @return The configured {@link MavenProcessor} for dashboard creation.
      * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/advise/advise_create-dashboard.md">advise_create-dashboard.md</a>
      */
-    private MavenProcessor handleDashboard(AssetExecutionContext context) {
+    private MavenProcessor handleDashboard(AssetExecutionContext context, Dashboard dashboard) {
         EnrichmentOptions enrichmentOptions = context.getConfiguration().getOptions() != null
                 ? context.getConfiguration().getOptions().getEnrichment()
                 : null;
@@ -80,6 +81,7 @@ public class DashboardStageHandler implements AssetStageHandler {
                                         asset.getContext());
         processor.setProcessorParameter(ENV_VULNERABILITY_MIRROR_DIR,
                                         context.getEnvironment().getMirrorDatabaseDirNormalized());
+        processor.setProcessorParameter(ENV_VULNERABILITY_ASSESSMENT_API, dashboard.getAssessmentApi());
 
         return processor;
     }

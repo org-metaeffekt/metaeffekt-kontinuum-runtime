@@ -32,22 +32,6 @@ public class Workspace {
     }
 
     /**
-     * Returns the grouped report directory path for the given asset, report type and locale.
-     *
-     * @param asset      the asset the directory belongs to
-     * @param reportType the report type selecting the workspace folder
-     * @param locale     the locale whose identifier is appended, or null for none
-     * @return the grouped directory path for the asset
-     */
-    public AssetPath getGroupedDirForAsset(PipelineConfiguration.ProjectProperties.Asset asset, ReportType reportType,
-                                           SupportedLocale locale) {
-        String localeStr = locale != null ? locale.getIdentifier() : "";
-        return new AssetPath(
-                WORKSPACE_DIR + Stage.GROUP.getStageDirectory() + "/" + asset + "/" + reportType.getWorkspaceFolder()
-                + "/" + localeStr + "/", asset);
-    }
-
-    /**
      * Returns the grouped directory path for the given report, asset, report type and locale.
      *
      * @param report     the report providing the group id, or null
@@ -144,26 +128,6 @@ public class Workspace {
             return dir + asset + "-overview.html";
         }
 
-        /**
-         * Returns the path to the asset's report PDF for the given report type and locale.
-         *
-         * @param reportType the report type whose key is part of the file name
-         * @param locale     the locale whose identifier is part of the file name
-         * @return the report file path
-         */
-        public String appendReportFile(ReportType reportType, SupportedLocale locale) {
-            return dir + asset + "-" + reportType.getKey() + "-" + locale.getIdentifier() + ".pdf";
-        }
-
-        /**
-         * Returns the path to the asset's annex archive for the given locale.
-         *
-         * @param locale the locale whose identifier is part of the file name
-         * @return the annex archive file path
-         */
-        public String appendAnnexArchiveFile(SupportedLocale locale) {
-            return dir + asset + "-" + locale + "-annex-archive.zip";
-        }
 
         /**
          * Returns the path to the asset's SPDX file in the given format.

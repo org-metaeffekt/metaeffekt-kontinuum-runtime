@@ -7,62 +7,54 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class KontinuumUtilsTest {
 
     @Test
-    void normalizeDir_singlePathWithoutTrailingSlash_appendsSlash() {
+    void normalizeDirAppendsSlash() {
         assertEquals("usr/local/", KontinuumUtils.normalizeDir("usr/local"));
     }
 
     @Test
-    void normalizeDir_singlePathWithTrailingSlash_preservesSlash() {
+    void normalizeDirPreservesSlash() {
         assertEquals("usr/local/", KontinuumUtils.normalizeDir("usr/local/"));
     }
 
     @Test
-    void normalizeDir_multipleSegments_joinsWithSlash() {
+    void normalizeDirJoinsWithSlash() {
         assertEquals("usr/local/bin/", KontinuumUtils.normalizeDir("usr", "local", "bin"));
     }
 
     @Test
-    void normalizeDir_segmentsWithLeadingSlash_noDoubleSlash() {
+    void normalizeDirNoDoubleSlash() {
         assertEquals("usr/local/bin/", KontinuumUtils.normalizeDir("usr", "/local", "/bin"));
-    }
-
-    @Test
-    void normalizeDir_segmentsWithTrailingSlash_noDoubleSlash() {
         assertEquals("usr/local/bin/", KontinuumUtils.normalizeDir("usr/", "local/", "bin/"));
     }
 
     @Test
-    void normalizeDir_mixedSlashes_collapsesCorrectly() {
+    void normalizeDirCollapsesCorrectly() {
         assertEquals("usr/local/bin/", KontinuumUtils.normalizeDir("usr/", "/local/", "/bin/"));
     }
 
     @Test
-    void normalizeDir_absolutePath_preservesLeadingSlash() {
+    void normalizeDirPreservesLeadingSlash() {
         assertEquals("/usr/local/", KontinuumUtils.normalizeDir("/usr", "local"));
     }
 
     @Test
-    void normalizeDir_nullSegment_skipped() {
+    void normalizeDirNullSegmentSkipped() {
         assertEquals("usr/local/", KontinuumUtils.normalizeDir("usr", null, "local"));
     }
 
     @Test
-    void normalizeDir_emptySegment_skipped() {
+    void normalizeDirEmptySegmentSkipped() {
         assertEquals("usr/local/", KontinuumUtils.normalizeDir("usr", "", "local"));
     }
 
     @Test
-    void normalizeDir_allNull_returnsSlash() {
+    void normalizeDirNoInputSegments() {
         assertEquals("/", KontinuumUtils.normalizeDir((String) null));
-    }
-
-    @Test
-    void normalizeDir_noArguments_returnsSlash() {
         assertEquals("/", KontinuumUtils.normalizeDir());
     }
 
     @Test
-    void normalizeDir_tripleSlash_collapsed() {
+    void normalizeDirTripleSlashCollapsed() {
         assertEquals("/a/b/c/", KontinuumUtils.normalizeDir("///a///b///c///"));
     }
 }
