@@ -15,6 +15,36 @@ class GitlabPipelineTest {
 
     @Test
     void processorsOfTheSameStageAreCombinedIntoOneJob() {
+        PipelineConfiguration configuration = buildPipelineConfiguration();
+
+        GitlabConfiguration environment = GitlabConfiguration.builder()
+                .KONTINUUM_DIR("kontinuum")
+                .CONTAINER_IMAGE("runtime-image")
+                .build();
+        String pipeline = new GitlabPipeline(configuration, environment).generatePipeline();
+
+        assertEquals(1, countJobsForStage(pipeline, "PREPARE"), pipeline);
+        assertTrue(pipeline.contains("advise/advise_attach-metadata.xml"), pipeline);
+        assertTrue(pipeline.contains("util/util_enrich-with-reference.xml"), pipeline);
+
+        assertEquals(1, countJobsForStage(pipeline, "REPORT"), pipeline);
+        assertTrue(pipeline.contains("report/report_create-document.xml"), pipeline);
+    }
+
+    @Test
+    void generatesScriptThatCopiesContainerPatchesToTheirAbsolutePaths() {
+        GitlabConfiguration environment = GitlabConfiguration.builder()
+                .KONTINUUM_DIR("kontinuum")
+                .CONTAINER_IMAGE("runtime-image")
+                .CONTAINER_PATCH_DIRECTORY("$CI_PROJECT_DIR/container-patches/")
+                .build();
+
+        String pipeline = new GitlabPipeline(buildPipelineConfiguration(), environment).generatePipeline();
+
+        assertTrue(pipeline.contains("      cp -r \"$CI_PROJECT_DIR/container-patches/.\" /"), pipeline);
+    }
+
+    private static PipelineConfiguration buildPipelineConfiguration() {
         PipelineConfiguration configuration = TestUtils.buildMinimalPipelineConfiguration();
         PipelineConfiguration.ProjectProperties.Asset asset = configuration.getProjectProperties().getAssets().get(0);
         asset.setAssessmentId("assessment");
@@ -33,19 +63,7 @@ class GitlabPipelineTest {
         report.setControlRating("DEFAULT");
         configuration.setReports(List.of(report));
         configuration.getOptions().getEnrichment().setSecurityPolicyFile("policies/security-policy.json");
-
-        GitlabConfiguration environment = GitlabConfiguration.builder()
-                .KONTINUUM_DIR("kontinuum")
-                .CONTAINER_IMAGE("runtime-image")
-                .build();
-        String pipeline = new GitlabPipeline(configuration, environment).generatePipeline();
-
-        assertEquals(1, countJobsForStage(pipeline, "PREPARE"), pipeline);
-        assertTrue(pipeline.contains("advise/advise_attach-metadata.xml"), pipeline);
-        assertTrue(pipeline.contains("util/util_enrich-with-reference.xml"), pipeline);
-
-        assertEquals(1, countJobsForStage(pipeline, "REPORT"), pipeline);
-        assertTrue(pipeline.contains("report/report_create-document.xml"), pipeline);
+        return configuration;
     }
 
     private static long countJobsForStage(String pipeline, String stage) {

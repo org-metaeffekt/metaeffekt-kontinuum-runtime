@@ -106,15 +106,6 @@ public class GitlabPipeline {
         }
     }
 
-    private static final List<ProcessorParameterKey> DISCRIMINATOR_KEYS = List.of(
-            ProcessorParameterKey.PARAM_DOCUMENT_TYPE,
-            ProcessorParameterKey.PARAM_DOCUMENT_LANGUAGE,
-            ProcessorParameterKey.PARAM_LANGUAGE_MODE,
-            ProcessorParameterKey.PARAM_OUTPUT_FORMAT,
-            ProcessorParameterKey.PARAM_OUTPUT_MODE,
-            ProcessorParameterKey.PARAM_SOURCE_MODE
-    );
-
     /**
      * Appends the jobs section to the GitLab pipeline document.
      */
@@ -136,6 +127,11 @@ public class GitlabPipeline {
                 for (Processor processor : stageEntry.getValue()) {
 
                     if (processor instanceof MavenProcessor mavenProcessor) {
+
+                        if (StringUtils.isNotEmpty(gitlabConfiguration.CONTAINER_PATCH_DIRECTORY)) {
+                            job.append(generateContainerPatchScript(6)).append(System.lineSeparator());
+                        }
+
                         if (mavenProcessor.getPreScript() != null) {
                             job.append(mavenProcessor.getPreScript(6)).append(System.lineSeparator());
                         }
@@ -198,6 +194,21 @@ public class GitlabPipeline {
             }
         }
         return script.append(System.lineSeparator()).toString();
+    }
+
+    private String generateContainerPatchScript(int indent) {
+        StringBuilder containerPatchScript = new StringBuilder();
+        String patchDirectory = gitlabConfiguration.CONTAINER_PATCH_DIRECTORY;
+        if (patchDirectory.endsWith("/")) {
+            patchDirectory = patchDirectory.substring(0, patchDirectory.length() - 1);
+        }
+
+        containerPatchScript.append(" ".repeat(indent))
+                .append("cp -r \"")
+                .append(patchDirectory)
+                .append("/.\" /");
+
+        return containerPatchScript.append(System.lineSeparator()).toString();
     }
 
 
