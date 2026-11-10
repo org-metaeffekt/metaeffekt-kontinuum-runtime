@@ -28,6 +28,9 @@ public class GenerateGitlabPipelineMojo extends AbstractGeneratePipelineMojo {
     @Parameter(property = "runnerTag")
     private String runnerTag;
 
+    @Parameter(property = "containerPatchDirectory")
+    private String containerPatchDirectory;
+
     @Override
     public void execute() throws MojoExecutionException {
         getLog().info("Generating GitLab CI pipeline from: " + pipelineConfigPath);
@@ -65,7 +68,8 @@ public class GenerateGitlabPipelineMojo extends AbstractGeneratePipelineMojo {
                 .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD(portfolioManagerClientTruststorePassword)
                 .MAVEN_CLI_OPTS(mavenCliOpts)
                 .LOCAL_MAVEN_REPO(localMavenRepo)
-                .SETUP_COMMAND(setupCommand);
+                .SETUP_COMMAND(setupCommand)
+                .CONTAINER_PATCH_DIRECTORY(containerPatchDirectory);
 
 
         PipelineConfiguration pipelineConfiguration = new PipelineConfigurationLoader().readConfig(pipelineConfigFile);
