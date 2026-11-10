@@ -9,16 +9,17 @@ projectProperties:
       name: "application"
       version: "1.0.0"
       reference: "shared/workbench/inventories/reference-inventory/inventory"
-      inventory: "tc-0001/workspace/02_prepared/app-inventory.xlsx"
+      urlResolver:
+        url: "file:tc-0001/workspace/02_prepared/app/app-inventory.xlsx"
       assets:
-      - id: "a"
-        name: "a"
-        extractionScript:
-          script: "tc-0001/workspace/scripts/xxx.kts"
-          inventory: "02_prepared/a/a-inventory.xlsx"
-          params:
-            artifactIdPattern: "a-.*"
-            inventoryPath: "tc-0001/workbench/inventories"
+        - id: "a"
+          name: "a"
+          extractionScript:
+            script: "tc-0001/workbench/scripts/select-inventory.kts"
+            inventory: "a-inventory.xlsx"
+            params:
+              artifactIdPattern: "a-.*"
+              inventoryPath: "tc-0001/workbench/inventories"
 
 # Result of extraction step:
 #  tc-0001/workbench/inventories/a-1.15-inventory.xlsx is copied to 02_prepared/a/a-inventory.xlsx
