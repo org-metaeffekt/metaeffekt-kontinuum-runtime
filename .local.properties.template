@@ -15,6 +15,7 @@ ae.workbench.version=HEAD-SNAPSHOT
 ae.kontinuum.runtime.version=HEAD-SNAPSHOT
 ae.portfolio.manager.version=HEAD-SNAPSHOT
 s-dit-007.workbench.version=HEAD-SNAPSHOT
+ae.dita.version=0.31.0
 ae.universe.version=3.1.0
 ae.kosmos.version=0.1.0
 

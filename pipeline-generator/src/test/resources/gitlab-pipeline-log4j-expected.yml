@@ -1,0 +1,337 @@
+stages:
+  - PRE
+  - FETCH
+  - EXTRACT
+  - PREPARE
+  - AGGREGATE
+  - ADVISE
+  - GROUP
+  - REPORT
+  - SUMMARIZE
+
+variables:
+  GIT_DEPTH: 1
+  GIT_STRATEGY: clone
+  CONTAINER_IMAGE: metaeffekt/metaeffekt-kontinuum-runtime:2.4.0
+
+default:
+  tags:
+    - examples
+
+pipeline-PRE-ea1e619a-ea63-4c2d-a054-65ea3372392a:
+  stage: PRE
+  image: metaeffekt/metaeffekt-kontinuum-runtime:2.4.0
+  script:
+    - |
+      set -o pipefail
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/mirror/mirror_download-index.xml' process-resources \
+      -Denv.vulnerability.mirror.dir='/metaeffekt-gitlab-examples/mirror/' \
+      -Dparam.mirror.archive.url='http://ae-scanner/mirror/index/ae-mirror-index_gen7.tar.gz'
+
+      2>&1 | tee $CI_JOB_NAME.log
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_JOB_NAME.log
+    expire_in: 1 Week
+
+log4j-core-FETCH-d015f220-5fe8-4eae-9e34-8c9def3e0706:
+  stage: FETCH
+  image: metaeffekt/metaeffekt-kontinuum-runtime:2.4.0
+  script:
+    - |
+      set -o pipefail
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/fetch/fetch_download-maven-artifact.xml' process-resources \
+      -Doutput.asset.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/00_fetched/log4j-core/' \
+      -Dparam.artifact.id='log4j-core' \
+      -Dparam.group.id='org.apache.logging.log4j' \
+      -Dparam.version='2.24.3' \
+      -Dparam.repo.url='https://repo1.maven.org/maven2'
+
+      2>&1 | tee $CI_JOB_NAME.log
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_JOB_NAME.log
+    expire_in: 1 Week
+
+log4j-core-EXTRACT-bd62fb08-f7dc-44ed-aa20-08211fa852d4:
+  stage: EXTRACT
+  image: metaeffekt/metaeffekt-kontinuum-runtime:2.4.0
+  script:
+    - |
+      set -o pipefail
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/prepare/prepare_scan-directory.xml' process-resources \
+      -Dinput.extract.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/00_fetched/log4j-core/' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/01_extracted/log4j-core/log4j-core.xlsx' \
+      -Doutput.scan.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/01_extracted/log4j-core/scan/' \
+      -Dparam.reference.inventory.dir='workbench/inventories/example-reference-inventory/'
+
+      2>&1 | tee $CI_JOB_NAME.log
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_JOB_NAME.log
+    expire_in: 1 Week
+
+log4j-core-PREPARE-7456a931-13fc-401c-a5f2-76ad271ca929:
+  stage: PREPARE
+  image: metaeffekt/metaeffekt-kontinuum-runtime:2.4.0
+  script:
+    - |
+      set -o pipefail
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/advise/advise_attach-metadata.xml' process-resources \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/01_extracted/log4j-core/log4j-core.xlsx' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Dparam.metadata.asset.id='log4j-core' \
+      -Dparam.metadata.asset.name='log4j-core'
+
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/util/util_enrich-with-reference.xml' process-resources \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Dparam.reference.inventory.dir='workbench/inventories/example-reference-inventory/'
+
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/convert/convert_inventory-to-cyclonedx.xml' process-resources \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-cyclonedx.json' \
+      -Dparam.document.name='log4j-core' \
+      -Dparam.document.organization='FIXME' \
+      -Dparam.document.organization.url='FIXME' \
+      -Dparam.document.output.format='JSON'
+
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/convert/convert_inventory-to-spdx.xml' process-resources \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-spdx.json' \
+      -Dparam.document.name='log4j-core' \
+      -Dparam.document.organization='FIXME' \
+      -Dparam.document.organization.url='FIXME' \
+      -Dparam.document.output.format='JSON'
+
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/prepare/prepare_portfolio-upload.xml' process-resources \
+      -Dinput.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Dparam.asset.group.id='log4j-core:2.24.3' \
+      -Dparam.asset.name='log4j-core' \
+      -Dparam.asset.version='2.24.3' \
+      -Dparam.keystore.config.file='workbench/config/portfolio/pm-client-TEST-keystore.p12' \
+      -Dparam.keystore.password='client-TEST-ks-pw' \
+      -Dparam.portfolio.manager.token='3e6c4faa-4dfc-4bae-b711-22225768274f' \
+      -Dparam.portfolio.manager.url='https://192.168.178.100:8444' \
+      -Dparam.project.name='metaeffekt-examples' \
+      -Dparam.truststore.config.file='workbench/config/portfolio/pm-client-TEST-truststore.p12' \
+      -Dparam.truststore.password='client-TEST-ts-pw'
+
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/aggregate/aggregate_portfolio-download.xml' process-resources \
+      -Doutput.inventory.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/portfolio-manager/' \
+      -Dparam.asset.group.id='Reports:SNAPSHOT' \
+      -Dparam.asset.id='metaeffekt-examples' \
+      -Dparam.inventory.modifier='report' \
+      -Dparam.keystore.config.file='workbench/config/portfolio/pm-client-TEST-keystore.p12' \
+      -Dparam.keystore.password='client-TEST-ks-pw' \
+      -Dparam.portfolio.manager.token='3e6c4faa-4dfc-4bae-b711-22225768274f' \
+      -Dparam.portfolio.manager.url='https://192.168.178.100:8444' \
+      -Dparam.project.name='metaeffekt-examples' \
+      -Dparam.truststore.config.file='workbench/config/portfolio/pm-client-TEST-truststore.p12' \
+      -Dparam.truststore.password='client-TEST-ts-pw'
+      find /metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/portfolio-manager/ -type f -name "*.zip" -print0 | while IFS= read -r -d '' zip_file; do
+          zip_dir=$(dirname "$zip_file")
+          unzip -q -j "$zip_file" "*_report.xlsx" "*_report.xls" -d "$zip_dir" || true
+          extracted_file=$(find "$zip_dir" -maxdepth 1 -type f \( -name "*_report.xlsx" -o -name "*_report.xls" \) | head -n 1)
+          if [ -n "$extracted_file" ]; then
+              mv "$extracted_file" "/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/portfolio-manager/log4j-core-pm-reference.xlsx"
+          fi
+      done
+
+
+      2>&1 | tee $CI_JOB_NAME.log
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_JOB_NAME.log
+    expire_in: 1 Week
+
+log4j-core-AGGREGATE-f12f0c8c-0746-466e-ad0c-fb4c9b424dea:
+  stage: AGGREGATE
+  image: metaeffekt/metaeffekt-kontinuum-runtime:2.4.0
+  script:
+    - |
+      set -o pipefail
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/util/util_enrich-with-reference.xml' process-resources \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core.xlsx' \
+      -Dparam.reference.inventory.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/portfolio-manager/'
+
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/util/util_execute-kotlin-script.xml' process-resources \
+      -Dinput.kotlin.script.file='workbench/scripts/inventory.asset.filter.kts' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core.xlsx' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core.xlsx' \
+      -Dparam.asset.id='log4j-core'
+
+      2>&1 | tee $CI_JOB_NAME.log
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_JOB_NAME.log
+    expire_in: 1 Week
+
+log4j-core-ADVISE-3aea0046-d41f-4c32-adae-87a8b7f88888:
+  stage: ADVISE
+  image: metaeffekt/metaeffekt-kontinuum-runtime:2.4.0
+  script:
+    - |
+      set -o pipefail
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/advise/advise_enrich-inventory.xml' process-resources \
+      -Denv.vulnerability.mirror.dir='/metaeffekt-gitlab-examples/mirror/.database/' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core.xlsx' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core.xlsx' \
+      -Doutput.tmp.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/vulnerability-enrichment-temp/' \
+      -Dparam.assessment.dirs='workbench/assessments/metaeffekt/sample-product-1/local/' \
+      -Dparam.context.dirs='workbench/assessments/metaeffekt/sample-product-1/local/context/' \
+      -Dparam.correlation.dir='workbench/correlations/' \
+      -Dparam.security.policy.file='workbench/policies/security-policy/security-policy.json/' \
+      -Dparam.activate.certeu='true' \
+      -Dparam.activate.certfr='true' \
+      -Dparam.activate.certsei='true' \
+      -Dparam.activate.csaf='true' \
+      -Dparam.activate.eol='true' \
+      -Dparam.activate.epss='true' \
+      -Dparam.activate.kev='true' \
+      -Dparam.activate.msrc='true' \
+      -Dparam.activate.nvd='true' \
+      -Dparam.activate.osv='true' \
+      -Dparam.activate.osv.providers='null' \
+      -Dparam.security.policy.active.ids='base_configuration'
+
+      2>&1 | tee $CI_JOB_NAME.log
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_JOB_NAME.log
+    expire_in: 1 Week
+
+log4j-core-GROUP-65f43be4-e6bc-4da7-8e41-78e45199ce06:
+  stage: GROUP
+  image: metaeffekt/metaeffekt-kontinuum-runtime:2.4.0
+  script:
+    - |
+      set -o pipefail
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/util/util_transform-inventories.xml' process-resources \
+      -Dinput.inventory.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core.xlsx' \
+      -Doutput.inventory.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/07_grouped/group-1/prepared/log4j-core/log4j-core.xlsx' \
+      -Dparam.kotlin.script.file='workbench/scripts/prepare.kts/' \
+      -Dparam.asset.name='log4j-core'
+
+      sh '/usr/src/metaeffekt-kontinuum/processors/util/util_copy-inventory.sh' '/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/07_grouped/group-1/prepared/log4j-core/log4j-core.xlsx' '/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/07_grouped/group-1/vulnerability-report/en_US/log4j-core.xlsx'
+
+      2>&1 | tee $CI_JOB_NAME.log
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_JOB_NAME.log
+    expire_in: 1 Week
+
+log4j-core-REPORT-5020c505-bc97-4928-a212-8880e7f697ca:
+  stage: REPORT
+  image: metaeffekt/metaeffekt-kontinuum-runtime:2.4.0
+  script:
+    - |
+      set -o pipefail
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/advise/advise_create-dashboard.xml' process-resources \
+      -Denv.vulnerability.mirror.dir='/metaeffekt-gitlab-examples/mirror/.database/' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core.xlsx' \
+      -Doutput.dashboard.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/08_reported/log4j-core/dashboards/log4j-core.html' \
+      -Dparam.assessment.context='local' \
+      -Dparam.asset.id='sample-product-1' \
+      -Dparam.security.policy.file='workbench/policies/security-policy/security-policy.json/' \
+      -Dparam.tenant.id='metaeffekt' \
+      -Dparam.security.policy.active.ids='base_configuration'
+
+      2>&1 | tee $CI_JOB_NAME.log
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_JOB_NAME.log
+    expire_in: 1 Week
+
+log4j-core-SUMMARIZE-b14dc1ad-3318-424c-9740-e93b6fe3401c:
+  stage: SUMMARIZE
+  image: metaeffekt/metaeffekt-kontinuum-runtime:2.4.0
+  script:
+    - |
+      set -o pipefail
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/convert/convert_inventory-to-cyclonedx.xml' process-resources \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core.xlsx' \
+      -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/09_summarized/log4j-core/log4j-core-cyclonedx.json' \
+      -Dparam.document.name='log4j-core' \
+      -Dparam.document.organization='FIXME' \
+      -Dparam.document.organization.url='FIXME' \
+      -Dparam.document.output.format='JSON'
+
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/convert/convert_inventory-to-spdx.xml' process-resources \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core.xlsx' \
+      -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/09_summarized/log4j-core/log4j-core-spdx.json' \
+      -Dparam.document.name='log4j-core' \
+      -Dparam.document.organization='FIXME' \
+      -Dparam.document.organization.url='FIXME' \
+      -Dparam.document.output.format='JSON'
+
+      2>&1 | tee $CI_JOB_NAME.log
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_JOB_NAME.log
+    expire_in: 1 Week
+
+group-1-VR-REPORT-a072f63e-09af-4085-bf3e-1a86deee65cc:
+  stage: REPORT
+  image: metaeffekt/metaeffekt-kontinuum-runtime:2.4.0
+  script:
+    - |
+      set -o pipefail
+      echo "Setup Command valid."
+      mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/report/report_create-document.xml' process-resources \
+      -Denv.kontinuum.dir='/usr/src/metaeffekt-kontinuum/' \
+      -Denv.workbench.dir='workbench/' \
+      -Dinput.inventory.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/07_grouped/group-1/vulnerability-report/en_US/' \
+      -Doutput.document.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/08_reported/group-1/group-1-VR-en_US.pdf' \
+      -Dparam.asset.descriptor.file='workbench/descriptors/asset-descriptor_GENERIC-vulnerability-report.yaml/' \
+      -Dparam.asset.id='group-1' \
+      -Dparam.asset.name='log4j' \
+      -Dparam.asset.version='2.24.3' \
+      -Dparam.document.type='VR' \
+      -Dparam.product.name='log4j' \
+      -Dparam.product.version='2.24.3' \
+      -Dparam.product.watermark='Sample' \
+      -Dparam.property.selector.organization='metaeffekt' \
+      -Denv.kontinuum.processors.dir='/usr/src/metaeffekt-kontinuum/processors/' \
+      -Denv.vulnerability.mirror.dir='/metaeffekt-gitlab-examples/mirror/.database/' \
+      -Dparam.computed.inventory.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/08_reported/group-1/computed/' \
+      -Dparam.document.language='en' \
+      -Dparam.property.selector.classification='DEFAULT' \
+      -Dparam.property.selector.control='DEFAULT' \
+      -Dparam.reference.components.dir='workbench/components/' \
+      -Dparam.reference.inventory.dir='workbench/inventories/example-reference-inventory/' \
+      -Dparam.reference.licenses.dir='workbench/licenses/' \
+      -Dparam.security.policy.file='workbench/policies/security-policy/security-policy.json/'
+
+      2>&1 | tee $CI_JOB_NAME.log
+  artifacts:
+    when: on_failure
+    paths:
+      - $CI_JOB_NAME.log
+    expire_in: 1 Week

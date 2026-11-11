@@ -562,6 +562,7 @@ public class PipelineConfiguration {
             private Boolean enableScan = false;
             private Boolean enableSpdxBom = false;
             private Boolean enableCycloneDxBom = false;
+            private Boolean forceDisablePortfolioManager = false;
             private String debugParam;
         }
 

@@ -64,34 +64,6 @@ public class ProcessorDefinitions {
                 }
             }
         }
-
-        /**
-         * Returns the pre-script indented by the given number of spaces.
-         *
-         * @param indent the number of spaces to indent each line
-         * @return the indented pre-script, or null if none is configured
-         */
-        public String getPreScript(int indent) {
-            return indentScript(preScript, indent);
-        }
-
-        /**
-         * Returns the post-script indented by the given number of spaces.
-         *
-         * @param indent the number of spaces to indent each line
-         * @return the indented post-script, or null if none is configured
-         */
-        public String getPostScript(int indent) {
-            return indentScript(postScript, indent);
-        }
-
-        protected static String indentScript(String script, int indent) {
-            if (script == null) {
-                return null;
-            }
-            String padding = " ".repeat(indent);
-            return padding + script.replace("\n", "\n" + padding);
-        }
     }
 
     /**
