@@ -123,6 +123,7 @@ public class GitlabPipeline {
                         System.lineSeparator());
                 job.append("  ").append("script: ").append(System.lineSeparator());
                 job.append("    - |").append(System.lineSeparator());
+                job.append("      set -o pipefail").append(System.lineSeparator());
 
                 for (Processor processor : stageEntry.getValue()) {
 
@@ -147,6 +148,12 @@ public class GitlabPipeline {
                     job.append(System.lineSeparator());
                 }
 
+                job.append("      ").append("2>&1 | tee $CI_JOB_NAME.log").append(System.lineSeparator());
+                job.append("  ").append("artifacts: ").append(System.lineSeparator());
+                job.append("    ").append("when: on_failure").append(System.lineSeparator());
+                job.append("    ").append("paths:").append(System.lineSeparator());
+                job.append("      ").append("- $CI_JOB_NAME.log").append(System.lineSeparator());
+                job.append("    ").append("expire_in: 1 Week").append(System.lineSeparator());
                 gitlabPipelineDocument.append(job).append(System.lineSeparator());
             }
         }

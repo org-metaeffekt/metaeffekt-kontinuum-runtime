@@ -507,6 +507,16 @@ public class PipelineConfiguration {
             }
             return "default";
         }
+
+        /**
+         * Resolves the assessment context directory for this asset.
+         *
+         * @param workbenchPath the workbench root path used to normalize the context directory
+         * @return the normalized context directory
+         */
+        public String getPreReportFilterFileNormalized(String workbenchPath) {
+            return KontinuumUtils.normalizeDir(workbenchPath, preReportFilterFile);
+        }
     }
 
     /**
