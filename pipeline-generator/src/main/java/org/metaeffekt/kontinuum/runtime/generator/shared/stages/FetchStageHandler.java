@@ -67,7 +67,8 @@ public class FetchStageHandler implements AssetStageHandler {
         MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(DOWNLOAD_ASSET);
         mavenProcessor.setStage(Stage.FETCH);
 
-        mavenProcessor.setProcessorParameter(PARAM_ASSET_URL, urlResolver.getUrl());
+        mavenProcessor.setProcessorParameter(PARAM_ASSET_URL,
+                urlResolver.getResolvedUrl(context.getEnvironment().getWorkbenchDirNormalized()));
         mavenProcessor.setProcessorParameter(OUTPUT_ASSET_DIR, context.getStageDirForAsset(Stage.FETCH).toString());
         mavenProcessor.setProcessorParameter(PARAM_USERNAME, urlResolver.getUsername());
         mavenProcessor.setProcessorParameter(PARAM_PASSWORD, urlResolver.getPassword());

@@ -10,6 +10,7 @@ public class KontinuumUtils {
 
     /**
      * Joins the given path segments and ensures the result ends with a directory separator.
+     * A segment starting with {@code /} is absolute and discards the segments before it.
      *
      * @param path the path segments to join
      * @return the normalized directory path
@@ -24,6 +25,7 @@ public class KontinuumUtils {
 
     /**
      * Joins the given path segments into a normalized file path.
+     * A segment starting with {@code /} is absolute and discards the segments before it.
      *
      * @param path the path segments to join
      * @return the normalized file path
@@ -38,11 +40,11 @@ public class KontinuumUtils {
             if (part == null || part.isEmpty()) {
                 continue;
             }
-            if (!sb.isEmpty() && sb.charAt(sb.length() - 1) != '/') {
+            if (part.startsWith("/")) {
+                // absolute segment: everything joined so far is replaced
+                sb.setLength(0);
+            } else if (!sb.isEmpty() && sb.charAt(sb.length() - 1) != '/') {
                 sb.append('/');
-            }
-            if (!sb.isEmpty() && part.startsWith("/")) {
-                part = part.substring(1);
             }
             sb.append(part);
         }
