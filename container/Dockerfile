@@ -7,6 +7,7 @@ RUN apt-get update && \
 COPY target/metaeffekt-kontinuum /usr/src/metaeffekt-kontinuum
 COPY target/metaeffekt-kontinuum-runtime /usr/src/metaeffekt-kontinuum-runtime
 
+# Includes resolved Metaeffekt artifacts, including DITA, Universe, and Kosmos.
 COPY target/.m2/repository/org/metaeffekt /root/.m2/repository/org/metaeffekt
 COPY target/.m2/repository/com/metaeffekt /root/.m2/repository/com/metaeffekt
 COPY target/.m2/repository/org/jetbrains/kotlin /root/.m2/repository/org/jetbrains/kotlin

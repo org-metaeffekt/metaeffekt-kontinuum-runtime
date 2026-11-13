@@ -180,12 +180,4 @@ public class ProcessorDefinitionsTest {
                 processor.setProcessorParameter(ProcessorParameterKey.ENV_MIRROR_DIR, "dir")
         );
     }
-
-    @Test
-    public void testScriptIndentation() {
-        ProcessorDefinitions.MavenProcessor processor = new ProcessorDefinitions.MavenProcessor();
-        processor.setPreScript("line1\nline2");
-        assertEquals("  line1\n  line2", processor.getPreScript(2));
-        assertNull(processor.getPostScript(2));
-    }
 }

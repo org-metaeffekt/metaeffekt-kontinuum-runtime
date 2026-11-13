@@ -1,0 +1,44 @@
+projectProperties:
+  project:
+    id: "log4j-core-analysis"
+    name: "Apache Log4j Core"
+    version: "2.24.3"
+    tenant: "metaeffekt"
+  assets:
+    - id: "log4j-core"
+      name: "log4j-core"
+      version: "2.24.3"
+      reference: "inventories/example-reference-inventory/artifact-inventory.xls"
+      assessmentId: "sample-product-1"
+      context: "local"
+      mavenResolver:
+        groupId: "org.apache.logging.log4j"
+        artifactId: "log4j-core"
+        artifactVersion: "2.24.3"
+        repoUrl: "https://repo1.maven.org/maven2"
+
+reports:
+  - assetIds: ["log4j-core"]
+    types: ["VR"]
+    organization: "metaeffekt"
+    classificationRating: "DEFAULT"
+    controlRating: "DEFAULT"
+    productName: "log4j"
+    productVersion: "2.24.3"
+    productWatermark: "Sample"
+    locales: ["en_US"]
+    preReportFilterFile: "scripts/prepare.kts"
+
+dashboards:
+  - assetIds: ["log4j-core"]
+
+portfolioManager:
+  project: "metaeffekt-examples"
+
+options:
+  global:
+    enableCycloneDxBom: true
+    enableSpdxBom: true
+  enrichment:
+    securityPolicyFile: "policies/security-policy/security-policy.json"
+    securityPolicyActiveIds: ["base_configuration"]

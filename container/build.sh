@@ -40,6 +40,7 @@ readonly DOCKER_REGISTRY="$(strip_quotes "$8")"
 
 AE_UNIVERSE_VERSION_INPUT="$(strip_quotes "$9")"
 AE_KOSMOS_VERSION_INPUT="$(strip_quotes "${10}")"
+AE_DITA_VERSION_INPUT="$(read_optional "${11}")"
 
 if [[ -z "$AE_UNIVERSE_VERSION_INPUT" || -z "$AE_KOSMOS_VERSION_INPUT" ]]; then
     local_props="$(cd "$SELF_DIR/../.." && pwd)/.local.properties"
@@ -53,8 +54,22 @@ if [[ -z "$AE_UNIVERSE_VERSION_INPUT" || -z "$AE_KOSMOS_VERSION_INPUT" ]]; then
     fi
 fi
 
+if [[ -z "$AE_DITA_VERSION_INPUT" ]]; then
+    harness_dir="$(cd "$SELF_DIR/../.." && pwd)"
+    runtime_dir="$(cd "$SELF_DIR/.." && pwd)"
+    for local_props in "$harness_dir/.local.properties" "$runtime_dir/.local.properties" "$SELF_DIR/.local.properties"; do
+        if [[ -f "$local_props" ]]; then
+            dita_version="$(grep -E '^[[:space:]]*ae\.dita\.version[[:space:]]*=' "$local_props" | tail -n 1 | cut -d'=' -f2- | tr -d ' "\r\n' || true)"
+            if [[ -n "$dita_version" ]]; then
+                AE_DITA_VERSION_INPUT="$dita_version"
+            fi
+        fi
+    done
+fi
+
 readonly AE_UNIVERSE_VERSION="$AE_UNIVERSE_VERSION_INPUT"
 readonly AE_KOSMOS_VERSION="$AE_KOSMOS_VERSION_INPUT"
+readonly AE_DITA_VERSION="${AE_DITA_VERSION_INPUT:-0.31.0}"
 
 # Function to check all required input argument variables
 check_args() {
@@ -95,7 +110,7 @@ check_args() {
 
     if [[ $missing -ne 0 ]]; then
         echo "" >&2
-        echo "Usage: $0 <AE_CORE_VERSION> <AE_ARTIFACT_ANALYSIS_VERSION> <AE_PORTFOLIO_MANAGER_VERSION> <AE_KONTINUUM_BRANCH> <DOCKER_TAG> [DOCKER_USERNAME] [DOCKER_ACCESS_TOKEN] <DOCKER_REGISTRY> <AE_UNIVERSE_VERSION> <AE_KOSMOS_VERSION>" >&2
+        echo "Usage: $0 <AE_CORE_VERSION> <AE_ARTIFACT_ANALYSIS_VERSION> <AE_PORTFOLIO_MANAGER_VERSION> <AE_KONTINUUM_BRANCH> <DOCKER_TAG> [DOCKER_USERNAME] [DOCKER_ACCESS_TOKEN] <DOCKER_REGISTRY> <AE_UNIVERSE_VERSION> <AE_KOSMOS_VERSION> [AE_DITA_VERSION]" >&2
         echo "  DOCKER_USERNAME / DOCKER_ACCESS_TOKEN are optional; when empty, no docker login is performed (e.g. for a local registry)." >&2
         exit 1
     fi
@@ -262,76 +277,6 @@ build_kontinuum() {
       done
 }
 
-build_tmd() {
-    echo "Resolving TMD dependency com.metaeffekt.universe:ae-metaeffekt-universe:$AE_UNIVERSE_VERSION"
-
-    mvn dependency:get \
-        -DgroupId="com.metaeffekt.universe" \
-        -DartifactId="ae-metaeffekt-universe" \
-        -Dversion="$AE_UNIVERSE_VERSION" \
-        -Dpackaging=pom \
-        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
-        echo "Failed to resolve TMD universe pom: com.metaeffekt.universe:ae-metaeffekt-universe:$AE_UNIVERSE_VERSION" >&2
-        exit 1
-    }
-
-    mvn dependency:get \
-        -DgroupId="com.metaeffekt.universe" \
-        -DartifactId="ae-metaeffekt-universe" \
-        -Dversion="$AE_UNIVERSE_VERSION" \
-        -Dpackaging=zip \
-        -Dclassifier=package \
-        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
-        echo "Failed to resolve TMD universe package: com.metaeffekt.universe:ae-metaeffekt-universe:$AE_UNIVERSE_VERSION" >&2
-        exit 1
-    }
-
-    mvn dependency:get \
-        -DgroupId="com.metaeffekt.universe" \
-        -DartifactId="ae-metaeffekt-universe" \
-        -Dversion="$AE_UNIVERSE_VERSION" \
-        -Dpackaging=zip \
-        -Dclassifier=licenses \
-        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
-        echo "Failed to resolve TMD universe licenses: com.metaeffekt.universe:ae-metaeffekt-universe:$AE_UNIVERSE_VERSION" >&2
-        exit 1
-    }
-
-    echo "Resolving TMD dependency com.metaeffekt.kosmos:ae-metaeffekt-kosmos:$AE_KOSMOS_VERSION"
-
-    mvn dependency:get \
-        -DgroupId="com.metaeffekt.kosmos" \
-        -DartifactId="ae-metaeffekt-kosmos" \
-        -Dversion="$AE_KOSMOS_VERSION" \
-        -Dpackaging=pom \
-        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
-        echo "Failed to resolve TMD kosmos pom: com.metaeffekt.kosmos:ae-metaeffekt-kosmos:$AE_KOSMOS_VERSION" >&2
-        exit 1
-    }
-
-    mvn dependency:get \
-        -DgroupId="com.metaeffekt.kosmos" \
-        -DartifactId="ae-metaeffekt-kosmos" \
-        -Dversion="$AE_KOSMOS_VERSION" \
-        -Dpackaging=zip \
-        -Dclassifier=package \
-        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
-        echo "Failed to resolve TMD kosmos package: com.metaeffekt.kosmos:ae-metaeffekt-kosmos:$AE_KOSMOS_VERSION" >&2
-        exit 1
-    }
-
-    mvn dependency:get \
-        -DgroupId="com.metaeffekt.kosmos" \
-        -DartifactId="ae-metaeffekt-kosmos" \
-        -Dversion="$AE_KOSMOS_VERSION" \
-        -Dpackaging=zip \
-        -Dclassifier=licenses \
-        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
-        echo "Failed to resolve TMD kosmos licenses: com.metaeffekt.kosmos:ae-metaeffekt-kosmos:$AE_KOSMOS_VERSION" >&2
-        exit 1
-    }
-}
-
 build_kontinuum_runtime() {
     local runtime_source
     runtime_source="$(cd "$SELF_DIR/.." && pwd)"
@@ -362,6 +307,21 @@ build_kontinuum_runtime() {
     }
 }
 
+resolve_container_dependencies() {
+    local dependencies_pom="$SELF_DIR/maven-dependencies-pom.xml"
+
+    echo "Resolving Universe $AE_UNIVERSE_VERSION, Kosmos $AE_KOSMOS_VERSION, and DITA $AE_DITA_VERSION artifacts"
+    mvn -f "$dependencies_pom" \
+        org.apache.maven.plugins:maven-dependency-plugin:3.8.1:resolve \
+        -Dae.dita.version="$AE_DITA_VERSION" \
+        -Dae.universe.version="$AE_UNIVERSE_VERSION" \
+        -Dae.kosmos.version="$AE_KOSMOS_VERSION" \
+        -Dmaven.repo.local="$TEMP_MAVEN_REPO" || {
+        echo "Failed to resolve container Maven dependencies" >&2
+        exit 1
+    }
+}
+
 main() {
   check_args
 
@@ -369,7 +329,7 @@ main() {
   build_artifact_analysis
   build_portfolio_manager
   build_kontinuum
-  build_tmd
+  resolve_container_dependencies
   build_kontinuum_runtime
 
   build_docker

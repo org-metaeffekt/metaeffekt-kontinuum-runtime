@@ -117,7 +117,8 @@ public class GroupStageHandler implements AssetStageHandler {
         mavenProcessor.setProcessorParameter(INPUT_INVENTORY_DIR, context.getCurrentInventoryFile());
         mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_DIR, preparedDir.appendAssetInventory());
         mavenProcessor.setProcessorParameter(PARAM_KOTLIN_SCRIPT_FILE,
-                                             context.getEnvironment().getScriptsDirNormalized() + "prepare.kts");
+                                             report.getPreReportFilterFileNormalized(
+                                                     context.getEnvironment().getWorkbenchDirNormalized()));
         mavenProcessor.setProcessorParameter(PARAM_ASSET_NAME, asset.getName());
 
         return mavenProcessor;
