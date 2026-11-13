@@ -9,7 +9,7 @@ import java.io.File
  *
  * Script parameters (JSON in param.script.params):
  *   artifactIdPattern  regular expression the whole artifact id must match, e.g. "a-.*"
- *   inventoryPath      directory containing the inventories, e.g. "tc-0001/workbench/inventories"
+ *   inventoryPath      absolute path of the directory containing the inventories
  */
 
 val scriptParams: Map<String, String> = jacksonObjectMapper().readValue(params["param.script.params"] ?: "{}")

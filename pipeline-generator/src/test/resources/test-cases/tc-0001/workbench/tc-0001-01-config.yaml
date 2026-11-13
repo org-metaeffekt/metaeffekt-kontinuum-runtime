@@ -8,21 +8,21 @@ projectProperties:
     - id: "app"
       name: "application"
       version: "1.0.0"
-      reference: "shared/workbench/inventories/reference-inventory/inventory"
+      reference: "${shared.workbench.dir}/inventories/reference-inventory/inventory"
       urlResolver:
-        url: "file:tc-0001/workspace/02_prepared/app/app-inventory.xlsx"
+        url: "file:${workspace.dir}/02_prepared/app/app-inventory.xlsx"
       assets:
         - id: "a"
           name: "a"
           extractionScript:
-            script: "tc-0001/workbench/scripts/select-inventory.kts"
+            script: "${workbench.dir}/scripts/select-inventory.kts"
             inventory: "a-inventory.xlsx"
             params:
               artifactIdPattern: "a-.*"
-              inventoryPath: "tc-0001/workbench/inventories"
+              inventoryPath: "${workbench.dir}/inventories"
 
-# Result of extraction step:
-#  tc-0001/workbench/inventories/a-1.15-inventory.xlsx is copied to 02_prepared/a/a-inventory.xlsx
-#  the matching version is extracted from tc-0001/workspace/02_prepared/app-inventory.xlsx
-#  matching the artifact with the given version (based on artifactIdPattern)
-#  the match must be unique
+# Result of the extract stage:
+#  the parent inventory ${workspace.dir}/02_prepared/app/app-inventory.xlsx is fetched for asset 'app'
+#  the script selects the single artifact matching artifactIdPattern from it (the match must be unique)
+#  ${workbench.dir}/inventories/<artifact id>-inventory.xlsx is copied to
+#  <runtime workspace>/tc-0001/01_extracted/a/scripted/a-inventory.xlsx

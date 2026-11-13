@@ -140,6 +140,16 @@ class ExtractStageHandlerTest {
     }
 
     @Test
+    void absoluteScriptPathIsNotPrefixedWithWorkbench() {
+        asset.setExtractionScript(extractionScript("/opt/scripts/transform.kts"));
+
+        handler.process(context);
+
+        Processor script = context.getProcessors().get(1);
+        assertEquals("/opt/scripts/transform.kts", param(script, INPUT_KOTLIN_SCRIPT_FILE));
+    }
+
+    @Test
     void extractionScriptWithoutParamsOmitsParameter() {
         asset.setExtractionScript(extractionScript("scripts/transform.kts"));
 
