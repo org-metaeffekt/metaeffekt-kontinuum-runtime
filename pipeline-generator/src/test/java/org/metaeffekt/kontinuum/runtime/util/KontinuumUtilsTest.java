@@ -23,13 +23,19 @@ public class KontinuumUtilsTest {
 
     @Test
     void normalizeDirNoDoubleSlash() {
-        assertEquals("usr/local/bin/", KontinuumUtils.normalizeDir("usr", "/local", "/bin"));
         assertEquals("usr/local/bin/", KontinuumUtils.normalizeDir("usr/", "local/", "bin/"));
     }
 
     @Test
     void normalizeDirCollapsesCorrectly() {
-        assertEquals("usr/local/bin/", KontinuumUtils.normalizeDir("usr/", "/local/", "/bin/"));
+        assertEquals("usr/local/bin/", KontinuumUtils.normalizeDir("usr/", "local//", "bin/"));
+    }
+
+    @Test
+    void absoluteSegmentDiscardsPrecedingSegments() {
+        assertEquals("/opt/local/bin/", KontinuumUtils.normalizeDir("workbench/", "/opt/local", "bin"));
+        assertEquals("/opt/script.kts", KontinuumUtils.normalizeFilePath("workbench/", "/opt/script.kts"));
+        assertEquals("workbench/scripts/x.kts", KontinuumUtils.normalizeFilePath("workbench/", "scripts/x.kts"));
     }
 
     @Test
