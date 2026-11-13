@@ -145,6 +145,16 @@ urlResolver:
   headerValue: "Bearer secret-token"
 ```
 
+`file:` URLs reference local files. A relative file URL (`file:path`) is resolved relative to the workbench directory
+by the runtime; absolute file URLs (`file:/path`, `file:///path`) are used as they are. A file URL ending in `.xls` or
+`.xlsx` references an already extracted inventory: the file is copied in the `FETCH` stage and the `EXTRACT` stage is
+skipped.
+
+```yaml
+urlResolver:
+  url: "file:inventories/app/app-inventory.xlsx"   # <workbench>/inventories/app/app-inventory.xlsx
+```
+
 Parameterized URLs can also be expressed with `urlPattern` using `${version}` or `${name}` placeholders:
 
 ```yaml
