@@ -6,6 +6,8 @@ import org.metaeffekt.kontinuum.runtime.TestUtils;
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetType;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
+import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Report;
+import org.metaeffekt.kontinuum.runtime.models.shared.SupportedLocale;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -157,5 +159,54 @@ class PipelineConfigurationLoaderTest {
 
         assertEquals(AssetType.DEFAULT, parent.getType());
         assertDoesNotThrow(this::validate);
+    }
+
+    @Test
+    void reportPeriodIsAccepted() {
+        configuration.setReports(List.of(report("CR", period("2 weeks", "now"))));
+
+        assertDoesNotThrow(this::validate);
+    }
+
+    @Test
+    void reportPeriodWithEmptyValueIsRejected() {
+        configuration.setReports(List.of(report("CR", period(" ", "now"))));
+
+        assertThrows(IllegalStateException.class, this::validate);
+    }
+
+    @Test
+    void reportPeriodWithSingleQuoteIsRejected() {
+        configuration.setReports(List.of(report("CR", period("1 week", "it's now"))));
+
+        assertThrows(IllegalStateException.class, this::validate);
+    }
+
+    @Test
+    void reportPeriodOnOtherReportTypeIsOnlyWarned() {
+        configuration.setReports(List.of(report("VR", period("2 weeks", "now"))));
+
+        assertDoesNotThrow(this::validate);
+    }
+
+    private Report report(String type, Report.Period period) {
+        parent.setAssessmentId("assessment");
+        configuration.getOptions().getEnrichment().setSecurityPolicyFile("policies/security-policy.json");
+
+        Report report = new Report();
+        report.setAssetIds(List.of(parent.getId()));
+        report.setTypes(List.of(type));
+        report.setLocales(List.of(SupportedLocale.EN_US));
+        report.setProductName("product");
+        report.setProductVersion("1.0.0");
+        report.setPeriod(period);
+        return report;
+    }
+
+    private static Report.Period period(String since, String until) {
+        Report.Period period = new Report.Period();
+        period.setSince(since);
+        period.setUntil(until);
+        return period;
     }
 }

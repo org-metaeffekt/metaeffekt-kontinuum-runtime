@@ -1,8 +1,15 @@
 # Test Cases
 
-Each test case `tc-XXXX` is executed as a roundtrip by a test in `org.metaeffekt.kontinuum.runtime.testcases`: the
-configuration is loaded, the local pipeline script is generated and executed, and the result is compared with the
-expected output. The tests require a Kontinuum checkout at `../../metaeffekt-kontinuum` and are skipped otherwise.
+Each test case `tc-XXXX` is checked by a test in `org.metaeffekt.kontinuum.runtime.testcases`. The configuration is
+loaded and the pipeline is generated. Depending on the test case, the result is checked in one of two ways:
+
+| Test case | Check                                                                                                       |
+|:----------|:------------------------------------------------------------------------------------------------------------|
+| `tc-0001` | Roundtrip: the local pipeline script is executed and the result is compared with the expected output.        |
+| `tc-0002` | Generation only: the parameters of the processors in the local and the GitLab pipeline are checked.          |
+
+Roundtrip tests require a Kontinuum checkout at `../../metaeffekt-kontinuum` and are skipped otherwise. Tests that
+only generate pipelines run without it, and the files referenced by their configuration do not need to exist.
 
 ## Layout
 
@@ -26,4 +33,5 @@ with absolute paths before the configuration is used:
 
 The test writes the resolved configuration to `target/test-cases/tc-XXXX/` and only uses that copy for loading the
 configuration, generating the pipeline and executing it. A placeholder left after the replacement fails the test.
-The runtime does not replace placeholders.
+The runtime does not replace placeholders. The replacement is implemented once in `TestCaseConfigTemplates` and
+shared by all test cases.

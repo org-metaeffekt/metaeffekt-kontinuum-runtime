@@ -12,10 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -33,26 +30,15 @@ class TestCase0001Test {
 
     private static final String TEST_CASE = "tc-0001";
 
-    private static final Path TEST_CASES_DIR = Path.of("src/test/resources/test-cases").toAbsolutePath().normalize();
-
     private static final Path KONTINUUM_DIR = Path.of("../../metaeffekt-kontinuum").toAbsolutePath().normalize();
 
-    private static final Path WORKBENCH_DIR = TEST_CASES_DIR.resolve(TEST_CASE).resolve("workbench");
+    private static final Path WORKBENCH_DIR = TestCaseConfigTemplates.workbenchDir(TEST_CASE);
 
-    private static final Path WORKSPACE_DIR = TEST_CASES_DIR.resolve(TEST_CASE).resolve("workspace");
+    private static final Path WORKSPACE_DIR = TestCaseConfigTemplates.workspaceDir(TEST_CASE);
 
-    private static final Path SHARED_WORKBENCH_DIR = TEST_CASES_DIR.resolve("shared").resolve("workbench");
-
-    private static final Path RESOLVED_CONFIG_DIR = Path.of("target/test-cases").resolve(TEST_CASE).toAbsolutePath();
+    private static final Path SHARED_WORKBENCH_DIR = TestCaseConfigTemplates.SHARED_WORKBENCH_DIR;
 
     private static final String CONFIG_FILE_NAME = "tc-0001-01-config.yaml";
-
-    private static final Map<String, Path> PLACEHOLDERS = Map.of(
-            "workbench.dir", WORKBENCH_DIR,
-            "workspace.dir", WORKSPACE_DIR,
-            "shared.workbench.dir", SHARED_WORKBENCH_DIR);
-
-    private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([^}]+)}");
 
     private static final long TIMEOUT_MINUTES = 10;
 
@@ -94,26 +80,8 @@ class TestCase0001Test {
                 "Copied inventory differs from " + expectedInventory);
     }
 
-    /**
-     * Replaces the placeholders of the configuration template with absolute paths and writes the result to
-     * {@code target/test-cases/<test case>/}. Only this copy is used by the test.
-     */
     private static Path resolveConfigTemplate() throws IOException {
-        String config = Files.readString(WORKBENCH_DIR.resolve(CONFIG_FILE_NAME));
-        for (Map.Entry<String, Path> placeholder : PLACEHOLDERS.entrySet()) {
-            config = config.replace("${" + placeholder.getKey() + "}", placeholder.getValue().toString());
-        }
-
-        Matcher unresolved = PLACEHOLDER.matcher(config);
-        if (unresolved.find()) {
-            fail("Unknown placeholder ${" + unresolved.group(1) + "} in " + CONFIG_FILE_NAME
-                 + ", known placeholders: " + PLACEHOLDERS.keySet());
-        }
-
-        Files.createDirectories(RESOLVED_CONFIG_DIR);
-        Path resolvedConfig = RESOLVED_CONFIG_DIR.resolve(CONFIG_FILE_NAME);
-        Files.writeString(resolvedConfig, config);
-        return resolvedConfig;
+        return TestCaseConfigTemplates.resolve(TEST_CASE, CONFIG_FILE_NAME);
     }
 
     private String generateScript(Path configFile) {

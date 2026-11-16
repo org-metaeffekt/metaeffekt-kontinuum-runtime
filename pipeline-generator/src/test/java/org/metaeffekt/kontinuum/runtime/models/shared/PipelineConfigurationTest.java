@@ -1,7 +1,12 @@
 package org.metaeffekt.kontinuum.runtime.models.shared;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.junit.jupiter.api.Test;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
+import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.Report;
+
+import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -9,6 +14,22 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class PipelineConfigurationTest {
 
     private static final String WORKBENCH = "/opt/workbench/";
+
+    @Test
+    void reportWithoutPeriodUsesTheDefaultPeriod() {
+        Report.Period period = new Report().getResolvedPeriod();
+
+        assertEquals("1 week", period.getSince());
+        assertEquals("now", period.getUntil());
+    }
+
+    @Test
+    void partialPeriodKeepsTheDefaultOfTheMissingValue() throws IOException {
+        Report report = new ObjectMapper(new YAMLFactory()).readValue("period:\n  since: \"2 weeks\"\n", Report.class);
+
+        assertEquals("2 weeks", report.getResolvedPeriod().getSince());
+        assertEquals("now", report.getResolvedPeriod().getUntil());
+    }
 
     @Test
     void referenceDirectoryIsResolvedAgainstWorkbench() {
