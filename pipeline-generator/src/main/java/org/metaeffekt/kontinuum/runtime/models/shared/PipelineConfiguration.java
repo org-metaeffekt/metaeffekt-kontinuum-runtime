@@ -434,7 +434,7 @@ public class PipelineConfiguration {
                     return null;
                 }
                 String fileName = StringUtils.isBlank(extractionScript.getInventory())
-                        ? id
+                        ? id + "-inventory"
                         : extractionScript.getInventory();
                 return Strings.CI.endsWith(fileName, ".xlsx") ? fileName : fileName + ".xlsx";
             }

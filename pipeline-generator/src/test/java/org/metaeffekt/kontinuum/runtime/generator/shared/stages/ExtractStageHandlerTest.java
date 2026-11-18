@@ -112,18 +112,20 @@ class ExtractStageHandlerTest {
         assertEquals("workbench/scripts/transform.kts", param(script, INPUT_KOTLIN_SCRIPT_FILE));
         assertEquals(param(extraction, OUTPUT_INVENTORY_FILE), param(script, INPUT_INVENTORY_FILE));
         assertTrue(context.getDependencies(script).contains(extraction));
-        assertTrue(context.getCurrentInventoryFile().endsWith("/scripted/" + asset.getId() + ".xlsx"));
+        assertTrue(context.getCurrentInventoryFile().endsWith("/" + asset.getId() + "-inventory.xlsx"));
     }
 
     @Test
     void extractionScriptUsesConfiguredInventoryName() {
         Asset.ExtractionScript extractionScript = extractionScript("scripts/transform.kts");
+
+        // FIXME: this property must be moved up to asset-level
         extractionScript.setInventory("custom-inventory");
         asset.setExtractionScript(extractionScript);
 
         handler.process(context);
 
-        assertTrue(context.getCurrentInventoryFile().endsWith("/scripted/custom-inventory.xlsx"));
+        assertTrue(context.getCurrentInventoryFile().endsWith("/custom-inventory.xlsx"));
     }
 
     @Test
@@ -189,7 +191,7 @@ class ExtractStageHandlerTest {
 
         assertEquals(parentContext.getCurrentInventoryFile(), param(childScript, INPUT_INVENTORY_FILE));
         assertTrue(childContext.getDependencies(childScript).contains(parentExtraction));
-        assertTrue(childContext.getCurrentInventoryFile().endsWith("/child/scripted/child.xlsx"));
+        assertTrue(childContext.getCurrentInventoryFile().endsWith("/child/child-inventory.xlsx"));
     }
 
     @Test

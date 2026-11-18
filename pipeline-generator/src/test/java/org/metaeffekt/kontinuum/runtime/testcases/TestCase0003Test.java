@@ -68,7 +68,7 @@ class TestCase0003Test {
     }
 
     @Test
-    void generatedScriptExtractsTheWindowsArchiveAndSelectsTheInventory() throws IOException {
+    void generatedScriptExtractsWindowsArchiveAndSelectsInventory() throws IOException {
         String script = generateScript(resolveConfigTemplate());
 
         assertTrue(script.contains("-Dparam.asset.url='file:" + WORKBENCH_DIR + "/extractions/windows-extract.tar'"),
@@ -79,23 +79,23 @@ class TestCase0003Test {
         assertTrue(script.contains("-Dinput.kotlin.script.file='" + WORKBENCH_DIR + "/scripts/select-inventory.kts'"),
                 script);
         assertTrue(script.contains("\"artifactIdPattern\":\"SumatraPDF-.*\""), script);
-        assertTrue(script.contains("\"inventoryPath\":\"" + WORKBENCH_DIR + "/inventories\""), script);
+        assertTrue(script.contains("\"inventoriesDir\":\"" + WORKBENCH_DIR + "/inventories\""), script);
         assertFalse(script.contains("# --- PRE:"), "Mirror step is not required for this test case:\n" + script);
     }
 
     @Test
-    void selectsTheInventoryOfTheSumatraPdfArtifactFoundInTheAppliance() throws Exception {
+    void selectsSumatraPdfInventoryByArtifactInAppliance() throws Exception {
         Path scriptFile = runtimeWorkspaceDir.resolve(TEST_CASE + "-pipeline.sh");
         Files.writeString(scriptFile, generateScript(resolveConfigTemplate()));
 
         runScript(scriptFile);
 
         Path applianceInventory = runtimeWorkspaceDir.resolve(
-                TEST_CASE + "/01_extracted/windows-appliance/windows-appliance.xlsx");
+                TEST_CASE + "/01_extracted/windows-appliance/windows-appliance-inventory.xlsx");
         assertTrue(Files.isRegularFile(applianceInventory), "Inventory was not extracted: " + applianceInventory);
 
         Path outputInventory = runtimeWorkspaceDir.resolve(
-                TEST_CASE + "/01_extracted/sumatrapdf/scripted/sumatrapdf-inventory.xlsx");
+                TEST_CASE + "/01_extracted/sumatrapdf/sumatrapdf-inventory.xlsx");
         Path expectedInventory = WORKBENCH_DIR.resolve("inventories/SumatraPDF-3.5.2-inventory.xlsx");
         assertTrue(Files.isRegularFile(outputInventory), "Inventory was not created: " + outputInventory);
         assertEquals(-1, Files.mismatch(expectedInventory, outputInventory),

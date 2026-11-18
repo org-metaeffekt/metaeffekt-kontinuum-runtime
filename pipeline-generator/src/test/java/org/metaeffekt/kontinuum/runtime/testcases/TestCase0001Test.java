@@ -75,7 +75,7 @@ class TestCase0001Test {
                    script);
         assertTrue(script.contains("-Dparam.reference.inventory.dir='" + SHARED_WORKBENCH_DIR
                                    + "/inventories/reference-inventory/inventory/'"), script);
-        assertTrue(script.contains("\"inventoryPath\":\"" + WORKBENCH_DIR + "/inventories\""), script);
+        assertTrue(script.contains("\"inventoriesDir\":\"" + WORKBENCH_DIR + "/inventories\""), script);
         assertTrue(script.contains("\"artifactIdPattern\":\"a-.*\""), script);
         assertFalse(script.contains("# --- PRE:"), "Mirror step is not required for this test case:\n" + script);
     }
@@ -87,7 +87,7 @@ class TestCase0001Test {
 
         runScript(scriptFile);
 
-        Path outputInventory = runtimeWorkspaceDir.resolve(TEST_CASE + "/01_extracted/a/scripted/a-inventory.xlsx");
+        Path outputInventory = runtimeWorkspaceDir.resolve(TEST_CASE + "/01_extracted/a/a-inventory.xlsx");
         Path expectedInventory = WORKBENCH_DIR.resolve("inventories/a-1.15-inventory.xlsx");
         assertTrue(Files.isRegularFile(outputInventory), "Inventory was not created: " + outputInventory);
         assertEquals(-1, Files.mismatch(expectedInventory, outputInventory),

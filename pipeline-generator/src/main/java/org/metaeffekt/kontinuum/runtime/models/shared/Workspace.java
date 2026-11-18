@@ -98,7 +98,7 @@ public class Workspace {
          * @return the asset inventory file path
          */
         public String appendAssetInventory() {
-            return dir + asset + ".xlsx";
+            return dir + asset + "-inventory.xlsx";
         }
 
         /**
@@ -157,7 +157,7 @@ public class Workspace {
          * @return the portfolio manager reference inventory file path
          */
         public String appendPortfolioManagerReferenceInventory() {
-            return appendPortfolioManagerReferenceDir() + asset + "-pm-reference.xlsx";
+            return appendPortfolioManagerReferenceDir() + asset + "-pm-reference-inventory.xlsx";
         }
 
         /**

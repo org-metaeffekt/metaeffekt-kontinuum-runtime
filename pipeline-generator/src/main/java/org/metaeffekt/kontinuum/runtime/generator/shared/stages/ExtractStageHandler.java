@@ -123,7 +123,7 @@ public class ExtractStageHandler implements AssetStageHandler {
      */
     private MavenProcessor handleExtractionScript(AssetExecutionContext context) {
         Asset asset = context.getAsset();
-        String scriptedInventoryDir = context.getStageDirForAsset(Stage.EXTRACT) + "scripted/";
+        String scriptedInventoryDir = context.getStageDirForAsset(Stage.EXTRACT).toString();
         String scriptedInventoryFile = scriptedInventoryDir + asset.getExtractionScriptInventoryFileName();
 
         String workbenchDir = context.getEnvironment().getWorkbenchDirNormalized();

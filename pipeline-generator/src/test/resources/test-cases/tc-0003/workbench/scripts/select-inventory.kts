@@ -5,16 +5,16 @@ import java.io.File
 /*
  * Selects the inventory of an asset from a directory of prepared inventories:
  * finds the single artifact in the parent inventory whose id matches 'artifactIdPattern'
- * and copies '<artifact id>-inventory.xlsx' from 'inventoryPath' to the output inventory file.
+ * and copies '<artifact id>-inventory.xlsx' from 'inventoriesDir' to the output inventory file.
  *
  * Script parameters (JSON in param.script.params):
  *   artifactIdPattern  regular expression the whole artifact id must match, e.g. "a-.*"
- *   inventoryPath      absolute path of the directory containing the inventories
+ *   inventoriesDir      absolute path of the directory containing the inventories
  */
 
 val scriptParams: Map<String, String> = jacksonObjectMapper().readValue(params["param.script.params"] ?: "{}")
 val artifactIdPattern = Regex(scriptParams.getValue("artifactIdPattern"))
-val inventoryDir = File(scriptParams.getValue("inventoryPath"))
+val inventoryDir = File(scriptParams.getValue("inventoriesDir"))
 
 val matchingIds = loadInventory("input.inventory.file").artifacts
     .mapNotNull { it.id }

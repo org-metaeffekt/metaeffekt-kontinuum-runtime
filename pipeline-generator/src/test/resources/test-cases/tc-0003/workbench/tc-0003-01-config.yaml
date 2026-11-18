@@ -14,6 +14,25 @@ projectProperties:
         url: "file:extractions/windows-extract.tar"
         excludePatternFile: "configs/exclude-patterns.yaml"
       assets:
+        - id: "application"
+          name: "Application"
+          extractionScript:
+            script: "scripts/filter-part-inventory.kts"
+            params:
+              part: "application"
+# FIXME: enable kotlin script to also produce empty inventories
+#        - id: "os"
+#          name: "OS"
+#          extractionScript:
+#            script: "scripts/filter-part-inventory.kts"
+#            params:
+#              part: "os"
+#        - id: "driver"
+#          name: "Driver"
+#          extractionScript:
+#            script: "scripts/filter-part-inventory.kts"
+#            params:
+#              part: "driver"
         - id: "sumatrapdf"
           name: "SumatraPDF"
           extractionScript:
@@ -21,4 +40,4 @@ projectProperties:
             inventory: "sumatrapdf-inventory.xlsx"
             params:
               artifactIdPattern: "SumatraPDF-.*"
-              inventoryPath: "${workbench.dir}/inventories"
+              inventoriesDir: "${workbench.dir}/inventories"
