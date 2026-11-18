@@ -1,0 +1,24 @@
+projectProperties:
+  project:
+    id: "tc-0003"
+    name: "Test Case #0003"
+    version: "1.0.0"
+    tenant: "ae"
+  assets:
+    - id: "windows-appliance"
+      name: "windows-appliance"
+      version: "1.0.0"
+      type: "WINDOWS"
+      reference: "${shared.workbench.dir}/inventories/reference-inventory/inventory"
+      urlResolver:
+        url: "file:extractions/windows-extract.tar"
+        excludePatternFile: "configs/exclude-patterns.yaml"
+      assets:
+        - id: "sumatrapdf"
+          name: "SumatraPDF"
+          extractionScript:
+            script: "scripts/select-inventory.kts"
+            inventory: "sumatrapdf-inventory.xlsx"
+            params:
+              artifactIdPattern: "SumatraPDF-.*"
+              inventoryPath: "${workbench.dir}/inventories"
