@@ -19,8 +19,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-        with:
-          ref: main
 
       - uses: actions/setup-java@v6
         with:
@@ -42,7 +40,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ inputs.version }}
-          target_commitish: "main"
+          target_commitish: ${{ github.sha }}
           name: ${{ inputs.version }}
           draft: false
           prerelease: false

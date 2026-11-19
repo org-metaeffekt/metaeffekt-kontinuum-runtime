@@ -42,8 +42,10 @@ AE_UNIVERSE_VERSION_INPUT="$(strip_quotes "$9")"
 AE_KOSMOS_VERSION_INPUT="$(strip_quotes "${10}")"
 AE_DITA_VERSION_INPUT="$(read_optional "${11}")"
 
-if [[ -z "$AE_UNIVERSE_VERSION_INPUT" || -z "$AE_KOSMOS_VERSION_INPUT" ]]; then
-    local_props="$(cd "$SELF_DIR/../.." && pwd)/.local.properties"
+# Fill omitted arguments from shared defaults, then repository/container overrides.
+harness_dir="$(cd "$SELF_DIR/../.." && pwd)"
+runtime_dir="$(cd "$SELF_DIR/.." && pwd)"
+for local_props in "$harness_dir/.local.properties" "$runtime_dir/.local.properties" "$SELF_DIR/.local.properties"; do
     if [[ -f "$local_props" ]]; then
         if [[ -z "$AE_UNIVERSE_VERSION_INPUT" ]]; then
             AE_UNIVERSE_VERSION_INPUT="$(grep -E '^[[:space:]]*ae\.universe\.version[[:space:]]*=' "$local_props" | tail -n 1 | cut -d'=' -f2- | tr -d ' "\r\n' || true)"
@@ -51,21 +53,11 @@ if [[ -z "$AE_UNIVERSE_VERSION_INPUT" || -z "$AE_KOSMOS_VERSION_INPUT" ]]; then
         if [[ -z "$AE_KOSMOS_VERSION_INPUT" ]]; then
             AE_KOSMOS_VERSION_INPUT="$(grep -E '^[[:space:]]*ae\.kosmos\.version[[:space:]]*=' "$local_props" | tail -n 1 | cut -d'=' -f2- | tr -d ' "\r\n' || true)"
         fi
-    fi
-fi
-
-if [[ -z "$AE_DITA_VERSION_INPUT" ]]; then
-    harness_dir="$(cd "$SELF_DIR/../.." && pwd)"
-    runtime_dir="$(cd "$SELF_DIR/.." && pwd)"
-    for local_props in "$harness_dir/.local.properties" "$runtime_dir/.local.properties" "$SELF_DIR/.local.properties"; do
-        if [[ -f "$local_props" ]]; then
-            dita_version="$(grep -E '^[[:space:]]*ae\.dita\.version[[:space:]]*=' "$local_props" | tail -n 1 | cut -d'=' -f2- | tr -d ' "\r\n' || true)"
-            if [[ -n "$dita_version" ]]; then
-                AE_DITA_VERSION_INPUT="$dita_version"
-            fi
+        if [[ -z "$AE_DITA_VERSION_INPUT" ]]; then
+            AE_DITA_VERSION_INPUT="$(grep -E '^[[:space:]]*ae\.dita\.version[[:space:]]*=' "$local_props" | tail -n 1 | cut -d'=' -f2- | tr -d ' "\r\n' || true)"
         fi
-    done
-fi
+    fi
+done
 
 readonly AE_UNIVERSE_VERSION="$AE_UNIVERSE_VERSION_INPUT"
 readonly AE_KOSMOS_VERSION="$AE_KOSMOS_VERSION_INPUT"
