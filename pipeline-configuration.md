@@ -303,7 +303,7 @@ reports:
 The `period` is only used for cert reports. The values are passed unchanged to the report processor and must not
 contain single quotes. A `period` on a report without type `CR` is ignored and logged as a warning.
 
----the set overview advisors for vulnerability centric reports.
+---
 
 ### 3.1 Supported Report Types
 
