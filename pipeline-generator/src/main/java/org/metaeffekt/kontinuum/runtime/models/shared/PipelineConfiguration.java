@@ -207,7 +207,6 @@ public class PipelineConfiguration {
         public static class Asset {
 
             private static final String FILE_URL_PREFIX = "file:";
-            private static final List<String> INVENTORY_FILE_SUFFIXES = List.of(".xls", ".xlsx", ".ser");
 
             private String id;
             private String name;
@@ -307,15 +306,11 @@ public class PipelineConfiguration {
                             "Tried to access reference inventory for asset " + this + " but is not set.");
                 }
 
-                if (isInventoryFile(reference)) {
+                if (KontinuumUtils.isInventoryFile(reference)) {
                     String parent = new File(reference).getParent();
                     return KontinuumUtils.normalizeDir(workbenchPath, parent);
                 }
                 return KontinuumUtils.normalizeDir(workbenchPath, reference);
-            }
-
-            private static boolean isInventoryFile(String path) {
-                return INVENTORY_FILE_SUFFIXES.stream().anyMatch(suffix -> Strings.CI.endsWith(path, suffix));
             }
 
             /**
