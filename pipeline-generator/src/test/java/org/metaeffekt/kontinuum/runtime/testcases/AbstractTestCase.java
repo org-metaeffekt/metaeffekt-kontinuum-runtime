@@ -22,28 +22,34 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 abstract class AbstractTestCase {
 
-    static final Path TEST_CASES_DIR = Path.of("src/test/resources/test-cases").toAbsolutePath().normalize();
+    static final Path TEST_CASES_BASE_DIR = Path.of("src/test/resources/test-cases").toAbsolutePath().normalize();
 
-    static final Path SHARED_WORKBENCH_DIR = TEST_CASES_DIR.resolve("shared").resolve("workbench");
+    static final Path SHARED_WORKBENCH_DIR = TEST_CASES_BASE_DIR.resolve("shared").resolve("workbench");
+
+    private static final Path RESULTS_BASE_DIR = Path.of("target/test-cases").toAbsolutePath().normalize();
 
     // FIXME: read from local.properties on runtime-level
     private final Path KONTINUUM_DIR = Path.of("../../metaeffekt-kontinuum").toAbsolutePath().normalize();
 
-    private static final Path RESOLVED_CONFIG_ROOT = Path.of("target/test-cases").toAbsolutePath();
-
     private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([^}]+)}");
-
-    static Path workbenchDir(String testCase) {
-        return TEST_CASES_DIR.resolve(testCase).resolve("workbench");
-    }
-
-    static Path workspaceDir(String testCase) {
-        return TEST_CASES_DIR.resolve(testCase).resolve("workspace");
-    }
 
     static final long TIMEOUT_MINUTES = 10;
 
-    private Path resultBaseDir = Path.of("target/test-cases").toAbsolutePath().normalize() ;
+    static Path testCaseBaseDir(String testCase) {
+        return TEST_CASES_BASE_DIR.resolve(testCase);
+    }
+
+    static Path testCaseWorkbenchDir(String testCase) {
+        return testCaseBaseDir(testCase).resolve("workbench");
+    }
+
+    static Path testCaseWorkspaceDir(String testCase) {
+        return testCaseBaseDir(testCase).resolve("workspace");
+    }
+
+    static Path resultBaseDir(String testCase) {
+        return RESULTS_BASE_DIR.resolve(testCase);
+    }
 
     /**
      * Replaces the placeholders of the configuration template of a test case with absolute paths and writes the
@@ -57,13 +63,13 @@ abstract class AbstractTestCase {
      *
      * @throws IOException if the template cannot be read or the resolved configuration cannot be written
      */
-    static Path resolve(String testCase, String configFileName) throws IOException {
+    static Path resolveConfigTemplate(String testCase, String configFileName) throws IOException {
         Map<String, Path> placeholders = Map.of(
-                "workbench.dir", workbenchDir(testCase),
-                "workspace.dir", workspaceDir(testCase),
+                "workbench.dir", testCaseWorkbenchDir(testCase),
+                "workspace.dir", testCaseWorkspaceDir(testCase),
                 "shared.workbench.dir", SHARED_WORKBENCH_DIR);
 
-        String config = Files.readString(workbenchDir(testCase).resolve(configFileName));
+        String config = Files.readString(testCaseWorkbenchDir(testCase).resolve(configFileName));
         for (Map.Entry<String, Path> placeholder : placeholders.entrySet()) {
             config = config.replace("${" + placeholder.getKey() + "}", placeholder.getValue().toString());
         }
@@ -74,7 +80,7 @@ abstract class AbstractTestCase {
                  + ", known placeholders: " + placeholders.keySet());
         }
 
-        Path resolvedConfigDir = RESOLVED_CONFIG_ROOT.resolve(testCase);
+        Path resolvedConfigDir = resultBaseDir(testCase);
         Files.createDirectories(resolvedConfigDir);
         Path resolvedConfig = resolvedConfigDir.resolve(configFileName);
         Files.writeString(resolvedConfig, config);
@@ -82,9 +88,9 @@ abstract class AbstractTestCase {
     }
 
     protected void runScript(Path scriptFile) throws Exception {
-        Path logFile = getResultDir().resolve(getTestCaseId() + "-pipeline.log");
+        Path logFile = getResultBaseDir().resolve(getTestCaseId() + "-pipeline.log");
         Process process = new ProcessBuilder(List.of("bash", scriptFile.toString()))
-                .directory(resultBaseDir.toFile())
+                .directory(RESULTS_BASE_DIR.toFile())
                 .redirectErrorStream(true)
                 .redirectOutput(logFile.toFile())
                 .start();
@@ -99,13 +105,13 @@ abstract class AbstractTestCase {
     }
 
     protected Path resolveConfigTemplate() throws IOException {
-        return AbstractTestCase.resolve(getTestCaseId(), getConfigFileName());
+        return resolveConfigTemplate(getTestCaseId(), getConfigFileName());
     }
 
     protected String generateScript(Path configFile, Path scriptFile) throws IOException {
         PipelineConfiguration configuration = new PipelineConfigurationLoader().readConfig(configFile.toFile());
         LocalConfiguration localConfiguration = LocalConfiguration.builder()
-                .WORKBENCH_DIR(getTestCasesBaseDir().resolve("workbench").toString())
+                .WORKBENCH_DIR(getTestCaseWorkbenchDir().toString())
                 .WORKSPACE_DIR(getResultWorkspaceDir().toString())
                 .KONTINUUM_DIR(getKontinuumDir().toString())
                 .MAVEN_CLI_OPTS("-q")
@@ -120,24 +126,32 @@ abstract class AbstractTestCase {
     protected abstract String getTestCaseId();
     protected abstract String getConfigFileName();
 
-    protected Path getTestCasesBaseDir() {
-        return workbenchDir(getTestCaseId());
+    protected Path getTestCaseBaseDir() {
+        return testCaseBaseDir(getTestCaseId());
+    }
+
+    protected Path getTestCaseWorkbenchDir() {
+        return testCaseWorkbenchDir(getTestCaseId());
+    }
+
+    protected Path getTestCaseWorkspaceDir() {
+        return testCaseWorkspaceDir(getTestCaseId());
     }
 
     protected Path getKontinuumDir(){
         return KONTINUUM_DIR;
     }
 
-    protected Path getResultDir() {
-        return resultBaseDir.resolve(getTestCaseId());
+    protected Path getResultBaseDir() {
+        return resultBaseDir(getTestCaseId());
     }
 
     protected Path getResultWorkingDir() {
-        return getResultDir().resolve("working");
+        return getResultBaseDir().resolve("working");
     }
 
     protected Path getResultWorkspaceDir() {
-        return getResultDir().resolve("workspace");
+        return getResultBaseDir().resolve("workspace");
     }
 
     protected static void assertParameter(String key, String value, String script) {

@@ -38,7 +38,7 @@ class TestCase0002Test {
     @Test
     void localPipelinePassesThePeriodOfCertReports() throws IOException {
         LocalConfiguration localConfiguration = LocalConfiguration.builder()
-                .WORKBENCH_DIR(AbstractTestCase.workbenchDir(TEST_CASE).toString())
+                .WORKBENCH_DIR(AbstractTestCase.testCaseWorkbenchDir(TEST_CASE).toString())
                 .WORKSPACE_DIR(runtimeWorkspaceDir.toString())
                 .KONTINUUM_DIR("kontinuum")
                 .build();
@@ -51,7 +51,7 @@ class TestCase0002Test {
     @Test
     void gitlabPipelinePassesThePeriodOfCertReports() throws IOException {
         GitlabConfiguration gitlabConfiguration = GitlabConfiguration.builder()
-                .WORKBENCH_DIR(AbstractTestCase.workbenchDir(TEST_CASE).toString())
+                .WORKBENCH_DIR(AbstractTestCase.testCaseWorkbenchDir(TEST_CASE).toString())
                 .WORKSPACE_DIR(runtimeWorkspaceDir.toString())
                 .KONTINUUM_DIR("kontinuum")
                 .CONTAINER_IMAGE("runtime-image")
@@ -63,7 +63,7 @@ class TestCase0002Test {
     }
 
     private static PipelineConfiguration loadConfiguration() throws IOException {
-        Path configFile = AbstractTestCase.resolve(TEST_CASE, CONFIG_FILE_NAME);
+        Path configFile = AbstractTestCase.resolveConfigTemplate(TEST_CASE, CONFIG_FILE_NAME);
         return new PipelineConfigurationLoader().readConfig(configFile.toFile());
     }
 

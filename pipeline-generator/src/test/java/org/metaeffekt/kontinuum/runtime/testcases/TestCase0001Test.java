@@ -1,6 +1,7 @@
 package org.metaeffekt.kontinuum.runtime.testcases;
 
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -24,8 +25,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @Slf4j
 class TestCase0001Test extends AbstractTestCase {
 
-    private final String TEST_CASE = "tc-0001";
-    private final String CONFIG_FILE_NAME = "tc-0001-01-config.yaml";
+    private static final String TEST_CASE = "tc-0001";
+    private static final String CONFIG_FILE_NAME = "tc-0001-01-config.yaml";
 
     @BeforeEach
     void requireKontinuum() {
@@ -33,12 +34,22 @@ class TestCase0001Test extends AbstractTestCase {
                 "Kontinuum checkout not found at [" + getKontinuumDir() + "].");
     }
 
-    @BeforeEach
-    void cleanupResultsDir() {
-        File file = getResultDir().toFile();
-        if (!file.exists()) {
-            file.delete();
+    @BeforeAll
+    static void cleanupResultsDir() {
+        File file = resultBaseDir(TEST_CASE).toFile();
+        if (file.exists()) {
+            delete(file);
         }
+    }
+
+    private static void delete(File file) {
+        File[] children = file.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                delete(child);
+            }
+        }
+        assertTrue(file.delete(), "Cannot delete [" + file + "].");
     }
 
     @Test
@@ -46,14 +57,14 @@ class TestCase0001Test extends AbstractTestCase {
         Path scriptFile = getResultWorkingDir().resolve(TEST_CASE + "-pipeline.sh");
         String script = generateScript(resolveConfigTemplate(), scriptFile);
 
-        assertParameter("param.asset.url", "'file:" + getTestCasesBaseDir() + "/workspace/02_prepared/app/app-inventory.xlsx'", script);
+        assertParameter("param.asset.url", "'file:" + getTestCaseWorkspaceDir() + "/02_prepared/app/app-inventory.xlsx'", script);
 
         assertTrue(script.contains(
-                "-Dinput.kotlin.script.file='" + getTestCasesBaseDir() + "workbench/scripts/select-inventory.kts'"), script);
+                "-Dinput.kotlin.script.file='" + getTestCaseWorkbenchDir() + "/scripts/select-inventory.kts'"), script);
         assertTrue(script.contains(
                 "-Dparam.reference.inventory.dir='" + SHARED_WORKBENCH_DIR + "/inventories/reference-inventory/inventory/'"), script);
         assertTrue(script.contains(
-                "\"inventoryPath\":\"" + getTestCasesBaseDir() + "workbench/inventories\""), script);
+                "\"inventoryPath\":\"" + getTestCaseWorkbenchDir() + "/inventories\""), script);
         assertTrue(script.contains(
                 "\"artifactIdPattern\":\"a-.*\""), script);
         assertFalse(script.contains("# --- PRE:"), "Mirror step is not required for this test case:\n" + script);
@@ -67,8 +78,8 @@ class TestCase0001Test extends AbstractTestCase {
 
         runScript(scriptFile);
 
-        Path outputInventory = getResultWorkspaceDir().resolve("workspace/01_extracted/a/scripted/a-inventory.xlsx");
-        Path expectedInventory = getTestCasesBaseDir().resolve("workbench/inventories/a-1.15-inventory.xlsx");
+        Path outputInventory = getResultWorkspaceDir().resolve(TEST_CASE + "/01_extracted/a/scripted/a-inventory.xlsx");
+        Path expectedInventory = getTestCaseBaseDir().resolve("workbench/inventories/a-1.15-inventory.xlsx");
         assertTrue(Files.isRegularFile(outputInventory), "Inventory was not created: " + outputInventory);
         assertEquals(-1, Files.mismatch(expectedInventory, outputInventory),
                 "Copied inventory differs from " + expectedInventory);
