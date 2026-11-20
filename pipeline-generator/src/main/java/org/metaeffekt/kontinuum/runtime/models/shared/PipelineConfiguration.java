@@ -25,7 +25,7 @@ public class PipelineConfiguration {
     private List<Dashboard> dashboards;
     private List<Overview> overviews;
     private PortfolioManager portfolioManager;
-    private Options options = new Options();
+    private Options options = new Options(); // Required to gain access to default options
 
     /**
      * Whether vulnerability enrichment is required by any dashboard or report type.
