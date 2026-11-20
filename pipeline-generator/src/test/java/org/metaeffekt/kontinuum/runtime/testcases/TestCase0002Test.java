@@ -19,20 +19,11 @@ import static org.junit.jupiter.api.Assertions.*;
  * {@code create-document} invocation of each report are checked. The pipelines are not executed, so no Kontinuum
  * checkout is required. See {@code test-cases/README.md} for the layout and the placeholders of the templates.
  */
+@AbstractTestCase.TestCaseMetadata(id = "tc-0002",configFileName = "tc-0002-01-config.yaml")
 class TestCase0002Test extends AbstractTestCase {
 
     private static final String CREATE_DOCUMENT_POM = "report/report_create-document.xml";
     private static final String PERIOD_PARAMETER_PREFIX = "-Dparam.report.period.";
-
-    @Override
-    protected String getTestCaseId() {
-        return "tc-0002";
-    }
-
-    @Override
-    protected String getConfigFileName() {
-        return "tc-0002-01-config.yaml";
-    }
 
     @Test
     void localPipelinePassesThePeriodOfCertReports() throws IOException {

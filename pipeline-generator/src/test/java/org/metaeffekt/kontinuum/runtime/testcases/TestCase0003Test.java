@@ -31,124 +31,40 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * <p>
  * Requires a Kontinuum checkout next to the runtime; skipped otherwise.
  */
-class TestCase0003Test {
-
-    private static final String TEST_CASE = "tc-0003";
-
-    private static final Path TEST_CASES_DIR = Path.of("src/test/resources/test-cases").toAbsolutePath().normalize();
-
-    private static final Path KONTINUUM_DIR = Path.of("../../metaeffekt-kontinuum").toAbsolutePath().normalize();
-
-    private static final Path WORKBENCH_DIR = TEST_CASES_DIR.resolve(TEST_CASE).resolve("workbench");
-
-    private static final Path WORKSPACE_DIR = TEST_CASES_DIR.resolve(TEST_CASE).resolve("workspace");
-
-    private static final Path SHARED_WORKBENCH_DIR = TEST_CASES_DIR.resolve("shared").resolve("workbench");
-
-    private static final Path RESOLVED_CONFIG_DIR = Path.of("target/test-cases").resolve(TEST_CASE).toAbsolutePath();
-
-    private static final String CONFIG_FILE_NAME = "tc-0003-01-config.yaml";
-
-    private static final Map<String, Path> PLACEHOLDERS = Map.of(
-            "workbench.dir", WORKBENCH_DIR,
-            "workspace.dir", WORKSPACE_DIR,
-            "shared.workbench.dir", SHARED_WORKBENCH_DIR);
-
-    private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([^}]+)}");
-
-    private static final long TIMEOUT_MINUTES = 10;
-
-    @TempDir
-    Path runtimeWorkspaceDir;
-
-    @BeforeEach
-    void requireKontinuum() {
-        assumeTrue(Files.isDirectory(KONTINUUM_DIR.resolve("processors")),
-                "Kontinuum checkout not found at " + KONTINUUM_DIR);
-    }
+@AbstractTestCase.TestCaseMetadata(id = "tc-0003",configFileName = "tc-0003-01-config.yaml")
+class TestCase0003Test extends AbstractTestCase {
 
     @Test
     void generatedScriptExtractsWindowsArchiveAndSelectsInventory() throws IOException {
-        String script = generateScript(resolveConfigTemplate());
+        Path scriptFile = getResultWorkingDir().resolve("pipeline.sh");
+        String script = generateBashPipelineScript(resolveConfigTemplate(), scriptFile);
 
-        assertTrue(script.contains("-Dparam.asset.url='file:" + WORKBENCH_DIR + "/extractions/windows-extract.tar'"),
-                script);
-        assertTrue(script.contains("extract/extract_windows-inventory.xml"), script);
-        assertTrue(script.contains("-Dparam.exclude.pattern.file='" + WORKBENCH_DIR + "/configs/exclude-patterns.yaml'"),
-                script);
-        assertTrue(script.contains("-Dinput.kotlin.script.file='" + WORKBENCH_DIR + "/scripts/select-inventory.kts'"),
-                script);
-        assertTrue(script.contains("\"artifactIdPattern\":\"SumatraPDF-.*\""), script);
-        assertTrue(script.contains("\"inventoriesDir\":\"" + WORKBENCH_DIR + "/inventories\""), script);
-        assertFalse(script.contains("# --- PRE:"), "Mirror step is not required for this test case:\n" + script);
+        assertParameter("param.asset.url", "'file:" + getTestCaseWorkbenchDir() + "/extractions/windows-extract.tar'", script);
+        assertContains("extract/extract_windows-inventory.xml", script);
+        assertParameter("param.exclude.pattern.file", "'" + getTestCaseWorkbenchDir() + "/configs/exclude-patterns.yaml'", script);
+        assertParameter("input.kotlin.script.file", "'" + getTestCaseWorkbenchDir() + "/scripts/select-inventory.kts'", script);
+        assertContains("\"artifactIdPattern\":\"SumatraPDF-.*\"", script);
+        assertContains("\"inventoriesDir\":\"" + getTestCaseWorkbenchDir() + "/inventories\"", script);
+
+        // Mirror step is not required for this test case
+        assertNotContains("# --- PRE:", script);
     }
 
     @Test
     void selectsSumatraPdfInventoryByArtifactInAppliance() throws Exception {
-        Path scriptFile = runtimeWorkspaceDir.resolve(TEST_CASE + "-pipeline.sh");
-        Files.writeString(scriptFile, generateScript(resolveConfigTemplate()));
+        Path scriptFile = getResultWorkingDir().resolve("pipeline.sh");
 
         runScript(scriptFile);
 
-        Path applianceInventory = runtimeWorkspaceDir.resolve(
-                TEST_CASE + "/01_extracted/windows-appliance/windows-appliance-inventory.xlsx");
+        Path applianceInventory = getResultProjectWorkspaceDir().resolve("01_extracted/windows-appliance/windows-appliance-inventory.xlsx");
         assertTrue(Files.isRegularFile(applianceInventory), "Inventory was not extracted: " + applianceInventory);
 
-        Path outputInventory = runtimeWorkspaceDir.resolve(
-                TEST_CASE + "/01_extracted/sumatrapdf/sumatrapdf-inventory.xlsx");
-        Path expectedInventory = WORKBENCH_DIR.resolve("inventories/SumatraPDF-3.5.2-inventory.xlsx");
+        // compare the extracted inventories with the provided inventory to see, whether the right inventory was copied
+        Path outputInventory = getResultProjectWorkspaceDir().resolve("01_extracted/sumatrapdf/sumatrapdf-inventory.xlsx");
+        Path expectedInventory = getTestCaseWorkbenchDir().resolve("inventories/SumatraPDF-3.5.2-inventory.xlsx");
         assertTrue(Files.isRegularFile(outputInventory), "Inventory was not created: " + outputInventory);
-        assertEquals(-1, Files.mismatch(expectedInventory, outputInventory),
-                "Copied inventory differs from " + expectedInventory);
+        assertEquals(-1, Files.mismatch(expectedInventory, outputInventory), "Copied inventory differs from " + expectedInventory);
     }
 
-    /**
-     * Replaces the placeholders of the configuration template with absolute paths and writes the result to
-     * {@code target/test-cases/<test case>/}. Only this copy is used by the test.
-     */
-    private static Path resolveConfigTemplate() throws IOException {
-        String config = Files.readString(WORKBENCH_DIR.resolve(CONFIG_FILE_NAME));
-        for (Map.Entry<String, Path> placeholder : PLACEHOLDERS.entrySet()) {
-            config = config.replace("${" + placeholder.getKey() + "}", placeholder.getValue().toString());
-        }
-
-        Matcher unresolved = PLACEHOLDER.matcher(config);
-        if (unresolved.find()) {
-            fail("Unknown placeholder ${" + unresolved.group(1) + "} in " + CONFIG_FILE_NAME
-                 + ", known placeholders: " + PLACEHOLDERS.keySet());
-        }
-
-        Files.createDirectories(RESOLVED_CONFIG_DIR);
-        Path resolvedConfig = RESOLVED_CONFIG_DIR.resolve(CONFIG_FILE_NAME);
-        Files.writeString(resolvedConfig, config);
-        return resolvedConfig;
-    }
-
-    private String generateScript(Path configFile) {
-        PipelineConfiguration configuration = new PipelineConfigurationLoader().readConfig(configFile.toFile());
-        LocalConfiguration localConfiguration = LocalConfiguration.builder()
-                .WORKBENCH_DIR(WORKBENCH_DIR.toString())
-                .WORKSPACE_DIR(runtimeWorkspaceDir.toString())
-                .KONTINUUM_DIR(KONTINUUM_DIR.toString())
-                .MAVEN_CLI_OPTS("-q")
-                .build();
-        return new LocalPipeline(configuration, localConfiguration).generatePipeline();
-    }
-
-    private void runScript(Path scriptFile) throws Exception {
-        Path logFile = runtimeWorkspaceDir.resolve(TEST_CASE + "-pipeline.log");
-        Process process = new ProcessBuilder(List.of("bash", scriptFile.toString()))
-                .directory(runtimeWorkspaceDir.toFile())
-                .redirectErrorStream(true)
-                .redirectOutput(logFile.toFile())
-                .start();
-
-        if (!process.waitFor(TIMEOUT_MINUTES, TimeUnit.MINUTES)) {
-            process.destroyForcibly();
-            fail("Execution of the pipeline script timed out after " + TIMEOUT_MINUTES + " minutes:\n"
-                 + Files.readString(logFile));
-        }
-        assertEquals(0, process.exitValue(),
-                "Execution of the pipeline script failed:\n" + Files.readString(logFile));
-    }
 }
+

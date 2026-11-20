@@ -31,7 +31,7 @@ class TestCase0001Test extends AbstractTestCase {
         assertParameter("input.kotlin.script.file", "'" + getTestCaseWorkbenchDir() + "/scripts/select-inventory.kts'", script);
         assertParameter("param.reference.inventory.dir", "'" + SHARED_WORKBENCH_DIR + "/inventories/reference-inventory/inventory/'", script);
 
-        assertContains("\"inventoryPath\":\"" + getTestCaseWorkbenchDir() + "/inventories\"", script);
+        assertContains("\"inventoriesDir\":\"" + getTestCaseWorkbenchDir() + "/inventories\"", script);
         assertContains("\"artifactIdPattern\":\"a-.*\"", script);
 
         // Mirror step is not required for this test case
@@ -46,7 +46,7 @@ class TestCase0001Test extends AbstractTestCase {
 
         runScript(scriptFile);
 
-        Path outputInventory = getResultWorkspaceDir().resolve("tc-0001" + "/01_extracted/a/scripted/a-inventory.xlsx");
+        Path outputInventory = getResultProjectWorkspaceDir().resolve("01_extracted/a/a-inventory.xlsx");
         Path expectedInventory = getTestCaseWorkbenchDir().resolve("inventories/a-1.15-inventory.xlsx");
         assertTrue(Files.isRegularFile(outputInventory), "Inventory was not created: " + outputInventory);
         assertEquals(-1, Files.mismatch(expectedInventory, outputInventory),

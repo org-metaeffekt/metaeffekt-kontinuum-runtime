@@ -30,10 +30,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 abstract class AbstractTestCase {
 
-    static final Path TEST_CASES_BASE_DIR = Path.of("src/test/resources/test-cases").toAbsolutePath().normalize();
-
-    static final Path SHARED_WORKBENCH_DIR = TEST_CASES_BASE_DIR.resolve("shared").resolve("workbench");
-
+    private static final Path TEST_CASES_BASE_DIR = Path.of("src/test/resources/test-cases").toAbsolutePath().normalize();
     private static final Path RESULTS_BASE_DIR = Path.of("target/test-cases").toAbsolutePath().normalize();
 
     // FIXME: read from local.properties on runtime-level
@@ -41,7 +38,9 @@ abstract class AbstractTestCase {
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([^}]+)}");
 
-    static final long TIMEOUT_MINUTES = 10;
+    private static final long TIMEOUT_MINUTES = 10;
+
+    protected static final Path SHARED_WORKBENCH_DIR = TEST_CASES_BASE_DIR.resolve("shared").resolve("workbench");
 
     static Path testCaseBaseDir(String testCase) {
         return TEST_CASES_BASE_DIR.resolve(testCase);
@@ -170,10 +169,6 @@ abstract class AbstractTestCase {
         assertTrue(file.delete(), "Cannot delete [" + file + "].");
     }
 
-    protected Path getTestCaseBaseDir() {
-        return testCaseBaseDir(getTestCaseId());
-    }
-
     protected Path getTestCaseWorkbenchDir() {
         return testCaseWorkbenchDir(getTestCaseId());
     }
@@ -198,9 +193,12 @@ abstract class AbstractTestCase {
         return getResultBaseDir().resolve("workspace");
     }
 
+    protected Path getResultProjectWorkspaceDir() {
+        return getResultWorkspaceDir().resolve(getTestCaseId());
+    }
+
     protected static void assertParameter(String key, String value, String script) {
-        String expected = "-D" + key + "=" + value;
-        assertContains(expected, script);
+        assertContains("-D" + key + "=" + value, script);
     }
 
     protected static void assertContains(String expected, String script) {
