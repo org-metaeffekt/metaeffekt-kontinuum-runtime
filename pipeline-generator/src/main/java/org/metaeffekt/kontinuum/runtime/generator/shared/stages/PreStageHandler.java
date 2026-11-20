@@ -39,10 +39,11 @@ public class PreStageHandler implements PipelineStageHandler {
 
         if (context.getConfiguration().requiresVulnerabilityEnrichment()) {
             MavenProcessor vulnerabilityIndexDownloadProcessor = handleVulnerabilityIndexDownload(context);
+            context.addProcessor(vulnerabilityIndexDownloadProcessor);
+
             if (localMavenRepoCopyProcessor != null) {
                 context.addDependency(vulnerabilityIndexDownloadProcessor, localMavenRepoCopyProcessor);
             }
-            context.addProcessor(vulnerabilityIndexDownloadProcessor);
         }
     }
 

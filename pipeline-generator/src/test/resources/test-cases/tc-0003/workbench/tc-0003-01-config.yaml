@@ -28,7 +28,7 @@ projectProperties:
 #            params:
 #              part: "os"
 #        - id: "driver"
-#          name: "Driver"
+#          name: "Driver" script: "scripts/filter-part-inventory.kts"
 #          extractionScript:
 #            script: "scripts/filter-part-inventory.kts"
 #            params:
