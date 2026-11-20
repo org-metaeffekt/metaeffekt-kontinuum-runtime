@@ -404,18 +404,18 @@ public class PipelineConfigurationLoader {
         }
 
         if (StringUtils.isBlank(period.getSince()) || StringUtils.isBlank(period.getUntil())) {
-            log.error("A report with 'assetIds': {} contains an empty 'period.since' or 'period.until'.",
+            log.error("A report with 'assetIds' [{}] contains an empty 'period.since' or 'period.until'.",
                     report.getAssetIds());
             isValid = false;
         }
 
         if (StringUtils.contains(period.getSince(), '\'') || StringUtils.contains(period.getUntil(), '\'')) {
-            log.error("A report with 'assetIds': {} must not use single quotes in 'period'.", report.getAssetIds());
+            log.error("A report with 'assetIds' [{}] must not use single quotes in 'period'.", report.getAssetIds());
             isValid = false;
         }
 
         if (!report.getTypes().contains(ReportType.CERT_REPORT.getKey())) {
-            log.warn("A report with 'assetIds': {} defines a 'period', which is only used by report type '{}'.",
+            log.warn("A report with 'assetIds' [{}] defines a 'period', which is only used by report type '{}'.",
                     report.getAssetIds(), ReportType.CERT_REPORT.getKey());
         }
     }
