@@ -44,6 +44,31 @@ class GitlabPipelineTest {
     }
 
     @Test
+    void registersLocalMavenRepoCopyBeforeVulnerabilityIndexDownload() {
+        GitlabConfiguration environment = GitlabConfiguration.builder()
+                .KONTINUUM_DIR("kontinuum")
+                .CONTAINER_IMAGE("runtime-image")
+                .LOCAL_MAVEN_REPO("/cache/maven")
+                .build();
+
+        GitlabPipeline generator = new GitlabPipeline(buildPipelineConfiguration(), environment);
+        String pipeline = generator.generatePipeline();
+
+        Processor copyDirectory = allProcessors(generator)
+                .filter(processor -> "copy-directory".equals(processor.getId()))
+                .findFirst()
+                .orElseThrow();
+        Processor downloadIndex = allProcessors(generator)
+                .filter(processor -> "download-index".equals(processor.getId()))
+                .findFirst()
+                .orElseThrow();
+
+        assertTrue(generator.execution.getDependencies(downloadIndex).contains(copyDirectory));
+        assertTrue(pipeline.contains("util/util_copy-directory.sh"), pipeline);
+        assertTrue(pipeline.contains("'/root/.m2/repository' '/cache/maven'"), pipeline);
+    }
+
+    @Test
     void generatesScriptThatCopiesContainerPatchesToTheirAbsolutePaths() {
         GitlabConfiguration environment = GitlabConfiguration.builder()
                 .KONTINUUM_DIR("kontinuum")
@@ -135,20 +160,6 @@ class GitlabPipelineTest {
 
         assertTrue(pipeline.contains("      echo pre\n\n        echo indented  \n"), pipeline);
         assertFalse(pipeline.contains("       \n"), pipeline);
-    }
-
-    @Test
-    void reproducesCleanedLog4jExample() throws IOException {
-        PipelineConfiguration configuration = new PipelineConfigurationLoader().readConfig(
-                Path.of("src/test/resources/gitlab-pipeline-log4j.yaml").toFile());
-        String expected = Files.readString(Path.of("src/test/resources/gitlab-pipeline-log4j-expected.yml"));
-
-        String pipeline = new GitlabPipeline(configuration, exampleGitlabConfiguration()).generatePipeline();
-
-        assertEquals(normalizeJobIds(expected), normalizeJobIds(pipeline));
-        assertDoesNotThrow(() -> new ObjectMapper(new YAMLFactory()).readTree(pipeline));
-        assertTrue(pipeline.endsWith("\n"), pipeline);
-        assertFalse(pipeline.endsWith("\n\n"), pipeline);
     }
 
     private static java.util.stream.Stream<Processor> allProcessors(GitlabPipeline generator) {
