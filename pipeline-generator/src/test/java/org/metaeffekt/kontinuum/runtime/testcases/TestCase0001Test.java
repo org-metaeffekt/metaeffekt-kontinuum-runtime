@@ -20,18 +20,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Requires a Kontinuum checkout next to the runtime; skipped otherwise.
  */
 @Slf4j
+@AbstractTestCase.TestCaseMetadata(id = "tc-0001",configFileName = "tc-0001-01-config.yaml")
 class TestCase0001Test extends AbstractTestCase {
-
-    // FIXME: consider moving to base class using test annotations
-    @Override
-    protected String getTestCaseId() {
-        return "tc-0001";
-    }
-
-    @Override
-    protected String getConfigFileName() {
-        return "tc-0001-01-config.yaml";
-    }
 
     @Test
     void generatedScriptContainsTheResolvedAbsolutePaths() throws IOException {

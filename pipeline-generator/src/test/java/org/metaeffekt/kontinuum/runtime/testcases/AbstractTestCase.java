@@ -11,6 +11,8 @@ import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -168,9 +170,6 @@ abstract class AbstractTestCase {
         assertTrue(file.delete(), "Cannot delete [" + file + "].");
     }
 
-    protected abstract String getTestCaseId();
-    protected abstract String getConfigFileName();
-
     protected Path getTestCaseBaseDir() {
         return testCaseBaseDir(getTestCaseId());
     }
@@ -212,5 +211,25 @@ abstract class AbstractTestCase {
         assertFalse(script.contains(expected), "Generated script expected to not contain [" + expected + "].");
     }
 
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface TestCaseMetadata {
+        String id();
+        String configFileName();
+    }
 
+    protected TestCaseMetadata getTestCaseMetadata(){
+        TestCaseMetadata annotation = this.getClass().getAnnotation(TestCaseMetadata.class);
+        if (annotation == null) {
+            throw new IllegalStateException(this.getClass().getSimpleName() + " does not have required annotation: " + TestCaseMetadata.class.getSimpleName());
+        }
+        return annotation;
+    }
+
+    protected String getTestCaseId() {
+        return getTestCaseMetadata().id();
+    }
+
+    protected String getConfigFileName() {
+        return getTestCaseMetadata().configFileName();
+    }
 }
