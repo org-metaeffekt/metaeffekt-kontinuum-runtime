@@ -9,8 +9,6 @@ import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,7 +25,7 @@ public class PipelineConfiguration {
     private List<Dashboard> dashboards;
     private List<Overview> overviews;
     private PortfolioManager portfolioManager;
-    private Options options = new Options();
+    private Options options = new Options(); // Required to gain access to default options
 
     /**
      * Whether vulnerability enrichment is required by any dashboard or report type.
@@ -207,6 +205,9 @@ public class PipelineConfiguration {
          */
         @Data
         public static class Asset {
+
+            private static final String FILE_URL_PREFIX = "file:";
+
             private String id;
             private String name;
             private String version;
@@ -238,6 +239,25 @@ public class PipelineConfiguration {
                 private String headerName;
                 private String headerValue;
                 private String excludePatternFile;
+
+                /**
+                 * Resolves the url against the workbench. A relative {@code file:} url ({@code file:path}) is
+                 * interpreted relative to the workbench directory. Absolute file urls ({@code file:/path},
+                 * {@code file:///path}, {@code file://host/path}) and all other schemes are returned unchanged.
+                 *
+                 * @param workbenchPath the workbench root path relative file urls are resolved against
+                 * @return the resolved url, or the configured url if it is not a relative file url
+                 */
+                public String getResolvedUrl(String workbenchPath) {
+                    if (!Strings.CI.startsWith(url, FILE_URL_PREFIX)) {
+                        return url;
+                    }
+                    String path = url.substring(FILE_URL_PREFIX.length());
+                    if (path.isEmpty() || path.startsWith("/")) {
+                        return url;
+                    }
+                    return FILE_URL_PREFIX + KontinuumUtils.normalizeFilePath(workbenchPath, path);
+                }
             }
 
             /**
@@ -272,7 +292,10 @@ public class PipelineConfiguration {
             }
 
             /**
-             * Resolves the reference directory for this asset relative to the workbench path.
+             * Resolves the reference directory for this asset relative to the workbench path. The reference may
+             * point to the inventory directory or to an inventory file inside it; in the latter case the parent
+             * directory is used. The decision is made by file suffix only, since the workbench may not be
+             * available where the pipeline is generated.
              *
              * @param workbenchPath the workbench root path used to normalize the reference directory
              * @return the normalized reference directory
@@ -283,12 +306,11 @@ public class PipelineConfiguration {
                             "Tried to access reference inventory for asset " + this + " but is not set.");
                 }
 
-                if (Files.isDirectory(Path.of(reference))) {
-                    return KontinuumUtils.normalizeDir(workbenchPath, reference);
-                } else {
-                    File referenceFile = new File(reference);
-                    return KontinuumUtils.normalizeDir(workbenchPath, referenceFile.getParentFile().getPath());
+                if (KontinuumUtils.isInventoryFile(reference)) {
+                    String parent = new File(reference).getParent();
+                    return KontinuumUtils.normalizeDir(workbenchPath, parent);
                 }
+                return KontinuumUtils.normalizeDir(workbenchPath, reference);
             }
 
             /**
@@ -355,11 +377,10 @@ public class PipelineConfiguration {
                     return false;
                 }
                 String url = urlResolver.getUrl();
-                if (!Strings.CI.startsWith(url, "file:")) {
+                if (!Strings.CI.startsWith(url, FILE_URL_PREFIX)) {
                     return false;
                 }
-                String lowerCaseUrl = url.toLowerCase(Locale.ROOT);
-                return lowerCaseUrl.endsWith(".xls") || lowerCaseUrl.endsWith(".xlsx");
+                return Strings.CI.endsWith(url, ".xls") || Strings.CI.endsWith(url, ".xlsx");
             }
 
             /**
@@ -408,7 +429,7 @@ public class PipelineConfiguration {
                     return null;
                 }
                 String fileName = StringUtils.isBlank(extractionScript.getInventory())
-                        ? id
+                        ? id + "-inventory"
                         : extractionScript.getInventory();
                 return Strings.CI.endsWith(fileName, ".xlsx") ? fileName : fileName + ".xlsx";
             }
@@ -479,6 +500,7 @@ public class PipelineConfiguration {
         private String controlRating;
         private List<SupportedLocale> locales;
         private String preReportFilterFile;
+        private Period period;
 
         /**
          * Short, position-derived group name ({@code group-1}, {@code group-2}, ...) resolved by
@@ -516,6 +538,30 @@ public class PipelineConfiguration {
          */
         public String getPreReportFilterFileNormalized(String workbenchPath) {
             return KontinuumUtils.normalizeDir(workbenchPath, preReportFilterFile);
+        }
+
+        /**
+         * The query period of the report. Falls back to the default period if the configuration does not declare
+         * one.
+         *
+         * @return the configured period or the default period
+         */
+        @JsonIgnore
+        public Period getResolvedPeriod() {
+            return period != null ? period : new Period();
+        }
+
+        /**
+         * The {@code period} of a report: the query period of the advisories shown in a cert report. The values are
+         * passed unchanged to the report processor; the defaults correspond to those of the cert report template.
+         */
+        @Data
+        public static class Period {
+            public static final String DEFAULT_SINCE = "1 week";
+            public static final String DEFAULT_UNTIL = "now";
+
+            private String since = DEFAULT_SINCE;
+            private String until = DEFAULT_UNTIL;
         }
     }
 

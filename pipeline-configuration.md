@@ -145,6 +145,16 @@ urlResolver:
   headerValue: "Bearer secret-token"
 ```
 
+`file:` URLs reference local files. A relative file URL (`file:path`) is resolved relative to the workbench directory
+by the runtime; absolute file URLs (`file:/path`, `file:///path`) are used as they are. A file URL ending in `.xls` or
+`.xlsx` references an already extracted inventory: the file is copied in the `FETCH` stage and the `EXTRACT` stage is
+skipped.
+
+```yaml
+urlResolver:
+  url: "file:inventories/app/app-inventory.xlsx"   # <workbench>/inventories/app/app-inventory.xlsx
+```
+
 Parameterized URLs can also be expressed with `urlPattern` using `${version}` or `${name}` placeholders:
 
 ```yaml
@@ -268,6 +278,9 @@ reports:
     productWatermark: "CONFIDENTIAL"
     overviewAdvisors: [ "CERT_FR", "NVD" ]
     preReportFilterFile: "scripts/prepare.kts"
+    period:                          # Query period of cert reports (CR only)
+      since: "1 week"
+      until: "now"
 ```
 
 | Parameter              | Type   | Required | Description                                                                                             | What It Produces / Affects                                                        |
@@ -284,8 +297,13 @@ reports:
 | `productWatermark`     | String | Optional | Watermark text printed across all report pages.                                                         | Displays a customer specific watermark in the report.                             |
 | `overviewAdvisors`     | List   | Optional | List of vulnerability advisory sources to enable for vulnerability reports (e.g. `["CERT_FR", "NVD"]`). | Enables the set overview advisors for vulnerability centric reports.              |
 | `preReportFilterFile`  | String | Optional | A path to a kotlin script file filtering the inventory used to generate the report.                     | Enables customer specific filtering and adjustment of the report-input inventory. |
+| `period.since`         | String | Optional | Start of the query period of a cert report (`CR`). Defaults to `1 week`.                                | Passed as `param.report.period.since` to the report processor.                    |
+| `period.until`         | String | Optional | End of the query period of a cert report (`CR`). Defaults to `now`.                                     | Passed as `param.report.period.until` to the report processor.                    |
 
----the set overview advisors for vulnerability centric reports.
+The `period` is only used for cert reports. The values are passed unchanged to the report processor and must not
+contain single quotes. A `period` on a report without type `CR` is ignored and logged as a warning.
+
+---
 
 ### 3.1 Supported Report Types
 
