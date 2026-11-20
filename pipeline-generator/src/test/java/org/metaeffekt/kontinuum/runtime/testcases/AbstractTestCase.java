@@ -151,9 +151,9 @@ abstract class AbstractTestCase {
                 "Kontinuum checkout not found at [" + getKontinuumDir() + "].");
     }
 
-    @BeforeAll
-    static void cleanupResultsDir() {
-        File file = resultBaseDir("tc-0001").toFile();
+    @BeforeEach
+    void cleanupResultsDir() {
+        File file = resultBaseDir(getTestCaseId()).toFile();
         if (file.exists()) {
             delete(file);
         }
@@ -197,25 +197,13 @@ abstract class AbstractTestCase {
         return getResultWorkspaceDir().resolve(getTestCaseId());
     }
 
-    protected static void assertParameter(String key, String value, String script) {
-        assertContains("-D" + key + "=" + value, script);
-    }
-
-    protected static void assertContains(String expected, String script) {
-        assertTrue(script.contains(expected), "Generated script expected to contain [" + expected + "].");
-    }
-
-    protected static void assertNotContains(String expected, String script) {
-        assertFalse(script.contains(expected), "Generated script expected to not contain [" + expected + "].");
-    }
-
     @Retention(RetentionPolicy.RUNTIME)
     public @interface TestCaseMetadata {
         String id();
         String configFileName();
     }
 
-    protected TestCaseMetadata getTestCaseMetadata(){
+    private TestCaseMetadata getTestCaseMetadata(){
         TestCaseMetadata annotation = this.getClass().getAnnotation(TestCaseMetadata.class);
         if (annotation == null) {
             throw new IllegalStateException(this.getClass().getSimpleName() + " does not have required annotation: " + TestCaseMetadata.class.getSimpleName());
@@ -230,4 +218,17 @@ abstract class AbstractTestCase {
     protected String getConfigFileName() {
         return getTestCaseMetadata().configFileName();
     }
+
+    protected static void assertParameter(String key, String value, String script) {
+        assertContains("-D" + key + "=" + value, script);
+    }
+
+    protected static void assertContains(String expected, String script) {
+        assertTrue(script.contains(expected), "Generated script expected to contain [" + expected + "].");
+    }
+
+    protected static void assertNotContains(String expected, String script) {
+        assertFalse(script.contains(expected), "Generated script expected to not contain [" + expected + "].");
+    }
+
 }
