@@ -46,6 +46,7 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
         COPY_INVENTORY("copy-inventory"),
         COPY_POM_DEPENDENCIES("copy-pom-dependencies"),
         COPY_RESOURCES("copy-resources"),
+        COPY_DIRECTORY("copy-directory"),
         CREATE_ANNEX_ARCHIVE("create-annex-archive"),
         CREATE_DASHBOARD("create-dashboard"),
         CREATE_DIFF("create-diff"),
@@ -133,6 +134,7 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
         list.add(convertAssessments());
         list.add(copyInventories());
         list.add(copyInventory());
+        list.add(copyDirectory());
         list.add(copyPomDependencies());
         list.add(copyResources());
         list.add(createAnnexArchive());
@@ -261,6 +263,12 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
         return standaloneProcessor(COPY_INVENTORY, "Copy Inventory", "util/util_copy-inventory.sh",
                                    processorParameter(INPUT_INVENTORY_FILE, true),
                                    processorParameter(OUTPUT_INVENTORY_FILE, true));
+    }
+
+    private static ProcessorDefinitions.StandaloneProcessor copyDirectory() {
+        return standaloneProcessor(COPY_DIRECTORY, "Copy Directory", "util/util_copy-directory.sh",
+                                   processorParameter(INPUT_DIR, true),
+                                   processorParameter(OUTPUT_DIR, true));
     }
 
     private static ProcessorDefinitions.MavenProcessor copyPomDependencies() {

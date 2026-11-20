@@ -33,6 +33,7 @@ public enum ProcessorParameterKey {
     INPUT_BOM_FILE("input.bom.file"),
     INPUT_CLI_DIR("input.cli.dir"),
     INPUT_DASHBOARDS_DIR("input.dashboards.dir"),
+    INPUT_DIR("input.dir"),
     INPUT_DOCUMENT_DE_PDF_FILE("input.document.de.pdf.file"),
     INPUT_DOCUMENT_EN_PDF_FILE("input.document.en.pdf.file"),
     INPUT_EXTRACT_DIR("input.extract.dir"),
