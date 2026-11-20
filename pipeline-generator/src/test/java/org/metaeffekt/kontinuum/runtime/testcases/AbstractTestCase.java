@@ -1,10 +1,15 @@
 package org.metaeffekt.kontinuum.runtime.testcases;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.metaeffekt.kontinuum.runtime.generator.gitlab.GitlabPipeline;
 import org.metaeffekt.kontinuum.runtime.generator.local.LocalPipeline;
 import org.metaeffekt.kontinuum.runtime.generator.shared.PipelineConfigurationLoader;
+import org.metaeffekt.kontinuum.runtime.models.gitlab.GitlabConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.local.LocalConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,6 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Resolves the configuration templates of the test cases. See {@code test-cases/README.md} for the layout and the
@@ -108,7 +114,7 @@ abstract class AbstractTestCase {
         return resolveConfigTemplate(getTestCaseId(), getConfigFileName());
     }
 
-    protected String generateScript(Path configFile, Path scriptFile) throws IOException {
+    protected String generateBashPipelineScript(Path configFile, Path scriptFile) throws IOException {
         PipelineConfiguration configuration = new PipelineConfigurationLoader().readConfig(configFile.toFile());
         LocalConfiguration localConfiguration = LocalConfiguration.builder()
                 .WORKBENCH_DIR(getTestCaseWorkbenchDir().toString())
@@ -121,6 +127,45 @@ abstract class AbstractTestCase {
         scriptFile.toFile().getParentFile().mkdirs();
         Files.writeString(scriptFile, script);
         return script;
+    }
+
+    protected String generateGitlabPipelineScript(Path configFile, Path scriptFile) throws IOException {
+        PipelineConfiguration configuration = new PipelineConfigurationLoader().readConfig(configFile.toFile());
+        GitlabConfiguration gitlabConfiguration = GitlabConfiguration.builder()
+                .WORKBENCH_DIR(getTestCaseWorkbenchDir().toString())
+                .WORKSPACE_DIR(getResultWorkspaceDir().toString())
+                .KONTINUUM_DIR(getKontinuumDir().toString())
+                .MAVEN_CLI_OPTS("-q")
+                .build();
+        String script = new GitlabPipeline(configuration, gitlabConfiguration).generatePipeline();
+
+        scriptFile.toFile().getParentFile().mkdirs();
+        Files.writeString(scriptFile, script);
+        return script;
+    }
+
+    @BeforeEach
+    void requireKontinuum() {
+        assumeTrue(Files.isDirectory(getKontinuumDir().resolve("processors")),
+                "Kontinuum checkout not found at [" + getKontinuumDir() + "].");
+    }
+
+    @BeforeAll
+    static void cleanupResultsDir() {
+        File file = resultBaseDir("tc-0001").toFile();
+        if (file.exists()) {
+            delete(file);
+        }
+    }
+
+    private static void delete(File file) {
+        File[] children = file.listFiles();
+        if (children != null) {
+            for (File child : children) {
+                delete(child);
+            }
+        }
+        assertTrue(file.delete(), "Cannot delete [" + file + "].");
     }
 
     protected abstract String getTestCaseId();
@@ -156,7 +201,16 @@ abstract class AbstractTestCase {
 
     protected static void assertParameter(String key, String value, String script) {
         String expected = "-D" + key + "=" + value;
+        assertContains(expected, script);
+    }
+
+    protected static void assertContains(String expected, String script) {
         assertTrue(script.contains(expected), "Generated script expected to contain [" + expected + "].");
     }
+
+    protected static void assertNotContains(String expected, String script) {
+        assertFalse(script.contains(expected), "Generated script expected to not contain [" + expected + "].");
+    }
+
 
 }

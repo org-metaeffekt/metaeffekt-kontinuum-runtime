@@ -1,12 +1,9 @@
 package org.metaeffekt.kontinuum.runtime.testcases;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.metaeffekt.kontinuum.runtime.generator.gitlab.GitlabPipeline;
-import org.metaeffekt.kontinuum.runtime.generator.local.LocalPipeline;
 import org.metaeffekt.kontinuum.runtime.generator.shared.PipelineConfigurationLoader;
 import org.metaeffekt.kontinuum.runtime.models.gitlab.GitlabConfiguration;
-import org.metaeffekt.kontinuum.runtime.models.local.LocalConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 
 import java.io.IOException;
@@ -22,49 +19,35 @@ import static org.junit.jupiter.api.Assertions.*;
  * {@code create-document} invocation of each report are checked. The pipelines are not executed, so no Kontinuum
  * checkout is required. See {@code test-cases/README.md} for the layout and the placeholders of the templates.
  */
-class TestCase0002Test {
-
-    private static final String TEST_CASE = "tc-0002";
-
-    private static final String CONFIG_FILE_NAME = "tc-0002-01-config.yaml";
+class TestCase0002Test extends AbstractTestCase {
 
     private static final String CREATE_DOCUMENT_POM = "report/report_create-document.xml";
-
     private static final String PERIOD_PARAMETER_PREFIX = "-Dparam.report.period.";
 
-    @TempDir
-    Path runtimeWorkspaceDir;
+    @Override
+    protected String getTestCaseId() {
+        return "tc-0002";
+    }
+
+    @Override
+    protected String getConfigFileName() {
+        return "tc-0002-01-config.yaml";
+    }
 
     @Test
     void localPipelinePassesThePeriodOfCertReports() throws IOException {
-        LocalConfiguration localConfiguration = LocalConfiguration.builder()
-                .WORKBENCH_DIR(AbstractTestCase.testCaseWorkbenchDir(TEST_CASE).toString())
-                .WORKSPACE_DIR(runtimeWorkspaceDir.toString())
-                .KONTINUUM_DIR("kontinuum")
-                .build();
 
-        String pipeline = new LocalPipeline(loadConfiguration(), localConfiguration).generatePipeline();
+        Path scriptFile = getResultWorkingDir().resolve("pipeline.sh");
+        String script = generateBashPipelineScript(resolveConfigTemplate(), scriptFile);
 
-        assertPeriodParameters(pipeline);
+        assertPeriodParameters(script);
     }
 
     @Test
     void gitlabPipelinePassesThePeriodOfCertReports() throws IOException {
-        GitlabConfiguration gitlabConfiguration = GitlabConfiguration.builder()
-                .WORKBENCH_DIR(AbstractTestCase.testCaseWorkbenchDir(TEST_CASE).toString())
-                .WORKSPACE_DIR(runtimeWorkspaceDir.toString())
-                .KONTINUUM_DIR("kontinuum")
-                .CONTAINER_IMAGE("runtime-image")
-                .build();
-
-        String pipeline = new GitlabPipeline(loadConfiguration(), gitlabConfiguration).generatePipeline();
-
-        assertPeriodParameters(pipeline);
-    }
-
-    private static PipelineConfiguration loadConfiguration() throws IOException {
-        Path configFile = AbstractTestCase.resolveConfigTemplate(TEST_CASE, CONFIG_FILE_NAME);
-        return new PipelineConfigurationLoader().readConfig(configFile.toFile());
+        Path scriptFile = getResultWorkingDir().resolve("gitlab-ci.json");
+        String script = generateGitlabPipelineScript(resolveConfigTemplate(), scriptFile);
+        assertPeriodParameters(script);
     }
 
     private static void assertPeriodParameters(String pipeline) {
