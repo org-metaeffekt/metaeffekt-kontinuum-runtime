@@ -110,7 +110,6 @@
                         </goals>
                         <configuration>
                             <files>
-                                <file>${project.basedir}/../../.local.properties</file>
                                 <file>${project.basedir}/../.local.properties</file>
                                 <file>${project.basedir}/.local.properties</file>
                             </files>
