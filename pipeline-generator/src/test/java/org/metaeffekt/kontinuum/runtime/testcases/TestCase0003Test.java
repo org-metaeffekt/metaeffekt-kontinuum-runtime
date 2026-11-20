@@ -53,6 +53,7 @@ class TestCase0003Test extends AbstractTestCase {
     @Test
     void selectsSumatraPdfInventoryByArtifactInAppliance() throws Exception {
         Path scriptFile = getResultWorkingDir().resolve("pipeline.sh");
+        generateBashPipelineScript(resolveConfigTemplate(), scriptFile);
 
         runScript(scriptFile);
 
