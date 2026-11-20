@@ -127,8 +127,14 @@ public class PrepareStageHandler implements AssetStageHandler {
                                         context.getStageDirForAsset(Stage.PREPARE).appendCycloneDxFile("JSON"));
         processor.setProcessorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, "JSON");
         processor.setProcessorParameter(PARAM_DOCUMENT_NAME, asset.getName());
-        processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION, "FIXME");
-        processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, "FIXME");
+
+        assert context.getConfiguration().getOptions().getGlobal().getBomOrganization() != null;
+        assert context.getConfiguration().getOptions().getGlobal().getBomOrganizationUrl() != null;
+
+        processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION, context.getConfiguration()
+                .getOptions().getGlobal().getBomOrganization());
+        processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, context.getConfiguration()
+                .getOptions().getGlobal().getBomOrganizationUrl());
 
         return processor;
     }
@@ -150,8 +156,14 @@ public class PrepareStageHandler implements AssetStageHandler {
                                         context.getStageDirForAsset(Stage.PREPARE).appendSpdxFile("JSON"));
         processor.setProcessorParameter(PARAM_DOCUMENT_OUTPUT_FORMAT, "JSON");
         processor.setProcessorParameter(PARAM_DOCUMENT_NAME, asset.getName());
-        processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION, "FIXME");
-        processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, "FIXME");
+
+        assert context.getConfiguration().getOptions().getGlobal().getBomOrganization() != null;
+        assert context.getConfiguration().getOptions().getGlobal().getBomOrganizationUrl() != null;
+
+        processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION, context.getConfiguration()
+                .getOptions().getGlobal().getBomOrganization());
+        processor.setProcessorParameter(PARAM_DOCUMENT_ORGANIZATION_URL, context.getConfiguration()
+                .getOptions().getGlobal().getBomOrganizationUrl());
 
         return processor;
     }

@@ -101,8 +101,8 @@ log4j-core-PREPARE-7456a931-13fc-401c-a5f2-76ad271ca929:
       -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-inventory.xlsx' \
       -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-cyclonedx.json' \
       -Dparam.document.name='log4j-core' \
-      -Dparam.document.organization='FIXME' \
-      -Dparam.document.organization.url='FIXME' \
+      -Dparam.document.organization='metaeffekt' \
+      -Dparam.document.organization.url='https://metaeffekt.com' \
       -Dparam.document.output.format='JSON'
 
       echo "Setup Command valid."
@@ -110,8 +110,8 @@ log4j-core-PREPARE-7456a931-13fc-401c-a5f2-76ad271ca929:
       -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-inventory.xlsx' \
       -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-spdx.json' \
       -Dparam.document.name='log4j-core' \
-      -Dparam.document.organization='FIXME' \
-      -Dparam.document.organization.url='FIXME' \
+      -Dparam.document.organization='metaeffekt' \
+      -Dparam.document.organization.url='https://metaeffekt.com' \
       -Dparam.document.output.format='JSON'
 
       echo "Setup Command valid."
@@ -277,8 +277,8 @@ log4j-core-SUMMARIZE-b14dc1ad-3318-424c-9740-e93b6fe3401c:
       -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core-inventory.xlsx' \
       -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/09_summarized/log4j-core/log4j-core-cyclonedx.json' \
       -Dparam.document.name='log4j-core' \
-      -Dparam.document.organization='FIXME' \
-      -Dparam.document.organization.url='FIXME' \
+      -Dparam.document.organization='metaeffekt' \
+      -Dparam.document.organization.url='https://metaeffekt.com' \
       -Dparam.document.output.format='JSON'
 
       echo "Setup Command valid."
@@ -286,8 +286,8 @@ log4j-core-SUMMARIZE-b14dc1ad-3318-424c-9740-e93b6fe3401c:
       -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core-inventory.xlsx' \
       -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/09_summarized/log4j-core/log4j-core-spdx.json' \
       -Dparam.document.name='log4j-core' \
-      -Dparam.document.organization='FIXME' \
-      -Dparam.document.organization.url='FIXME' \
+      -Dparam.document.organization='metaeffekt' \
+      -Dparam.document.organization.url='https://metaeffekt.com' \
       -Dparam.document.output.format='JSON'
 
       2>&1 | tee $CI_JOB_NAME.log

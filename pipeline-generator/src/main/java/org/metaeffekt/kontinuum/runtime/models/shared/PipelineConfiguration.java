@@ -610,6 +610,8 @@ public class PipelineConfiguration {
             private Boolean enableCycloneDxBom = false;
             private Boolean forceDisablePortfolioManager = false;
             private String debugParam;
+            private String bomOrganization;
+            private String bomOrganizationUrl;
         }
 
         /**

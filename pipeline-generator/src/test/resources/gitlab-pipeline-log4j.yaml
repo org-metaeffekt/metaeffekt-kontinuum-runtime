@@ -39,6 +39,8 @@ options:
   global:
     enableCycloneDxBom: true
     enableSpdxBom: true
+    bomOrganization: "metaeffekt"
+    bomOrganizationUrl: "https://metaeffekt.com"
   enrichment:
     securityPolicyFile: "policies/security-policy/security-policy.json"
     securityPolicyActiveIds: ["base_configuration"]
