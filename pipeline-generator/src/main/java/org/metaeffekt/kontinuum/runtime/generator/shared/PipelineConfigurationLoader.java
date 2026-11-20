@@ -364,6 +364,8 @@ public class PipelineConfigurationLoader {
                 }
             }
 
+            validatePeriod(report);
+
             if (report.getLocales() == null || report.getLocales().isEmpty()) {
                 log.error("A report with 'assetIds': {} is missing or contains an empty 'locales' list.",
                         report.getAssetIds());
@@ -388,6 +390,33 @@ public class PipelineConfigurationLoader {
                 log.error("A report with 'assetIds': {} is missing a 'productVersion'.", report.getAssetIds());
                 isValid = false;
             }
+        }
+    }
+
+    /**
+     * Validates the optional {@code period} of a report. The values are passed as free text to the report processor,
+     * so only empty values and single quotes, which break the generated shell commands, are rejected.
+     */
+    private void validatePeriod(Report report) {
+        Report.Period period = report.getPeriod();
+        if (period == null) {
+            return;
+        }
+
+        if (StringUtils.isBlank(period.getSince()) || StringUtils.isBlank(period.getUntil())) {
+            log.error("A report with 'assetIds' [{}] contains an empty 'period.since' or 'period.until'.",
+                    report.getAssetIds());
+            isValid = false;
+        }
+
+        if (StringUtils.contains(period.getSince(), '\'') || StringUtils.contains(period.getUntil(), '\'')) {
+            log.error("A report with 'assetIds' [{}] must not use single quotes in 'period'.", report.getAssetIds());
+            isValid = false;
+        }
+
+        if (!report.getTypes().contains(ReportType.CERT_REPORT.getKey())) {
+            log.warn("A report with 'assetIds' [{}] defines a 'period', which is only used by report type '{}'.",
+                    report.getAssetIds(), ReportType.CERT_REPORT.getKey());
         }
     }
 

@@ -25,7 +25,7 @@ public class PipelineConfiguration {
     private List<Dashboard> dashboards;
     private List<Overview> overviews;
     private PortfolioManager portfolioManager;
-    private Options options = new Options();
+    private Options options;
 
     /**
      * Whether vulnerability enrichment is required by any dashboard or report type.
@@ -505,6 +505,7 @@ public class PipelineConfiguration {
         private String controlRating;
         private List<SupportedLocale> locales;
         private String preReportFilterFile;
+        private Period period;
 
         /**
          * Short, position-derived group name ({@code group-1}, {@code group-2}, ...) resolved by
@@ -542,6 +543,30 @@ public class PipelineConfiguration {
          */
         public String getPreReportFilterFileNormalized(String workbenchPath) {
             return KontinuumUtils.normalizeDir(workbenchPath, preReportFilterFile);
+        }
+
+        /**
+         * The query period of the report. Falls back to the default period if the configuration does not declare
+         * one.
+         *
+         * @return the configured period or the default period
+         */
+        @JsonIgnore
+        public Period getResolvedPeriod() {
+            return period != null ? period : new Period();
+        }
+
+        /**
+         * The {@code period} of a report: the query period of the advisories shown in a cert report. The values are
+         * passed unchanged to the report processor; the defaults correspond to those of the cert report template.
+         */
+        @Data
+        public static class Period {
+            public static final String DEFAULT_SINCE = "1 week";
+            public static final String DEFAULT_UNTIL = "now";
+
+            private String since = DEFAULT_SINCE;
+            private String until = DEFAULT_UNTIL;
         }
     }
 

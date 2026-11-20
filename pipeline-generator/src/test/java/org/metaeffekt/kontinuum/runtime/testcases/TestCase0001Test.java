@@ -29,69 +29,39 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * <p>
  * Requires a Kontinuum checkout next to the runtime; skipped otherwise.
  */
-class TestCase0001Test {
-
-    private static final String TEST_CASE = "tc-0001";
-
-    private static final Path TEST_CASES_DIR = Path.of("src/test/resources/test-cases").toAbsolutePath().normalize();
-
-    private static final Path KONTINUUM_DIR = Path.of("../../metaeffekt-kontinuum").toAbsolutePath().normalize();
-
-    private static final Path WORKBENCH_DIR = TEST_CASES_DIR.resolve(TEST_CASE).resolve("workbench");
-
-    private static final Path WORKSPACE_DIR = TEST_CASES_DIR.resolve(TEST_CASE).resolve("workspace");
-
-    private static final Path SHARED_WORKBENCH_DIR = TEST_CASES_DIR.resolve("shared").resolve("workbench");
-
-    private static final Path RESOLVED_CONFIG_DIR = Path.of("target/test-cases").resolve(TEST_CASE).toAbsolutePath();
-
-    private static final String CONFIG_FILE_NAME = "tc-0001-01-config.yaml";
-
-    private static final Map<String, Path> PLACEHOLDERS = Map.of(
-            "workbench.dir", WORKBENCH_DIR,
-            "workspace.dir", WORKSPACE_DIR,
-            "shared.workbench.dir", SHARED_WORKBENCH_DIR);
-
-    private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([^}]+)}");
-
-    private static final long TIMEOUT_MINUTES = 10;
-
-    @TempDir
-    Path runtimeWorkspaceDir;
-
-    @BeforeEach
-    void requireKontinuum() {
-        assumeTrue(Files.isDirectory(KONTINUUM_DIR.resolve("processors")),
-                "Kontinuum checkout not found at " + KONTINUUM_DIR);
-    }
+@Slf4j
+@AbstractTestCase.TestCaseMetadata(id = "tc-0001",configFileName = "tc-0001-01-config.yaml")
+class TestCase0001Test extends AbstractTestCase {
 
     @Test
     void generatedScriptContainsTheResolvedAbsolutePaths() throws IOException {
-        String script = generateScript(resolveConfigTemplate());
+        Path scriptFile = getResultWorkingDir().resolve("pipeline.sh");
+        String script = generateBashPipelineScript(resolveConfigTemplate(), scriptFile);
 
-        assertTrue(script.contains("-Dparam.asset.url='file:" + WORKSPACE_DIR
-                                   + "/02_prepared/app/app-inventory.xlsx'"), script);
-        assertTrue(script.contains("-Dinput.kotlin.script.file='" + WORKBENCH_DIR + "/scripts/select-inventory.kts'"),
-                   script);
-        assertTrue(script.contains("-Dparam.reference.inventory.dir='" + SHARED_WORKBENCH_DIR
-                                   + "/inventories/reference-inventory/inventory/'"), script);
-        assertTrue(script.contains("\"inventoriesDir\":\"" + WORKBENCH_DIR + "/inventories\""), script);
-        assertTrue(script.contains("\"artifactIdPattern\":\"a-.*\""), script);
-        assertFalse(script.contains("# --- PRE:"), "Mirror step is not required for this test case:\n" + script);
+        assertParameter("param.asset.url", "'file:" + getTestCaseWorkspaceDir() + "/02_prepared/app/app-inventory.xlsx'", script);
+        assertParameter("input.kotlin.script.file", "'" + getTestCaseWorkbenchDir() + "/scripts/select-inventory.kts'", script);
+        assertParameter("param.reference.inventory.dir", "'" + SHARED_WORKBENCH_DIR + "/inventories/reference-inventory/inventory/'", script);
+
+        assertContains("\"inventoryPath\":\"" + getTestCaseWorkbenchDir() + "/inventories\"", script);
+        assertContains("\"artifactIdPattern\":\"a-.*\"", script);
+
+        // Mirror step is not required for this test case
+        assertNotContains("# --- PRE:", script);
     }
 
     @Test
     void copiesInventoryOfMatchingArtifact() throws Exception {
-        Path scriptFile = runtimeWorkspaceDir.resolve(TEST_CASE + "-pipeline.sh");
-        Files.writeString(scriptFile, generateScript(resolveConfigTemplate()));
+        Path scriptFile = getResultWorkingDir().resolve("pipeline.sh");
+        scriptFile.toFile().getParentFile().mkdirs();
+        generateBashPipelineScript(resolveConfigTemplate(), scriptFile);
 
         runScript(scriptFile);
 
-        Path outputInventory = runtimeWorkspaceDir.resolve(TEST_CASE + "/01_extracted/a/a-inventory.xlsx");
-        Path expectedInventory = WORKBENCH_DIR.resolve("inventories/a-1.15-inventory.xlsx");
+        Path outputInventory = getResultWorkspaceDir().resolve("tc-0001" + "/01_extracted/a/scripted/a-inventory.xlsx");
+        Path expectedInventory = getTestCaseWorkbenchDir().resolve("inventories/a-1.15-inventory.xlsx");
         assertTrue(Files.isRegularFile(outputInventory), "Inventory was not created: " + outputInventory);
         assertEquals(-1, Files.mismatch(expectedInventory, outputInventory),
-                "Copied inventory differs from " + expectedInventory);
+                "Copied inventory differs from " + expectedInventory + ".");
     }
 
     /**
