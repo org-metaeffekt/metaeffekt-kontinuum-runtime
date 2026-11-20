@@ -123,15 +123,15 @@ public class ExtractStageHandler implements AssetStageHandler {
      */
     private MavenProcessor handleExtractionScript(AssetExecutionContext context) {
         Asset asset = context.getAsset();
-        String scriptedInventoryDir = context.getStageDirForAsset(Stage.EXTRACT) + "scripted/";
+        String scriptedInventoryDir = context.getStageDirForAsset(Stage.EXTRACT).toString();
         String scriptedInventoryFile = scriptedInventoryDir + asset.getExtractionScriptInventoryFileName();
 
+        String workbenchDir = context.getEnvironment().getWorkbenchDirNormalized();
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(
                 EXECUTE_KOTLIN_SCRIPT);
         processor.setStage(Stage.EXTRACT);
         processor.setProcessorParameter(INPUT_KOTLIN_SCRIPT_FILE,
-                KontinuumUtils.normalizeFilePath(context.getEnvironment().getWorkbenchDirNormalized(),
-                        asset.getExtractionScript().getScript()));
+                KontinuumUtils.normalizeFilePath(workbenchDir, asset.getExtractionScript().getScript()));
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE, scriptedInventoryFile);
         processor.setProcessorParameter(PARAM_ASSET_ID, asset.getId());

@@ -1,6 +1,9 @@
 package org.metaeffekt.kontinuum.runtime.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Strings;
+
+import java.util.List;
 
 /**
  * Utility methods for normalizing file and directory paths used by the pipeline generator.
@@ -8,8 +11,22 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class KontinuumUtils {
 
+    private static final List<String> INVENTORY_FILE_SUFFIXES = List.of(".xls", ".xlsx", ".ser");
+
+    /**
+     * Checks by file suffix whether the given path points to an inventory file. The file system is not accessed.
+     *
+     * @param path the path to check
+     *
+     * @return true if the path ends with an inventory file suffix, ignoring case
+     */
+    public static boolean isInventoryFile(String path) {
+        return INVENTORY_FILE_SUFFIXES.stream().anyMatch(suffix -> Strings.CI.endsWith(path, suffix));
+    }
+
     /**
      * Joins the given path segments and ensures the result ends with a directory separator.
+     * A segment starting with {@code /} is absolute and discards the segments before it.
      *
      * @param path the path segments to join
      * @return the normalized directory path
@@ -24,6 +41,7 @@ public class KontinuumUtils {
 
     /**
      * Joins the given path segments into a normalized file path.
+     * A segment starting with {@code /} is absolute and discards the segments before it.
      *
      * @param path the path segments to join
      * @return the normalized file path
@@ -38,11 +56,11 @@ public class KontinuumUtils {
             if (part == null || part.isEmpty()) {
                 continue;
             }
-            if (!sb.isEmpty() && sb.charAt(sb.length() - 1) != '/') {
+            if (part.startsWith("/")) {
+                // absolute segment: everything joined so far is replaced
+                sb.setLength(0);
+            } else if (!sb.isEmpty() && sb.charAt(sb.length() - 1) != '/') {
                 sb.append('/');
-            }
-            if (!sb.isEmpty() && part.startsWith("/")) {
-                part = part.substring(1);
             }
             sb.append(part);
         }

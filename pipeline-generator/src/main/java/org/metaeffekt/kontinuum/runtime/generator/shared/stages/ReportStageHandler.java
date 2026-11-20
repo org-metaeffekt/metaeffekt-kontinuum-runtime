@@ -180,6 +180,10 @@ public class ReportStageHandler implements ReportGroupStageHandler {
 
         if (reportType.equals(ReportType.CERT_REPORT)) {
             processor.setProcessorParameter(PARAM_OVERVIEW_ADVISORS, "[\"CERT_FR\"]");
+
+            Report.Period period = report.getResolvedPeriod();
+            processor.setProcessorParameter(PARAM_REPORT_PERIOD_SINCE, period.getSince());
+            processor.setProcessorParameter(PARAM_REPORT_PERIOD_UNTIL, period.getUntil());
         } else {
             processor.setProcessorParameter(PARAM_OVERVIEW_ADVISORS,
                                             report.getOverviewAdvisors() == null ||

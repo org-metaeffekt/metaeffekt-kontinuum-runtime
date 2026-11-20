@@ -362,6 +362,8 @@ public class DefaultProcessorCatalog implements ProcessorCatalog {
                               processorParameter(PARAM_REFERENCE_COMPONENTS_DIR, false),
                               processorParameter(PARAM_REFERENCE_INVENTORY_DIR, false),
                               processorParameter(PARAM_REFERENCE_LICENSES_DIR, false),
+                              processorParameter(PARAM_REPORT_PERIOD_SINCE, false),
+                              processorParameter(PARAM_REPORT_PERIOD_UNTIL, false),
                               processorParameter(PARAM_SECURITY_POLICY_FILE, false),
                               processorParameter(PARAM_TEMPLATE_DIR, false)
         );

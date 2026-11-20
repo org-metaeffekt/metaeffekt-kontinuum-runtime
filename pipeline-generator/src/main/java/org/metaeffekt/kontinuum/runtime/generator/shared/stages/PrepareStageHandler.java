@@ -24,12 +24,11 @@ public class PrepareStageHandler implements AssetStageHandler {
 
     @Override
     public void process(AssetExecutionContext context) {
-
         PipelineConfiguration.Options.GlobalOptions globalOptions = context.getConfiguration().getOptions().getGlobal();
-        assert globalOptions != null;
 
         boolean cycloneDxEnabled = globalOptions.getEnableCycloneDxBom();
         boolean spdxEnabled = globalOptions.getEnableSpdxBom();
+
 
         boolean hasPortfolioManager = Objects.nonNull(context.getConfiguration().getPortfolioManager());
 

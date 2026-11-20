@@ -66,7 +66,7 @@ log4j-core-EXTRACT-bd62fb08-f7dc-44ed-aa20-08211fa852d4:
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/prepare/prepare_scan-directory.xml' process-resources \
       -Dinput.extract.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/00_fetched/log4j-core/' \
-      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/01_extracted/log4j-core/log4j-core.xlsx' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/01_extracted/log4j-core/log4j-core-inventory.xlsx' \
       -Doutput.scan.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/01_extracted/log4j-core/scan/' \
       -Dparam.reference.inventory.dir='workbench/inventories/example-reference-inventory/'
 
@@ -85,20 +85,20 @@ log4j-core-PREPARE-7456a931-13fc-401c-a5f2-76ad271ca929:
       set -o pipefail
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/advise/advise_attach-metadata.xml' process-resources \
-      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/01_extracted/log4j-core/log4j-core.xlsx' \
-      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/01_extracted/log4j-core/log4j-core-inventory.xlsx' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-inventory.xlsx' \
       -Dparam.metadata.asset.id='log4j-core' \
       -Dparam.metadata.asset.name='log4j-core'
 
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/util/util_enrich-with-reference.xml' process-resources \
-      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
-      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-inventory.xlsx' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-inventory.xlsx' \
       -Dparam.reference.inventory.dir='workbench/inventories/example-reference-inventory/'
 
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/convert/convert_inventory-to-cyclonedx.xml' process-resources \
-      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-inventory.xlsx' \
       -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-cyclonedx.json' \
       -Dparam.document.name='log4j-core' \
       -Dparam.document.organization='FIXME' \
@@ -107,7 +107,7 @@ log4j-core-PREPARE-7456a931-13fc-401c-a5f2-76ad271ca929:
 
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/convert/convert_inventory-to-spdx.xml' process-resources \
-      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-inventory.xlsx' \
       -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-spdx.json' \
       -Dparam.document.name='log4j-core' \
       -Dparam.document.organization='FIXME' \
@@ -116,7 +116,7 @@ log4j-core-PREPARE-7456a931-13fc-401c-a5f2-76ad271ca929:
 
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/prepare/prepare_portfolio-upload.xml' process-resources \
-      -Dinput.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
+      -Dinput.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-inventory.xlsx' \
       -Dparam.asset.group.id='log4j-core:2.24.3' \
       -Dparam.asset.name='log4j-core' \
       -Dparam.asset.version='2.24.3' \
@@ -146,7 +146,7 @@ log4j-core-PREPARE-7456a931-13fc-401c-a5f2-76ad271ca929:
           unzip -q -j "$zip_file" "*_report.xlsx" "*_report.xls" -d "$zip_dir" || true
           extracted_file=$(find "$zip_dir" -maxdepth 1 -type f \( -name "*_report.xlsx" -o -name "*_report.xls" \) | head -n 1)
           if [ -n "$extracted_file" ]; then
-              mv "$extracted_file" "/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/portfolio-manager/log4j-core-pm-reference.xlsx"
+              mv "$extracted_file" "/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/portfolio-manager/log4j-core-pm-reference-inventory.xlsx"
           fi
       done
 
@@ -166,15 +166,15 @@ log4j-core-AGGREGATE-f12f0c8c-0746-466e-ad0c-fb4c9b424dea:
       set -o pipefail
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/util/util_enrich-with-reference.xml' process-resources \
-      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core.xlsx' \
-      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core.xlsx' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/log4j-core-inventory.xlsx' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core-inventory.xlsx' \
       -Dparam.reference.inventory.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/02_prepared/log4j-core/portfolio-manager/'
 
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/util/util_execute-kotlin-script.xml' process-resources \
       -Dinput.kotlin.script.file='workbench/scripts/inventory.asset.filter.kts' \
-      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core.xlsx' \
-      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core.xlsx' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core-inventory.xlsx' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core-inventory.xlsx' \
       -Dparam.asset.id='log4j-core'
 
       2>&1 | tee $CI_JOB_NAME.log
@@ -193,8 +193,8 @@ log4j-core-ADVISE-3aea0046-d41f-4c32-adae-87a8b7f88888:
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/advise/advise_enrich-inventory.xml' process-resources \
       -Denv.vulnerability.mirror.dir='/metaeffekt-gitlab-examples/mirror/.database/' \
-      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core.xlsx' \
-      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core.xlsx' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/03_aggregated/log4j-core/log4j-core-inventory.xlsx' \
+      -Doutput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core-inventory.xlsx' \
       -Doutput.tmp.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/vulnerability-enrichment-temp/' \
       -Dparam.assessment.dirs='workbench/assessments/metaeffekt/sample-product-1/local/' \
       -Dparam.context.dirs='workbench/assessments/metaeffekt/sample-product-1/local/context/' \
@@ -228,12 +228,12 @@ log4j-core-GROUP-65f43be4-e6bc-4da7-8e41-78e45199ce06:
       set -o pipefail
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/util/util_transform-inventories.xml' process-resources \
-      -Dinput.inventory.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core.xlsx' \
-      -Doutput.inventory.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/07_grouped/group-1/prepared/log4j-core/log4j-core.xlsx' \
+      -Dinput.inventory.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core-inventory.xlsx' \
+      -Doutput.inventory.dir='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/07_grouped/group-1/prepared/log4j-core/log4j-core-inventory.xlsx' \
       -Dparam.kotlin.script.file='workbench/scripts/prepare.kts/' \
       -Dparam.asset.name='log4j-core'
 
-      sh '/usr/src/metaeffekt-kontinuum/processors/util/util_copy-inventory.sh' '/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/07_grouped/group-1/prepared/log4j-core/log4j-core.xlsx' '/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/07_grouped/group-1/vulnerability-report/en_US/log4j-core.xlsx'
+      sh '/usr/src/metaeffekt-kontinuum/processors/util/util_copy-inventory.sh' '/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/07_grouped/group-1/prepared/log4j-core/log4j-core-inventory.xlsx' '/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/07_grouped/group-1/vulnerability-report/en_US/log4j-core-inventory.xlsx'
 
       2>&1 | tee $CI_JOB_NAME.log
   artifacts:
@@ -251,7 +251,7 @@ log4j-core-REPORT-5020c505-bc97-4928-a212-8880e7f697ca:
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/advise/advise_create-dashboard.xml' process-resources \
       -Denv.vulnerability.mirror.dir='/metaeffekt-gitlab-examples/mirror/.database/' \
-      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core.xlsx' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core-inventory.xlsx' \
       -Doutput.dashboard.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/08_reported/log4j-core/dashboards/log4j-core.html' \
       -Dparam.assessment.context='local' \
       -Dparam.asset.id='sample-product-1' \
@@ -274,7 +274,7 @@ log4j-core-SUMMARIZE-b14dc1ad-3318-424c-9740-e93b6fe3401c:
       set -o pipefail
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/convert/convert_inventory-to-cyclonedx.xml' process-resources \
-      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core.xlsx' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core-inventory.xlsx' \
       -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/09_summarized/log4j-core/log4j-core-cyclonedx.json' \
       -Dparam.document.name='log4j-core' \
       -Dparam.document.organization='FIXME' \
@@ -283,7 +283,7 @@ log4j-core-SUMMARIZE-b14dc1ad-3318-424c-9740-e93b6fe3401c:
 
       echo "Setup Command valid."
       mvn -X -f '/usr/src/metaeffekt-kontinuum/processors/convert/convert_inventory-to-spdx.xml' process-resources \
-      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core.xlsx' \
+      -Dinput.inventory.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/06_advised/log4j-core/log4j-core-inventory.xlsx' \
       -Doutput.bom.file='/metaeffekt-gitlab-examples/workspace/log4j-core-analysis/09_summarized/log4j-core/log4j-core-spdx.json' \
       -Dparam.document.name='log4j-core' \
       -Dparam.document.organization='FIXME' \

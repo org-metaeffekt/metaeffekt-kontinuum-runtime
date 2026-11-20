@@ -1,0 +1,60 @@
+# Template: the placeholders are replaced with absolute paths by the test (see test-cases/README.md).
+# The pipelines of this test case are only generated, not executed; referenced files do not need to exist.
+projectProperties:
+  project:
+    id: "tc-0002"
+    name: "Test Case #0002"
+    version: "1.0.0"
+    tenant: "ae"
+  assets:
+    - id: "app"
+      name: "application"
+      version: "1.0.0"
+      reference: "${shared.workbench.dir}/inventories/reference-inventory/inventory"
+      assessmentId: "app"
+      context: "local"
+      urlResolver:
+        url: "https://example.com/application-1.0.0.zip"
+
+reports:
+  # cert report with an explicit period
+  - id: "cert-explicit-period"
+    assetIds: [ "app" ]
+    types: [ "CR" ]
+    locales: [ "en_US" ]
+    organization: "metaeffekt"
+    productName: "application"
+    productVersion: "1.0.0"
+    productWatermark: "Test"
+    period:
+      since: "4 weeks"
+      until: "1 week"
+
+  # cert report without a period: the defaults are used
+  - id: "cert-default-period"
+    assetIds: [ "app" ]
+    types: [ "CR" ]
+    locales: [ "en_US" ]
+    organization: "metaeffekt"
+    productName: "application"
+    productVersion: "1.0.0"
+    productWatermark: "Test"
+
+  # vulnerability report: no period parameters
+  - id: "vulnerability-report"
+    assetIds: [ "app" ]
+    types: [ "VR" ]
+    locales: [ "en_US" ]
+    organization: "metaeffekt"
+    productName: "application"
+    productVersion: "1.0.0"
+    productWatermark: "Test"
+
+options:
+  enrichment:
+    securityPolicyFile: "${workbench.dir}/policies/security-policy.json"
+
+# Expected parameters of the create-document invocation per report, in the local and the GitLab pipeline:
+#  cert-explicit-period  param.report.period.since='4 weeks', param.report.period.until='1 week'
+#  cert-default-period   param.report.period.since='1 week',  param.report.period.until='now'
+#  vulnerability-report  no param.report.period.* parameters
