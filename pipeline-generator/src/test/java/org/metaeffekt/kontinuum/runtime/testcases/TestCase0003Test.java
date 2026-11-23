@@ -3,6 +3,8 @@ package org.metaeffekt.kontinuum.runtime.testcases;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.metaeffekt.core.inventory.processor.model.Inventory;
+import org.metaeffekt.core.inventory.processor.reader.InventoryReader;
 import org.metaeffekt.kontinuum.runtime.generator.local.LocalPipeline;
 import org.metaeffekt.kontinuum.runtime.generator.shared.PipelineConfigurationLoader;
 import org.metaeffekt.kontinuum.runtime.models.local.LocalConfiguration;
@@ -26,6 +28,9 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * template is resolved, loaded, the local pipeline script is generated and executed, and the selected inventory is
  * compared with the expected inventory. See {@code test-cases/README.md} for the layout and the placeholders of the
  * templates.
+ * <p>
+ * The appliance inventory is also split into the parts application, os and driver by an extraction script. The
+ * appliance contains no drivers, so the driver part must produce an empty inventory instead of failing.
  * <p>
  * The script is executed from the workspace, not from the workbench, so paths must not work by accident.
  * <p>
@@ -65,6 +70,20 @@ class TestCase0003Test extends AbstractTestCase {
         Path expectedInventory = getTestCaseWorkbenchDir().resolve("inventories/SumatraPDF-3.5.2-inventory.xlsx");
         assertTrue(Files.isRegularFile(outputInventory), "Inventory was not created: " + outputInventory);
         assertEquals(-1, Files.mismatch(expectedInventory, outputInventory), "Copied inventory differs from " + expectedInventory);
+    }
+
+    @Test
+    void createsEmptyDriverInventory() throws Exception {
+        Path scriptFile = getResultWorkingDir().resolve("pipeline.sh");
+        generateBashPipelineScript(resolveConfigTemplate(), scriptFile);
+
+        runScript(scriptFile);
+
+        Path driverInventory = getResultProjectWorkspaceDir().resolve("01_extracted/driver/driver-inventory.xlsx");
+        assertTrue(Files.isRegularFile(driverInventory), "Inventory was not created: " + driverInventory);
+
+        Inventory inventory = new InventoryReader().readInventory(driverInventory.toFile());
+        assertTrue(inventory.getArtifacts().isEmpty(), "Inventory expected to be empty: " + driverInventory);
     }
 
 }
