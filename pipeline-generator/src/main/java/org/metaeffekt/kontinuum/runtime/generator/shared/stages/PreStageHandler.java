@@ -34,7 +34,7 @@ public class PreStageHandler implements PipelineStageHandler {
         ProcessorDefinitions.StandaloneProcessor localMavenRepoCopyProcessor = null;
         if (context.getEnvironment() instanceof GitlabConfiguration
             && context.getEnvironment().LOCAL_MAVEN_REPO != null) {
-            localMavenRepoCopyProcessor = handleMavenRepoCopy(context);
+            localMavenRepoCopyProcessor = context.addProcessor(handleMavenRepoCopy(context));
         }
 
         if (context.getConfiguration().requiresVulnerabilityEnrichment()) {
