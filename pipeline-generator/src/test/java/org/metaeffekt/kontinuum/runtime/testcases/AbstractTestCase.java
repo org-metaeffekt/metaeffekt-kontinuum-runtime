@@ -1,5 +1,6 @@
 package org.metaeffekt.kontinuum.runtime.testcases;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.metaeffekt.kontinuum.runtime.generator.gitlab.GitlabPipeline;
@@ -15,6 +16,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +31,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Resolves the configuration templates of the test cases. See {@code test-cases/README.md} for the layout and the
  * placeholders of the templates.
  */
+@Slf4j
 abstract class AbstractTestCase {
 
     private static final Path TEST_CASES_BASE_DIR = Path.of("src/test/resources/test-cases").toAbsolutePath().normalize();
@@ -96,6 +100,8 @@ abstract class AbstractTestCase {
 
     protected void runScript(Path scriptFile) throws Exception {
         Path logFile = getResultBaseDir().resolve(getTestCaseId() + "-pipeline.log");
+        log.info("Running pipeline script [{}], output is written to [{}].", scriptFile, logFile);
+        Instant start = Instant.now();
         Process process = new ProcessBuilder(List.of("bash", scriptFile.toString()))
                 .directory(RESULTS_BASE_DIR.toFile())
                 .redirectErrorStream(true)
@@ -107,6 +113,8 @@ abstract class AbstractTestCase {
             fail("Execution of the pipeline script timed out after " + TIMEOUT_MINUTES + " minutes:\n"
                     + Files.readString(logFile));
         }
+        log.info("Pipeline script [{}] finished with exit code [{}] in [{}] seconds.",
+                scriptFile, process.exitValue(), Duration.between(start, Instant.now()).toSeconds());
         assertEquals(0, process.exitValue(),
                 "Execution of the pipeline script failed:\n" + Files.readString(logFile));
     }
