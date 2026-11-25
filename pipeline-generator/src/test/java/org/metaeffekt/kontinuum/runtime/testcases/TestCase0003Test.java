@@ -1,8 +1,11 @@
 package org.metaeffekt.kontinuum.runtime.testcases;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.metaeffekt.core.inventory.processor.model.Inventory;
+import org.metaeffekt.core.inventory.processor.reader.InventoryReader;
 import org.metaeffekt.kontinuum.runtime.generator.local.LocalPipeline;
 import org.metaeffekt.kontinuum.runtime.generator.shared.PipelineConfigurationLoader;
 import org.metaeffekt.kontinuum.runtime.models.local.LocalConfiguration;
@@ -27,12 +30,19 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * compared with the expected inventory. See {@code test-cases/README.md} for the layout and the placeholders of the
  * templates.
  * <p>
+ * The appliance inventory is also split into the parts application, os and driver by an extraction script. The
+ * appliance contains no drivers, so the driver part must produce an empty inventory instead of failing.
+ * <p>
  * The script is executed from the workspace, not from the workbench, so paths must not work by accident.
  * <p>
  * Requires a Kontinuum checkout next to the runtime; skipped otherwise.
  */
+@Slf4j
 @AbstractTestCase.TestCaseMetadata(id = "tc-0003",configFileName = "tc-0003-01-config.yaml")
 class TestCase0003Test extends AbstractTestCase {
+
+    private static final String PART_DRIVER = "driver";
+    private static final List<String> PARTS = List.of("application", "os", PART_DRIVER);
 
     @Test
     void generatedScriptExtractsWindowsArchiveAndSelectsInventory() throws IOException {
@@ -65,6 +75,33 @@ class TestCase0003Test extends AbstractTestCase {
         Path expectedInventory = getTestCaseWorkbenchDir().resolve("inventories/SumatraPDF-3.5.2-inventory.xlsx");
         assertTrue(Files.isRegularFile(outputInventory), "Inventory was not created: " + outputInventory);
         assertEquals(-1, Files.mismatch(expectedInventory, outputInventory), "Copied inventory differs from " + expectedInventory);
+    }
+
+    @Test
+    void createsEmptyDriverInventory() throws Exception {
+        Path scriptFile = getResultWorkingDir().resolve("pipeline.sh");
+        generateBashPipelineScript(resolveConfigTemplate(), scriptFile);
+
+        runScript(scriptFile);
+        logPartInventorySizes();
+
+        Path driverInventory = partInventory(PART_DRIVER);
+        assertTrue(Files.isRegularFile(driverInventory), "Inventory was not created: " + driverInventory);
+
+        Inventory inventory = new InventoryReader().readInventory(driverInventory.toFile());
+        assertTrue(inventory.getArtifacts().isEmpty(), "Inventory expected to be empty: " + driverInventory);
+    }
+
+    private void logPartInventorySizes() throws IOException {
+        for (String part : PARTS) {
+            Path inventoryFile = partInventory(part);
+            int size = new InventoryReader().readInventory(inventoryFile.toFile()).getArtifacts().size();
+            log.info("Part inventory [{}] contains [{}] artifacts.", inventoryFile, size);
+        }
+    }
+
+    private Path partInventory(String part) {
+        return getResultProjectWorkspaceDir().resolve("01_extracted/" + part + "/" + part + "-inventory.xlsx");
     }
 
 }
