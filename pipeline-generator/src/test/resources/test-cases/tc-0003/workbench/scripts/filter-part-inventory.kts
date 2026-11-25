@@ -46,7 +46,7 @@ val grouped = inventory.artifacts.groupBy {
 }
 
 val type = scriptParams.getValue("part")
-writeInventory(Inventory().apply { artifacts = grouped[type] }, "output.inventory.file", true)
+writeInventory(Inventory().apply { artifacts = grouped[type].orEmpty() }, "output.inventory.file", true)
 
 fun Transformations.deriveComponentName(artifact: Artifact): Artifact {
     if (artifact.component.isNullOrBlank()) {
@@ -71,7 +71,6 @@ fun Transformations.deriveVersionFromIdsUUID4Part(artifact: Artifact): Artifact 
     }
 }
 
-// Tempoary fix; replaces apostrophes that cause an issue during report generation
 fun Transformations.replaceApos(artifact: Artifact): Artifact {
     artifact["Component"] = artifact["Component"]?.replace("’", "");
     artifact["Id"] = artifact["Id"]?.replace("’", "");
