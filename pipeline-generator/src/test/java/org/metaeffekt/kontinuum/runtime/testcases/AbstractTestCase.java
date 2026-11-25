@@ -1,8 +1,10 @@
 package org.metaeffekt.kontinuum.runtime.testcases;
 
+import org.apache.commons.lang3.StringUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.metaeffekt.core.util.PropertiesUtils;
 import org.metaeffekt.kontinuum.runtime.generator.gitlab.GitlabPipeline;
 import org.metaeffekt.kontinuum.runtime.generator.local.LocalPipeline;
 import org.metaeffekt.kontinuum.runtime.generator.shared.PipelineConfigurationLoader;
@@ -20,6 +22,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,8 +40,11 @@ abstract class AbstractTestCase {
     private static final Path TEST_CASES_BASE_DIR = Path.of("src/test/resources/test-cases").toAbsolutePath().normalize();
     private static final Path RESULTS_BASE_DIR = Path.of("target/test-cases").toAbsolutePath().normalize();
 
-    // FIXME: read from local.properties on runtime-level
-    private final Path KONTINUUM_DIR = Path.of("../../metaeffekt-kontinuum").toAbsolutePath().normalize();
+    private static final Path LOCAL_PROPERTIES_FILE = Path.of("../.local.properties").toAbsolutePath().normalize();
+    private static final String KONTINUUM_DIR_PROPERTY = "ae.kontinuum.dir";
+    private static final String DEFAULT_KONTINUUM_DIR = "../../metaeffekt-kontinuum";
+
+    private final Path KONTINUUM_DIR = resolveKontinuumDir();
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\$\\{([^}]+)}");
 
@@ -60,6 +66,26 @@ abstract class AbstractTestCase {
 
     static Path resultBaseDir(String testCase) {
         return RESULTS_BASE_DIR.resolve(testCase);
+    }
+
+    /**
+     * Returns the Kontinuum checkout configured by {@code ae.kontinuum.dir} in the {@code .local.properties} of the
+     * runtime. Falls back to a checkout next to the runtime, so setups without the property keep working.
+     */
+    private static Path resolveKontinuumDir() {
+        // values in .local.properties may be quoted
+        String configuredDir = StringUtils.unwrap(StringUtils.trim(readLocalProperties().getProperty(KONTINUUM_DIR_PROPERTY)), '"');
+        if (StringUtils.isEmpty(configuredDir)) {
+            return Path.of(DEFAULT_KONTINUUM_DIR).toAbsolutePath().normalize();
+        }
+        return Path.of(configuredDir).toAbsolutePath().normalize();
+    }
+
+    private static Properties readLocalProperties() {
+        if (!Files.isRegularFile(LOCAL_PROPERTIES_FILE)) {
+            return new Properties();
+        }
+        return PropertiesUtils.loadPropertiesFile(LOCAL_PROPERTIES_FILE.toFile(), true);
     }
 
     /**

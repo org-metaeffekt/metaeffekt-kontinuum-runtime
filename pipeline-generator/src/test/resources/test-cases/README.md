@@ -8,8 +8,10 @@ loaded and the pipeline is generated. Depending on the test case, the result is 
 | `tc-0001` | Roundtrip: the local pipeline script is executed and the result is compared with the expected output.        |
 | `tc-0002` | Generation only: the parameters of the processors in the local and the GitLab pipeline are checked.          |
 
-Roundtrip tests require a Kontinuum checkout at `../../metaeffekt-kontinuum` and are skipped otherwise. Tests that
-only generate pipelines run without it, and the files referenced by their configuration do not need to exist.
+Roundtrip tests require a Kontinuum checkout and are skipped otherwise. The checkout is configured by
+`ae.kontinuum.dir` in the `.local.properties` of the runtime root. Without the
+property, a checkout next to the runtime at `../../metaeffekt-kontinuum` is used. Tests that only generate pipelines
+run without it, and the files referenced by their configuration do not need to exist.
 
 ## Layout
 

@@ -41,6 +41,7 @@
         <dependency>
             <groupId>org.metaeffekt.core</groupId>
             <artifactId>ae-inventory-processor</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>
