@@ -1,0 +1,37 @@
+projectProperties:
+  project:
+    id: "tc-0004"
+    name: "Test Case #0004"
+    version: "1.0.0"
+    tenant: "ae"
+  assets:
+    - id: "a"
+      name: "a"
+      version: "1.0.0"
+      reference: "${shared.workbench.dir}/inventories/reference-inventory/inventory"
+      inventory: "my-a-inventory.xlsx"
+      urlResolver:
+        url: "file:${workspace.dir}/01_extracted/input-inventory.xlsx"
+    - id: "b"
+      name: "b"
+      version: "1.0.0"
+      reference: "${shared.workbench.dir}/inventories/reference-inventory/inventory"
+      inventory: "my-b-inventory.xlsx"
+      urlResolver:
+        url: "file:${workspace.dir}/01_extracted/input-inventory.xlsx"
+      extractionScript:
+        script: "${workbench.dir}/scripts/dummy-script.kts"
+    - id: "c"
+      name: "c"
+      version: "1.0.0"
+      reference: "${shared.workbench.dir}/inventories/reference-inventory/inventory"
+      urlResolver:
+        url: "file:${workspace.dir}/01_extracted/input-inventory.xlsx"
+    - id: "d"
+      name: "d"
+      version: "1.0.0"
+      reference: "${shared.workbench.dir}/inventories/reference-inventory/inventory"
+      urlResolver:
+        url: "file:${workspace.dir}/01_extracted/input-inventory.xlsx"
+      extractionScript:
+        script: "${workbench.dir}/scripts/dummy-script.kts"
