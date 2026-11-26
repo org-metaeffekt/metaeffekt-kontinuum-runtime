@@ -14,9 +14,9 @@ projectProperties:
       assets:
         - id: "a"
           name: "a"
+          inventory: "a-inventory.xlsx"
           extractionScript:
             script: "${workbench.dir}/scripts/select-inventory.kts"
-            inventory: "a-inventory.xlsx"
             params:
               artifactIdPattern: "a-.*"
               inventoriesDir: "${workbench.dir}/inventories"

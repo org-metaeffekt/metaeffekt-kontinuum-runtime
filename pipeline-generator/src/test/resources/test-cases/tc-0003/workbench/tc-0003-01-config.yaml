@@ -35,9 +35,9 @@ projectProperties:
 #              part: "driver"
         - id: "sumatrapdf"
           name: "SumatraPDF"
+          inventory: "sumatrapdf-inventory.xlsx"
           extractionScript:
             script: "scripts/select-inventory.kts"
-            inventory: "sumatrapdf-inventory.xlsx"
             params:
               artifactIdPattern: "SumatraPDF-.*"
               inventoriesDir: "${workbench.dir}/inventories"

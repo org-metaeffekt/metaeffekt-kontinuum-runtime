@@ -224,6 +224,7 @@ public class PipelineConfiguration {
             private ContainerResolver containerResolver;
             private AssetType type = AssetType.DEFAULT;
             private ExtractionScript extractionScript;
+            private String inventory;
 
             /**
              * Resolver configuration for fetching an asset from a URL, including optional
@@ -287,7 +288,6 @@ public class PipelineConfiguration {
             @Data
             public static class ExtractionScript {
                 private String script;
-                private String inventory;
                 private Map<String, String> params = new LinkedHashMap<>();
             }
 
@@ -419,19 +419,25 @@ public class PipelineConfiguration {
             }
 
             /**
-             * Returns the file name of the inventory written by the extraction script.
-             * Defaults to {@code <id>.xlsx} if no inventory is configured.
+             * Returns the file name of the inventory of this asset in all stages.
+             * Defaults to {@link #getDefaultInventoryFileName()} if no inventory is configured.
              *
-             * @return the inventory file name or null if no extraction script is configured
+             * @return the inventory file name, always ending with {@code .xlsx}
              */
-            public String getExtractionScriptInventoryFileName() {
-                if (extractionScript == null) {
-                    return null;
+            public String getInventoryFileName() {
+                if (StringUtils.isBlank(inventory)) {
+                    return getDefaultInventoryFileName();
                 }
-                String fileName = StringUtils.isBlank(extractionScript.getInventory())
-                        ? id + "-inventory"
-                        : extractionScript.getInventory();
-                return Strings.CI.endsWith(fileName, ".xlsx") ? fileName : fileName + ".xlsx";
+                return Strings.CI.endsWith(inventory, ".xlsx") ? inventory : inventory + ".xlsx";
+            }
+
+            /**
+             * Returns the inventory file name derived from the asset id, used if no inventory is configured.
+             *
+             * @return {@code <id>-inventory.xlsx}
+             */
+            public String getDefaultInventoryFileName() {
+                return id + "-inventory.xlsx";
             }
 
             /**

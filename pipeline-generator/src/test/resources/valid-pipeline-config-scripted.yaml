@@ -37,9 +37,9 @@ projectProperties:
         - id: "windows-appliance-applications"
           name: "windows-appliance-applications"
           assessmentId: "windows-appliance-applications"
+          inventory: "applications.xlsx"
           extractionScript:
             script: "scripts/filter-applications.kts"
-            inventory: "applications.xlsx"
             params:
               includeTypes: "application,service"
               removeDuplicates: "true"

@@ -89,13 +89,27 @@ class ExtractStageHandlerTest {
     }
 
     @Test
-    void preExtractedInventorySkipsExtractionForAllAssetTypes() {
+    void preExtractedInventoryIsCopiedForAllAssetTypes() {
         asset.setType(AssetType.WINDOWS);
         urlResolver.setUrl("file:///tmp/inventory.xlsx");
 
         handler.process(context);
 
-        assertTrue(context.getProcessors().isEmpty());
+        assertEquals(1, context.getProcessors().size());
+        Processor copy = context.getProcessors().get(0);
+        assertEquals("copy-inventory", copy.getId());
+        assertTrue(param(copy, OUTPUT_INVENTORY_FILE).endsWith("/" + asset.getId() + "/" + asset.getId() + "-inventory.xlsx"));
+        assertEquals(param(copy, OUTPUT_INVENTORY_FILE), context.getCurrentInventoryFile());
+    }
+
+    @Test
+    void extractionUsesConfiguredInventoryName() {
+        asset.setType(AssetType.WINDOWS);
+        asset.setInventory("custom-inventory");
+
+        handler.process(context);
+
+        assertTrue(param(OUTPUT_INVENTORY_FILE).endsWith("/custom-inventory.xlsx"));
     }
 
     @Test
@@ -117,14 +131,13 @@ class ExtractStageHandlerTest {
 
     @Test
     void extractionScriptUsesConfiguredInventoryName() {
-        Asset.ExtractionScript extractionScript = extractionScript("scripts/transform.kts");
-
-        // FIXME: this property must be moved up to asset-level
-        extractionScript.setInventory("custom-inventory");
-        asset.setExtractionScript(extractionScript);
+        asset.setExtractionScript(extractionScript("scripts/transform.kts"));
+        asset.setInventory("custom-inventory");
 
         handler.process(context);
 
+        Processor extraction = context.getProcessors().get(0);
+        assertTrue(param(extraction, OUTPUT_INVENTORY_FILE).endsWith("/" + asset.getId() + "-inventory.xlsx"));
         assertTrue(context.getCurrentInventoryFile().endsWith("/custom-inventory.xlsx"));
     }
 

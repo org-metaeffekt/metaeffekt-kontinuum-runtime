@@ -93,12 +93,12 @@ public class Workspace {
     public record AssetPath(String dir, PipelineConfiguration.ProjectProperties.Asset asset) {
 
         /**
-         * Returns the path to the asset's inventory spreadsheet.
+         * Returns the path to the asset's inventory spreadsheet, named after the configured inventory of the asset.
          *
          * @return the asset inventory file path
          */
         public String appendAssetInventory() {
-            return dir + asset + "-inventory.xlsx";
+            return dir + asset.getInventoryFileName();
         }
 
         /**
