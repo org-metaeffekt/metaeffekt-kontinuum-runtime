@@ -20,19 +20,18 @@ projectProperties:
             script: "scripts/filter-part-inventory.kts"
             params:
               part: "application"
-# FIXME: enable kotlin script to also produce empty inventories
-#        - id: "os"
-#          name: "OS"
-#          extractionScript:
-#            script: "scripts/filter-part-inventory.kts"
-#            params:
-#              part: "os"
-#        - id: "driver"
-#          name: "Driver" script: "scripts/filter-part-inventory.kts"
-#          extractionScript:
-#            script: "scripts/filter-part-inventory.kts"
-#            params:
-#              part: "driver"
+        - id: "os"
+          name: "OS"
+          extractionScript:
+            script: "scripts/filter-part-inventory.kts"
+            params:
+              part: "os"
+        - id: "driver"
+          name: "Driver"
+          extractionScript:
+            script: "scripts/filter-part-inventory.kts"
+            params:
+              part: "driver"
         - id: "sumatrapdf"
           name: "SumatraPDF"
           inventory: "sumatrapdf-inventory.xlsx"
