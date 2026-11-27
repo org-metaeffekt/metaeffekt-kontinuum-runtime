@@ -34,7 +34,7 @@ jobs:
             -DprocessAllModules=true
 
       - name: Build runtime modules
-        run: mvn --batch-mode clean package -DskipTests
+        run: mvn --batch-mode clean install
 
       - name: Create Release
         uses: softprops/action-gh-release@v3
