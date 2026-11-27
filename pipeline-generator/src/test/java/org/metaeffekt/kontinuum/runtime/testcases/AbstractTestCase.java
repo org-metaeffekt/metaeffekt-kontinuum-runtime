@@ -59,8 +59,7 @@ abstract class AbstractTestCase {
 
     private static final Path TEST_CASES_BASE_DIR = Path.of("src/test/resources/test-cases").toAbsolutePath().normalize();
     private static final Path RESULTS_BASE_DIR = Path.of("target/test-cases").toAbsolutePath().normalize();
-
-    protected static final Path SHARED_WORKBENCH_DIR = TEST_CASES_BASE_DIR.resolve("shared").resolve("workbench");
+    private static final Path SHARED_WORKBENCH_DIR = TEST_CASES_BASE_DIR.resolve("shared").resolve("workbench");
 
     private static final Path LOCAL_PROPERTIES_FILE = Path.of("../.local.properties").toAbsolutePath().normalize();
     private static final String KONTINUUM_DIR_PROPERTY = "ae.kontinuum.dir";
@@ -107,7 +106,7 @@ abstract class AbstractTestCase {
      *
      * @return the generated script
      *
-     * @throws IOException if the configuration cannot be loaded or the script cannot be written
+     * @throws IOException if the script cannot be written
      */
     protected GeneratedPipeline generateLocalPipeline() throws IOException {
         LocalConfiguration localConfiguration = LocalConfiguration.builder()
@@ -126,7 +125,7 @@ abstract class AbstractTestCase {
      *
      * @return the generated pipeline
      *
-     * @throws IOException if the configuration cannot be loaded or the pipeline cannot be written
+     * @throws IOException if the pipeline cannot be written
      */
     protected GeneratedPipeline generateGitlabPipeline() throws IOException {
         GitlabConfiguration gitlabConfiguration = GitlabConfiguration.builder()
@@ -173,6 +172,15 @@ abstract class AbstractTestCase {
 
     protected Path getTestCaseWorkspaceDir() {
         return TEST_CASES_BASE_DIR.resolve(testCaseId).resolve("workspace");
+    }
+
+    /**
+     * Returns the workbench shared by all test cases.
+     *
+     * @return the shared workbench directory
+     */
+    protected Path getSharedWorkbenchDir() {
+        return SHARED_WORKBENCH_DIR;
     }
 
     /**
@@ -230,7 +238,7 @@ abstract class AbstractTestCase {
                 "Execution of the pipeline script failed:\n" + Files.readString(logFile));
     }
 
-    private PipelineConfiguration loadConfiguration() throws IOException {
+    private PipelineConfiguration loadConfiguration() {
         return new PipelineConfigurationLoader().readConfig(resolvedConfigFile.toFile());
     }
 

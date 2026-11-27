@@ -32,7 +32,7 @@ class TestCase0003Config01Test extends AbstractTestCase {
         GeneratedPipeline pipeline = generateLocalPipeline();
 
         pipeline.step(Stage.FETCH, "download-asset", "windows-appliance")
-                .assertParameter("param.asset.url", "file:" + getTestCaseWorkbenchDir() + "/extractions/windows-extract.tar");
+                .assertParameter("param.asset.url", "file:" + getTestCaseWorkbenchDir().resolve("extractions/windows-extract.tar"));
 
         PipelineStep extraction = pipeline.step(Stage.EXTRACT, "extract-windows-inventory", "windows-appliance");
         extraction.assertContains("extract/extract_windows-inventory.xml");

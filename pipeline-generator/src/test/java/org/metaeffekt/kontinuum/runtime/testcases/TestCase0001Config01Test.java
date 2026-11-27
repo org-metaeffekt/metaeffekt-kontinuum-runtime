@@ -21,7 +21,7 @@ class TestCase0001Config01Test extends AbstractTestCase {
         GeneratedPipeline pipeline = generateLocalPipeline();
 
         pipeline.step(Stage.FETCH, "download-asset", "app")
-                .assertParameter("param.asset.url", "file:" + getTestCaseWorkspaceDir() + "/02_prepared/app/app-inventory.xlsx");
+                .assertParameter("param.asset.url", "file:" + getTestCaseWorkspaceDir().resolve("02_prepared/app/app-inventory.xlsx"));
 
         PipelineStep selection = pipeline.step(Stage.EXTRACT, "execute-kotlin-script", "a");
         selection.assertParameter("input.kotlin.script.file", getTestCaseWorkbenchDir().resolve("scripts/select-inventory.kts"));
@@ -29,7 +29,8 @@ class TestCase0001Config01Test extends AbstractTestCase {
         selection.assertContains("\"artifactIdPattern\":\"a-.*\"");
 
         pipeline.step(Stage.PREPARE, "enrich-with-reference", "app")
-                .assertParameter("param.reference.inventory.dir", SHARED_WORKBENCH_DIR + "/inventories/reference-inventory/inventory/");
+                // the generator writes directories with a trailing slash
+                .assertParameter("param.reference.inventory.dir", getSharedWorkbenchDir().resolve("inventories/reference-inventory/inventory") + "/");
 
         // Mirror step is not required for this test case
         pipeline.assertNoSteps(Stage.PRE);
