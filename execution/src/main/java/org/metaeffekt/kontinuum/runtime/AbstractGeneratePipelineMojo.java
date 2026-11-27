@@ -3,6 +3,9 @@ package org.metaeffekt.kontinuum.runtime;
 import lombok.Setter;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.metaeffekt.kontinuum.runtime.models.shared.OverwriteOptions;
+import org.metaeffekt.kontinuum.runtime.models.shared.PortfolioManagerOptions;
+import org.metaeffekt.kontinuum.runtime.models.shared.TermsMetadataOptions;
 
 import java.io.File;
 
@@ -23,15 +26,6 @@ public abstract class AbstractGeneratePipelineMojo extends AbstractMojo {
 
     @Parameter(property = "localMavenRepo", alias = "local.maven.repo")
     protected String localMavenRepo;
-
-    @Parameter(property = "tmdPassword")
-    protected String tmdPassword;
-
-    @Parameter(property = "tmdUserkeysFile")
-    protected String tmdUserkeysFile;
-
-    @Parameter(property = "tmdSource")
-    protected String tmdSource;
 
     @Parameter(property = "artifactResolverConfigFile")
     protected String artifactResolverConfigFile;
@@ -60,22 +54,12 @@ public abstract class AbstractGeneratePipelineMojo extends AbstractMojo {
     @Parameter(property = "kontinuumDir", defaultValue = "/usr/src/metaeffekt-kontinuum/")
     protected String kontinuumDir;
 
-    @Parameter(property = "portfolioManagerClientKeystoreFile")
-    protected String portfolioManagerClientKeystoreFile;
+    @Parameter
+    protected TermsMetadataOptions termsMetadataOptions = new TermsMetadataOptions();
 
-    @Parameter(property = "portfolioManagerClientTruststoreFile")
-    protected String portfolioManagerClientTruststoreFile;
+    @Parameter
+    protected PortfolioManagerOptions portfolioManagerOptions = new PortfolioManagerOptions();
 
-    @Parameter(property = "portfolioManagerClientKeystorePassword")
-    protected String portfolioManagerClientKeystorePassword;
-
-    @Parameter(property = "portfolioManagerClientTruststorePassword")
-    protected String portfolioManagerClientTruststorePassword;
-
-    @Parameter(property = "portfolioManagerToken")
-    protected String portfolioManagerToken;
-
-    @Parameter(property = "portfolioManagerUrl")
-    protected String portfolioManagerUrl;
-
+    @Parameter
+    protected OverwriteOptions overwriteOptions = new OverwriteOptions();
 }

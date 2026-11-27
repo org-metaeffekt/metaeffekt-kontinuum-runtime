@@ -1,7 +1,6 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
-import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
@@ -22,10 +21,7 @@ public class ScanStageHandler implements AssetStageHandler {
 
     @Override
     public void process(AssetExecutionContext context) {
-        PipelineConfiguration.Options.GlobalOptions globalOptions = context.getConfiguration().getOptions().getGlobal();
-        assert globalOptions != null;
-
-        if (globalOptions.getEnableScan()) {
+        if (context.getEnvironment().getOverwriteOptions().isForceEnableLocalScan()) {
             context.addProcessor(handleLicenseScan(context));
         }
     }
@@ -47,9 +43,9 @@ public class ScanStageHandler implements AssetStageHandler {
         processor.setProcessorParameter(PARAM_PROPERTIES_FILE,
                                         context.getEnvironment().SCAN_PROPERTIES_FILE);
         processor.setProcessorParameter(ENV_KOSMOS_PASSWORD,
-                                        context.getEnvironment().TMD_PASSWORD);
+                                        context.getEnvironment().termsMetadataOptions.getPassword());
         processor.setProcessorParameter(ENV_KOSMOS_USERKEYS_FILE,
-                                        context.getEnvironment().TMD_USERKEYS_FILE);
+                                        context.getEnvironment().termsMetadataOptions.getUserkeysFile());
 
         try {
             processor.setProcessorParameter(INPUT_OUTPUT_ANALYSIS_BASE_DIR,

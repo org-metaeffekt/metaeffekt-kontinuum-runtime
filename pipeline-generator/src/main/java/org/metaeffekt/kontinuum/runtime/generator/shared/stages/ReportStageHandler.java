@@ -150,9 +150,13 @@ public class ReportStageHandler implements ReportGroupStageHandler {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(AGGREGATE_LICENSES);
         processor.setStage(Stage.REPORT);
 
-        processor.setProcessorParameter(ENV_TMD_SOURCE, context.getEnvironment().TMD_SOURCE);
-        processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().TMD_PASSWORD);
-        processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().TMD_USERKEYS_FILE);
+        processor.setProcessorParameter(ENV_TMD_SOURCE, context.getEnvironment()
+                .termsMetadataOptions.getSource());
+        processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment()
+                .termsMetadataOptions.getPassword());
+        processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment()
+                .termsMetadataOptions.getUserkeysFile());
+
         processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getReportDir().appendMergedInventoryFile());
         processor.setProcessorParameter(PARAM_REFERENCE_COMPONENTS_DIR,
                                         context.getEnvironment().getWorkbenchDirNormalized() + "components/");

@@ -36,9 +36,7 @@ public class GenerateLocalPipelineMojo extends AbstractGeneratePipelineMojo {
 
         LocalConfiguration localConfiguration = LocalConfiguration.builder()
                 .executionEnvironment(executionEnvironment)
-                .TMD_PASSWORD(tmdPassword)
-                .TMD_USERKEYS_FILE(tmdUserkeysFile)
-                .TMD_SOURCE(tmdSource)
+                .termsMetadataOptions(termsMetadataOptions)
                 .ARTIFACT_RESOLVER_CONFIG_FILE(
                         artifactResolverConfigFile)
                 .ARTIFACT_RESOLVER_PROXY_FILE(
@@ -49,19 +47,11 @@ public class GenerateLocalPipelineMojo extends AbstractGeneratePipelineMojo {
                 .WORKBENCH_DIR(workbenchDir)
                 .KONTINUUM_DIR(kontinuumDir)
                 .WORKSPACE_DIR(workspaceDir)
-                .PORTFOLIO_MANAGER_URL(portfolioManagerUrl)
-                .PORTFOLIO_MANAGER_TOKEN(portfolioManagerToken)
-                .PORTFOLIO_MANAGER_CLIENT_KEYSTORE_FILE(
-                        portfolioManagerClientKeystoreFile)
-                .PORTFOLIO_MANAGER_CLIENT_KEYSTORE_PASSWORD(
-                        portfolioManagerClientKeystorePassword)
-                .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_FILE(
-                        portfolioManagerClientTruststoreFile)
-                .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD(
-                        portfolioManagerClientTruststorePassword)
+                .portfolioManagerOptions(portfolioManagerOptions)
                 .MAVEN_CLI_OPTS(mavenCliOpts)
                 .LOCAL_MAVEN_REPO(localMavenRepo)
                 .SETUP_COMMAND(setupCommand)
+                .overwriteOptions(overwriteOptions)
                 .build();
 
         PipelineConfiguration pipelineConfiguration = new PipelineConfigurationLoader().readConfig(pipelineConfigFile);

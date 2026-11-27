@@ -8,18 +8,18 @@ import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 /**
  * Environment configuration for pipeline execution on GitLab CI.
  */
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public class GitlabConfiguration extends EnvironmentConfiguration {
 
     @Builder.Default
-    public final int GIT_DEPTH = 1;
+    public int GIT_DEPTH = 1;
 
     @Builder.Default
-    public final String GIT_STRATEGY = "clone";
+    public String GIT_STRATEGY = "clone";
 
-    public final String RUNNER_TAG;
+    public String RUNNER_TAG;
 
-    public final String CONTAINER_IMAGE;
+    public String CONTAINER_IMAGE;
 
     @Override
     public String getWorkspaceDirNormalized() {

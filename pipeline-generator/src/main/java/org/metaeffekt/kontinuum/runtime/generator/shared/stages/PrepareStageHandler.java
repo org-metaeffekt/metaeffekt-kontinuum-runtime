@@ -2,6 +2,7 @@ package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
+import org.metaeffekt.kontinuum.runtime.models.shared.PortfolioManagerOptions;
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
@@ -48,7 +49,7 @@ public class PrepareStageHandler implements AssetStageHandler {
             context.addDependency(spdxProcessor, inventoryReferenceEnrichment);
         }
 
-        if (hasPortfolioManager) {
+        if (hasPortfolioManager && !context.getEnvironment().getOverwriteOptions().isForceDisablePortfolioManager()) {
             MavenProcessor uploadProcessor = handlePortfolioUpload(context);
             MavenProcessor downloadProcessor = handlePortfolioDownload(context);
 
@@ -184,23 +185,21 @@ public class PrepareStageHandler implements AssetStageHandler {
         Asset target = (rootAsset != null) ? rootAsset : asset;
         String assetGroupId = target.getId() + ":" + target.getVersion();
 
+        PortfolioManagerOptions options = context.getEnvironment().portfolioManagerOptions;
+        String workbenchDir = context.getEnvironment().getWorkbenchDirNormalized();
+
         processor.setProcessorParameter(INPUT_FILE, context.getCurrentInventoryFile());
-        processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_URL, context.getEnvironment().PORTFOLIO_MANAGER_URL);
-        processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_TOKEN,
-                                        context.getEnvironment().PORTFOLIO_MANAGER_TOKEN);
+        processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_URL, options.getUrl());
+        processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_TOKEN, options.getToken());
         processor.setProcessorParameter(PARAM_PROJECT_NAME,
                                         context.getConfiguration().getPortfolioManager().getProject());
         processor.setProcessorParameter(PARAM_ASSET_GROUP_ID, assetGroupId);
         processor.setProcessorParameter(PARAM_ASSET_NAME, asset.getName());
         processor.setProcessorParameter(PARAM_ASSET_VERSION, asset.getVersion());
-        processor.setProcessorParameter(PARAM_KEYSTORE_CONFIG_FILE,
-                                        context.getEnvironment().getPortfolioManagerClientKeystoreFile());
-        processor.setProcessorParameter(PARAM_TRUSTSTORE_CONFIG_FILE,
-                                        context.getEnvironment().getPortfolioManagerClientTruststoreFile());
-        processor.setProcessorParameter(PARAM_KEYSTORE_PASSWORD,
-                                        context.getEnvironment().PORTFOLIO_MANAGER_CLIENT_KEYSTORE_PASSWORD);
-        processor.setProcessorParameter(PARAM_TRUSTSTORE_PASSWORD,
-                                        context.getEnvironment().PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD);
+        processor.setProcessorParameter(PARAM_KEYSTORE_CONFIG_FILE, options.getClientKeystoreFile(workbenchDir));
+        processor.setProcessorParameter(PARAM_TRUSTSTORE_CONFIG_FILE, options.getClientTruststoreFile(workbenchDir));
+        processor.setProcessorParameter(PARAM_KEYSTORE_PASSWORD, options.getClientKeystorePassword());
+        processor.setProcessorParameter(PARAM_TRUSTSTORE_PASSWORD, options.getClientTruststorePassword());
 
         return processor;
     }
@@ -219,21 +218,19 @@ public class PrepareStageHandler implements AssetStageHandler {
         processor.setProcessorParameter(OUTPUT_INVENTORY_DIR,
                                         context.getStageDirForAsset(
                                                 Stage.PREPARE).appendPortfolioManagerReferenceDir());
-        processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_URL, context.getEnvironment().PORTFOLIO_MANAGER_URL);
-        processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_TOKEN,
-                                        context.getEnvironment().PORTFOLIO_MANAGER_TOKEN);
+        PortfolioManagerOptions options = context.getEnvironment().portfolioManagerOptions;
+        String workbenchDir = context.getEnvironment().getWorkbenchDirNormalized();
+
+        processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_URL, options.getUrl());
+        processor.setProcessorParameter(PARAM_PORTFOLIO_MANAGER_TOKEN, options.getToken());
         processor.setProcessorParameter(PARAM_PROJECT_NAME,
                                         context.getConfiguration().getPortfolioManager().getProject());
         processor.setProcessorParameter(PARAM_ASSET_GROUP_ID, "Reports:SNAPSHOT");
         processor.setProcessorParameter(PARAM_ASSET_ID, context.getConfiguration().getPortfolioManager().getProject());
-        processor.setProcessorParameter(PARAM_KEYSTORE_CONFIG_FILE,
-                                        context.getEnvironment().getPortfolioManagerClientKeystoreFile());
-        processor.setProcessorParameter(PARAM_TRUSTSTORE_CONFIG_FILE,
-                                        context.getEnvironment().getPortfolioManagerClientTruststoreFile());
-        processor.setProcessorParameter(PARAM_KEYSTORE_PASSWORD,
-                                        context.getEnvironment().PORTFOLIO_MANAGER_CLIENT_KEYSTORE_PASSWORD);
-        processor.setProcessorParameter(PARAM_TRUSTSTORE_PASSWORD,
-                                        context.getEnvironment().PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD);
+        processor.setProcessorParameter(PARAM_KEYSTORE_CONFIG_FILE, options.getClientKeystoreFile(workbenchDir));
+        processor.setProcessorParameter(PARAM_TRUSTSTORE_CONFIG_FILE, options.getClientTruststoreFile(workbenchDir));
+        processor.setProcessorParameter(PARAM_KEYSTORE_PASSWORD, options.getClientKeystorePassword());
+        processor.setProcessorParameter(PARAM_TRUSTSTORE_PASSWORD, options.getClientTruststorePassword());
         processor.setProcessorParameter(PARAM_INVENTORY_MODIFIER, "report");
 
         String targetInventoryPath = context.getStageDirForAsset(
