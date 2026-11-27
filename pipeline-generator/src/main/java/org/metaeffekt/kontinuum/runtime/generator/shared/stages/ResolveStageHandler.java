@@ -1,7 +1,6 @@
 package org.metaeffekt.kontinuum.runtime.generator.shared.stages;
 
 import org.metaeffekt.kontinuum.runtime.models.shared.AssetExecutionContext;
-import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
 
@@ -22,10 +21,8 @@ public class ResolveStageHandler implements AssetStageHandler {
 
     @Override
     public void process(AssetExecutionContext context) {
-        PipelineConfiguration.Options.GlobalOptions globalOptions = context.getConfiguration().getOptions().getGlobal();
-        assert globalOptions != null;
 
-        if (globalOptions.getEnableResolve()) {
+        if (context.getEnvironment().getOverwriteOptions().isForceEnableLocalResolve()) {
             context.addProcessor(handleResolve(context));
         }
     }

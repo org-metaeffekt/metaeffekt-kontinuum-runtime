@@ -509,14 +509,6 @@ public class PipelineConfigurationLoader {
             return;
         }
 
-        if (globalOptions.getEnableResolve() && Objects.nonNull(pipelineConfiguration.getPortfolioManager())) {
-            log.warn("Global Options 'enableResolve' is set to true even though portfolio manager is configured.");
-        }
-
-        if (globalOptions.getEnableScan() && Objects.nonNull(pipelineConfiguration.getPortfolioManager())) {
-            log.warn("Global Options 'enableScan' is set to true even though portfolio manager is configured.");
-        }
-
         if (globalOptions.getEnableCycloneDxBom() || globalOptions.getEnableSpdxBom()) {
             if (globalOptions.getBomOrganization() == null) {
                 log.error("Global Options 'bomOrganization' is not set " +

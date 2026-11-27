@@ -167,8 +167,10 @@ public class GroupStageHandler implements AssetStageHandler {
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(APPLY_BUSINESS_CASE);
         processor.setStage(Stage.GROUP);
 
-        processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment().TMD_PASSWORD);
-        processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment().TMD_USERKEYS_FILE);
+        processor.setProcessorParameter(ENV_TMD_PASSWORD, context.getEnvironment()
+                .termsMetadataOptions.getPassword());
+        processor.setProcessorParameter(ENV_TMD_USERKEYS_FILE, context.getEnvironment()
+                .termsMetadataOptions.getUserkeysFile());
 
         // Here, the "context.getCurrent()" inventory is not utilized on purpose as it is not set by the previous
         // processor.
@@ -177,7 +179,7 @@ public class GroupStageHandler implements AssetStageHandler {
         processor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
                                         context.getGroupedStage(report, reportType, locale).appendAssetInventory());
 
-        processor.setProcessorParameter(ENV_TMD_SOURCE, context.getEnvironment().TMD_SOURCE);
+        processor.setProcessorParameter(ENV_TMD_SOURCE, context.getEnvironment().termsMetadataOptions.getSource());
         processor.setProcessorParameter(PARAM_LANGUAGE_MODE, locale.getIdentifier());
         processor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR,
                                         context.getEnvironment().getWorkbenchDirNormalized() +

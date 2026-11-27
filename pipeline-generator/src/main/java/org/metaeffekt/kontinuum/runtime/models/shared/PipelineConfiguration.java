@@ -604,11 +604,8 @@ public class PipelineConfiguration {
          */
         @Data
         public static class GlobalOptions {
-            private Boolean enableResolve = false;
-            private Boolean enableScan = false;
             private Boolean enableSpdxBom = false;
             private Boolean enableCycloneDxBom = false;
-            private Boolean forceDisablePortfolioManager = false;
             private String debugParam;
             private String bomOrganization;
             private String bomOrganizationUrl;
@@ -619,7 +616,6 @@ public class PipelineConfiguration {
          */
         @Data
         public static class EnrichmentOptions {
-
             private String securityPolicyFile;
             private List<String> securityPolicyActiveIds = new ArrayList<>();
             private Boolean activateMsrc = true;
@@ -651,5 +647,6 @@ public class PipelineConfiguration {
                 return KontinuumUtils.normalizeDir(workbenchPath, file.getPath());
             }
         }
+
     }
 }

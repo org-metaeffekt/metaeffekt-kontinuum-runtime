@@ -42,39 +42,32 @@ public class GenerateGitlabPipelineMojo extends AbstractGeneratePipelineMojo {
                     "The pipeline configuration file " + pipelineConfigFile.getAbsolutePath() + " does not exist.");
         }
 
-        GitlabConfiguration.GitlabConfigurationBuilder gitlabConfiguration = GitlabConfiguration.builder()
+        GitlabConfiguration gitlabConfiguration = GitlabConfiguration.builder()
                 .ARTIFACT_RESOLVER_CONFIG_FILE(
                         artifactResolverConfigFile)
                 .ARTIFACT_RESOLVER_PROXY_FILE(
                         artifactResolverProxyFile)
-                .RUNNER_TAG(runnerTag);
-
-
-        gitlabConfiguration.CONTAINER_IMAGE(containerImage)
-                .TMD_PASSWORD(tmdPassword)
-                .TMD_USERKEYS_FILE(tmdUserkeysFile)
-                .TMD_SOURCE(tmdSource)
+                .RUNNER_TAG(runnerTag)
+                .CONTAINER_IMAGE(containerImage)
+                .termsMetadataOptions(termsMetadataOptions)
                 .SCAN_PROPERTIES_FILE(scanPropertiesFile)
                 .VULNERABILITY_MIRROR_DIR(vulnerabilityMirrorDir)
                 .VULNERABILITY_MIRROR_URL(vulnerabilityMirrorUrl)
                 .WORKBENCH_DIR(workbenchDir)
                 .KONTINUUM_DIR(kontinuumDir)
                 .WORKSPACE_DIR(workspaceDir)
-                .PORTFOLIO_MANAGER_URL(portfolioManagerUrl)
-                .PORTFOLIO_MANAGER_TOKEN(portfolioManagerToken)
-                .PORTFOLIO_MANAGER_CLIENT_KEYSTORE_FILE(portfolioManagerClientKeystoreFile)
-                .PORTFOLIO_MANAGER_CLIENT_KEYSTORE_PASSWORD(portfolioManagerClientKeystorePassword)
-                .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_FILE(portfolioManagerClientTruststoreFile)
-                .PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD(portfolioManagerClientTruststorePassword)
+                .portfolioManagerOptions(portfolioManagerOptions)
                 .MAVEN_CLI_OPTS(mavenCliOpts)
                 .LOCAL_MAVEN_REPO(localMavenRepo)
                 .SETUP_COMMAND(setupCommand)
-                .CONTAINER_PATCH_DIRECTORY(containerPatchDirectory);
+                .CONTAINER_PATCH_DIRECTORY(containerPatchDirectory)
+                .overwriteOptions(overwriteOptions)
+                .build();
 
 
         PipelineConfiguration pipelineConfiguration = new PipelineConfigurationLoader().readConfig(pipelineConfigFile);
 
-        GitlabPipeline gitlabPipeline = new GitlabPipeline(pipelineConfiguration, gitlabConfiguration.build());
+        GitlabPipeline gitlabPipeline = new GitlabPipeline(pipelineConfiguration, gitlabConfiguration);
 
         try {
             outputFile.getParentFile().mkdirs();

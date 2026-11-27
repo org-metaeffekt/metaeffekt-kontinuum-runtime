@@ -8,7 +8,7 @@ import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 /**
  * Environment configuration for pipeline execution on a local machine.
  */
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public class LocalConfiguration extends EnvironmentConfiguration {
 
     @Builder.Default

@@ -1,6 +1,7 @@
 package org.metaeffekt.kontinuum.runtime.models.shared;
 
 import lombok.Builder;
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
@@ -8,7 +9,7 @@ import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
  * Base configuration for a Kontinuum environment, exposing directories, credentials and processor
  * settings resolved from the harness properties.
  */
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public abstract class EnvironmentConfiguration {
 
     @Builder.Default
@@ -20,38 +21,30 @@ public abstract class EnvironmentConfiguration {
     @Builder.Default
     private final String VULNERABILITY_MIRROR_DIR = "./mirror/";
 
+    private final String KONTINUUM_DIR;
+
     public final String VULNERABILITY_MIRROR_URL;
     public final String ARTIFACT_RESOLVER_CONFIG_FILE;
     public final String ARTIFACT_RESOLVER_PROXY_FILE;
     public final String SCAN_PROPERTIES_FILE;
-    public final String TMD_PASSWORD;
-    public final String TMD_USERKEYS_FILE;
-
-    @Builder.Default
-    public final String TMD_SOURCE = "ae-kosmos";
     public final String SETUP_COMMAND;
-    private final String KONTINUUM_DIR;
-
-    private final String PORTFOLIO_MANAGER_CLIENT_KEYSTORE_FILE;
-    private final String PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_FILE;
-    public final String PORTFOLIO_MANAGER_CLIENT_KEYSTORE_PASSWORD;
-    public final String PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_PASSWORD;
-    public final String PORTFOLIO_MANAGER_TOKEN;
-    public final String PORTFOLIO_MANAGER_URL;
     public final String MAVEN_CLI_OPTS;
     public final String LOCAL_MAVEN_REPO;
     public final String CONTAINER_PATCH_DIRECTORY;
 
+
+    @Builder.Default
+    public final TermsMetadataOptions termsMetadataOptions = new TermsMetadataOptions();
+
+    @Builder.Default
+    public final PortfolioManagerOptions portfolioManagerOptions = new PortfolioManagerOptions();
+
+    @Getter
+    @Builder.Default
+    public final OverwriteOptions overwriteOptions = new OverwriteOptions();
+
     public String getMirrorDir() {
         return VULNERABILITY_MIRROR_DIR;
-    }
-
-    public String getPortfolioManagerClientTruststoreFile() {
-        return KontinuumUtils.normalizeFilePath(WORKBENCH_DIR, PORTFOLIO_MANAGER_CLIENT_TRUSTSTORE_FILE);
-    }
-
-    public String getPortfolioManagerClientKeystoreFile() {
-        return KontinuumUtils.normalizeFilePath(WORKBENCH_DIR, PORTFOLIO_MANAGER_CLIENT_KEYSTORE_FILE);
     }
 
     public String getMirrorDatabaseDirNormalized() {
