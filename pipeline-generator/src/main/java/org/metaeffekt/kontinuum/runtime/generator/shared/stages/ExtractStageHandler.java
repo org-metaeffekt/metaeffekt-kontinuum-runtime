@@ -7,12 +7,15 @@ import org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.Pr
 import org.metaeffekt.kontinuum.runtime.models.shared.PipelineConfiguration.ProjectProperties.Asset;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.Processor;
 import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.MavenProcessor;
+import org.metaeffekt.kontinuum.runtime.models.shared.ProcessorDefinitions.StandaloneProcessor;
 import org.metaeffekt.kontinuum.runtime.models.shared.Stage;
+import org.metaeffekt.kontinuum.runtime.models.shared.Workspace;
 import org.metaeffekt.kontinuum.runtime.util.KontinuumUtils;
 
 import java.util.IdentityHashMap;
 import java.util.Map;
 
+import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.COPY_INVENTORY;
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.EXECUTE_KOTLIN_SCRIPT;
 import static org.metaeffekt.kontinuum.runtime.models.shared.DefaultProcessorCatalog.ProcessorIds.SCAN_DIRECTORY;
 import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterKey.*;
@@ -26,7 +29,9 @@ import static org.metaeffekt.kontinuum.runtime.models.shared.ProcessorParameterK
  *     already references an extracted inventory skip the extraction.</li>
  *     <li>Assets without a resolver use the inventory of their parent asset.</li>
  * </ul>
- * If an extraction script is configured, it is applied to the inventory afterward.
+ * If an extraction script is configured, it is applied to the inventory afterward. Otherwise, an already extracted
+ * inventory is copied into the extract stage directory. The resulting inventory is named after
+ * {@link Asset#getInventoryFileName()}, like the inventories of all later stages.
  */
 public class ExtractStageHandler implements AssetStageHandler {
 
@@ -59,16 +64,21 @@ public class ExtractStageHandler implements AssetStageHandler {
         }
 
         if (asset.isAssetExtractedViaScript()) {
-            MavenProcessor script = handleExtractionScript(context);
-            context.addProcessor(script);
-            if (producer != null) {
-                context.addDependency(script, producer);
-            }
-            producer = script;
+            producer = addAfter(context, handleExtractionScript(context), producer);
+        } else if (asset.isPreExtractedInventory()) {
+            producer = addAfter(context, handleInventoryCopy(context), producer);
         }
 
         extractionResults.put(asset, new ExtractionResult(
                 context.getCurrentInventoryFile(), context.getCurrentInventoryDir(), producer));
+    }
+
+    private static Processor addAfter(AssetExecutionContext context, Processor processor, Processor predecessor) {
+        context.addProcessor(processor);
+        if (predecessor != null) {
+            context.addDependency(processor, predecessor);
+        }
+        return processor;
     }
 
     /**
@@ -124,7 +134,7 @@ public class ExtractStageHandler implements AssetStageHandler {
     private MavenProcessor handleExtractionScript(AssetExecutionContext context) {
         Asset asset = context.getAsset();
         String scriptedInventoryDir = context.getStageDirForAsset(Stage.EXTRACT).toString();
-        String scriptedInventoryFile = scriptedInventoryDir + asset.getExtractionScriptInventoryFileName();
+        String scriptedInventoryFile = context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory();
 
         String workbenchDir = context.getEnvironment().getWorkbenchDirNormalized();
         MavenProcessor processor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(
@@ -148,6 +158,46 @@ public class ExtractStageHandler implements AssetStageHandler {
     }
 
     /**
+     * Copies the already extracted inventory fetched by the url resolver into the extract stage directory.
+     *
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return The configured {@link StandaloneProcessor} for copying the inventory.
+     * @see <a href="https://github.com/org-metaeffekt/metaeffekt-kontinuum/blob/main/processors/util/util_copy-inventory.sh">util_copy-inventory.sh</a>
+     */
+    private StandaloneProcessor handleInventoryCopy(AssetExecutionContext context) {
+        String extractDir = context.getStageDirForAsset(Stage.EXTRACT).toString();
+        String copiedInventoryFile = context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory();
+
+        StandaloneProcessor processor = (StandaloneProcessor) context.getProcessorCatalog().getProcessorById(
+                COPY_INVENTORY);
+        processor.setStage(Stage.EXTRACT);
+        processor.setProcessorParameter(INPUT_INVENTORY_FILE, context.getCurrentInventoryFile());
+        processor.setProcessorParameter(OUTPUT_INVENTORY_FILE, copiedInventoryFile);
+
+        context.setCurrentInventoryFile(copiedInventoryFile);
+        context.setCurrentInventoryDir(extractDir);
+
+        return processor;
+    }
+
+    /**
+     * Returns the inventory file written by the extraction processor. Without an extraction script it is the final
+     * inventory of the asset and uses the configured name. With a script, the script writes the configured name, so
+     * the extraction keeps the default name to not be overwritten by the script reading it.
+     *
+     * @param context The asset execution context containing pipeline and asset information.
+     * @return the output inventory file of the extraction processor
+     */
+    private static String extractionInventoryFile(AssetExecutionContext context) {
+        Asset asset = context.getAsset();
+        Workspace.AssetPath extractDir = context.getStageDirForAsset(Stage.EXTRACT);
+        if (asset.isAssetExtractedViaScript()) {
+            return extractDir + asset.getDefaultInventoryFileName();
+        }
+        return extractDir.appendAssetInventory();
+    }
+
+    /**
      * Extracts an inventory from the fetched artifact directory.
      *
      * @param context The asset execution context containing pipeline and asset information.
@@ -160,15 +210,14 @@ public class ExtractStageHandler implements AssetStageHandler {
         MavenProcessor mavenProcessor = (MavenProcessor) context.getProcessorCatalog().getProcessorById(SCAN_DIRECTORY);
         mavenProcessor.setStage(Stage.EXTRACT);
         mavenProcessor.setProcessorParameter(INPUT_EXTRACT_DIR, context.getStageDirForAsset(Stage.FETCH).toString());
-        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
-                                             context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
+        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, extractionInventoryFile(context));
         mavenProcessor.setProcessorParameter(OUTPUT_SCAN_DIR, context.getStageDirForAsset(Stage.EXTRACT) + "scan/");
         mavenProcessor.setProcessorParameter(PARAM_REFERENCE_INVENTORY_DIR,
                                              asset.getReferenceDir(
                                                      context.getEnvironment().getWorkbenchDirNormalized()));
 
         context.setCurrentInventoryDir(context.getStageDirForAsset(Stage.EXTRACT).toString());
-        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
+        context.setCurrentInventoryFile(extractionInventoryFile(context));
 
         return mavenProcessor;
     }
@@ -192,13 +241,12 @@ public class ExtractStageHandler implements AssetStageHandler {
         mavenProcessor.setProcessorParameter(INPUT_ARCHIVE_FILE,
                 context.getStageDirForAsset(Stage.FETCH) + asset.getUrlResolverFileName());
         mavenProcessor.setProcessorParameter(PARAM_ANALYSIS_DIR, extractDir + "analysis/");
-        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE,
-                context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
+        mavenProcessor.setProcessorParameter(OUTPUT_INVENTORY_FILE, extractionInventoryFile(context));
         mavenProcessor.setProcessorParameter(PARAM_EXCLUDE_PATTERN_FILE,
                 KontinuumUtils.normalizeFilePath(workbenchDir, asset.getUrlResolver().getExcludePatternFile()));
 
         context.setCurrentInventoryDir(extractDir);
-        context.setCurrentInventoryFile(context.getStageDirForAsset(Stage.EXTRACT).appendAssetInventory());
+        context.setCurrentInventoryFile(extractionInventoryFile(context));
 
         return mavenProcessor;
     }

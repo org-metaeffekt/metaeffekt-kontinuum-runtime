@@ -111,11 +111,15 @@ projectProperties:
 | `context`          | String | Optional | Assessment context (e.g., `local`, `remote`).                                                  | Sub-directory qualifier to dynamically resolve context information.                                                   |
 | `type`             | Enum   | Optional | Asset type controlling the extraction: `DEFAULT`, `WINDOWS` or `LINUX`. Defaults to `DEFAULT`. | Selects the extraction processor in the `EXTRACT` stage. See [Asset Types](#24-asset-types-type).                     |
 | `extractionScript` | Object | Optional | Kotlin script applied to the inventory of the asset.                                           | Produces the final inventory of the asset. See [Asset Hierarchies](#25-asset-hierarchies-and-extraction-scripts).     |
+| `inventory`        | String | Optional | File name of the inventory of the asset. Defaults to `<id>-inventory.xlsx`.                    | Names the inventory of the asset in all stages (`<stage>/<asset-id>/<inventory>`). See note below.                    |
 | `assets`           | List   | Optional | Nested list of child assets.                                                                   | Models asset hierarchies. Child assets without a resolver use the inventory of their parent asset.                    |
 
 Nested assets inherit `version`, `reference` and `context` from their direct parent asset unless they define their own
 values. `id`, `name` and `assessmentId` are not inherited, as each asset stands on its own. Asset ids must be unique
 across all nesting levels.
+
+The inventories of all assets of a report are copied into one directory in the `GROUP` stage. Assets of the same
+report must therefore have different inventory names, otherwise they overwrite each other. This is not validated.
 
 ---
 
@@ -147,8 +151,8 @@ urlResolver:
 
 `file:` URLs reference local files. A relative file URL (`file:path`) is resolved relative to the workbench directory
 by the runtime; absolute file URLs (`file:/path`, `file:///path`) are used as they are. A file URL ending in `.xls` or
-`.xlsx` references an already extracted inventory: the file is copied in the `FETCH` stage and the `EXTRACT` stage is
-skipped.
+`.xlsx` references an already extracted inventory: the file is copied in the `FETCH` stage and the `EXTRACT` stage
+copies it to `01_extracted/<asset-id>/` instead of extracting it, unless an `extractionScript` is applied to it.
 
 ```yaml
 urlResolver:
@@ -229,9 +233,9 @@ projectProperties:
            - id: "appliance-os"
              name: "appliance-os"
              assessmentId: "appliance-os"
+             inventory: "os-inventory.xlsx"
              extractionScript:
                 script: "scripts/extract-os.kts"
-                inventory: "os-inventory.xlsx"
                 params:
                    filter: "os"
            - id: "appliance-drivers"
@@ -244,8 +248,9 @@ projectProperties:
 | Parameter                    | Type   | Required | Description                                                                                                                 |
 |:-----------------------------|:-------|:---------|:----------------------------------------------------------------------------------------------------------------------------|
 | `extractionScript.script`    | String | **Yes**  | Path to the kotlin script relative to the workbench directory.                                                              |
-| `extractionScript.inventory` | String | Optional | File name of the inventory written by the script. Defaults to `<id>.xlsx`.                                                  |
 | `extractionScript.params`    | Map    | Optional | Additional parameters passed to the script as a JSON object (`param.script.params`). Values must not contain single quotes. |
+
+The script writes the inventory named by the asset-level `inventory` (see [Asset Definitions](#22-asset-definitions-assets)).
 
 The inventory of each asset is determined in the `EXTRACT` stage:
 
